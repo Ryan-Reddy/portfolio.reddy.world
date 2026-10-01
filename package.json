@@ -1,0 +1,16 @@
+{
+  "name": "portfolio.reddy.world",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Visual archive & inner portfolio for RMaekers, RRproductions, Maup de Kleermaeker, and Vaguely Vulgar",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "import": "python scripts/parse_wordpress.py"
+  },
+  "devDependencies": {
+    "vite": "^5.4.10"
+  }
+}
