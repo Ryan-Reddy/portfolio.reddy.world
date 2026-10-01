@@ -404,12 +404,18 @@ window.addEventListener('keydown', (e) => {
   }
 });
 
-// Hash routing on initial load
-window.addEventListener('DOMContentLoaded', () => {
+// Hash routing on initial load and navigation
+function handleHashRoute() {
   const hash = window.location.hash.replace('#', '');
   if (hash && PORTFOLIOS[hash]) {
-    switchPortfolio(hash);
-  } else {
+    if (hash !== currentPortfolioKey) {
+      switchPortfolio(hash);
+    }
+  } else if (!window.location.hash) {
     switchPortfolio('rmaekers');
   }
-});
+}
+
+window.addEventListener('DOMContentLoaded', handleHashRoute);
+window.addEventListener('hashchange', handleHashRoute);
+
