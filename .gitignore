@@ -14,3 +14,6 @@ yarn-debug.log*
 Thumbs.db
 .vscode/
 .idea/
+
+# Local WordPress export backups (contain contact-form messages from real people)
+src/.zOld/
