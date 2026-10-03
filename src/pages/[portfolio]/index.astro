@@ -1,0 +1,41 @@
+---
+import Base from '../../layouts/Base.astro';
+import Grid from '../../components/Grid.astro';
+import { portfolios, PERSON_ID, SITE } from '../../lib/portfolios.js';
+
+export function getStaticPaths() {
+  return portfolios.map((p) => ({ params: { portfolio: p.id }, props: { p } }));
+}
+
+const { p } = Astro.props;
+const photoCount = p.posts.reduce((n, post) => n + post.media.filter((m) => m.type === 'image').length, 0);
+const categories = [...new Set(p.posts.flatMap((post) => post.categories))].sort();
+const description = `${p.name}: ${p.subtitle}. ${p.posts.length} projects and ${photoCount} photographs by Ryan Reddy.`;
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  url: `${SITE}/${p.id}/`,
+  name: p.name,
+  description,
+  author: { '@id': PERSON_ID },
+  isPartOf: { '@id': `${SITE}/#archive` },
+};
+---
+<Base title={`${p.name} — ${p.subtitle} | Ryan Reddy`} description={description} active={p.id} jsonLd={jsonLd}>
+  <section class="archive-hero" aria-labelledby="hero-title">
+    <div class="hero-inner">
+      <div class="hero-badge">{p.badge}</div>
+      <h1 class="hero-title" id="hero-title">{p.name}</h1>
+      <p class="hero-subtitle">{p.subtitle}</p>
+      <div class="hero-meta">
+        <span class="meta-item"><strong>{p.posts.length}</strong> Projects</span>
+        <span class="meta-dot">&bull;</span>
+        <span class="meta-item"><strong>{photoCount.toLocaleString('en-US')}</strong> Photographs</span>
+        <span class="meta-dot">&bull;</span>
+        <span class="meta-item">Amsterdam &amp; Worldwide</span>
+      </div>
+    </div>
+  </section>
+
+  <Grid posts={p.posts} chips={categories.map((c) => ({ label: c, value: c }))} />
+</Base>

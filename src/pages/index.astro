@@ -1,0 +1,45 @@
+---
+import Base from '../layouts/Base.astro';
+import Grid from '../components/Grid.astro';
+import { portfolios, allPosts, PERSON_ID, SITE } from '../lib/portfolios.js';
+
+const photoCount = allPosts.reduce((n, p) => n + p.media.filter((m) => m.type === 'image').length, 0);
+const description = 'Visual archive of Ryan Reddy: festival decors and stage builds (ReddyMaekers), fine art and inventions (RRproductions), adaptive furniture (Maup de Kleermaeker) and personal photography.';
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  '@id': `${SITE}/#archive`,
+  url: `${SITE}/`,
+  name: 'portfolio.reddy.world',
+  description,
+  author: { '@id': PERSON_ID },
+  hasPart: portfolios.map((p) => ({ '@type': 'CollectionPage', name: p.name, url: `${SITE}/${p.id}/` })),
+};
+---
+<Base title="portfolio.reddy.world — Decors, Art & Craftsmanship by Ryan Reddy" description={description} jsonLd={jsonLd}>
+  <section class="archive-hero" aria-labelledby="hero-title">
+    <div class="hero-inner">
+      <div class="hero-badge">Visual archive</div>
+      <h1 class="hero-title" id="hero-title">Everything we built</h1>
+      <p class="hero-subtitle">Festival decors, stage builds, art, inventions and furniture: Amsterdam and worldwide.</p>
+      <div class="hero-meta">
+        <span class="meta-item"><strong>{allPosts.length}</strong> Projects</span>
+        <span class="meta-dot">&bull;</span>
+        <span class="meta-item"><strong>{photoCount.toLocaleString('en-US')}</strong> Photographs</span>
+      </div>
+    </div>
+  </section>
+
+  <Grid
+    posts={allPosts}
+    chips={portfolios.map((p) => ({ label: p.name, value: p.id }))}
+    filterBy="portfolio"
+    showPortfolio
+  />
+
+  <script is:inline>
+    // Old links used #rmaekers etc.; send them to the real page
+    const key = location.hash.slice(1);
+    if (['rmaekers', 'rrproductions', 'maup', 'vaguelyvulgar'].includes(key)) location.replace(`/${key}/`);
+  </script>
+</Base>

@@ -1,0 +1,73 @@
+---
+import Card from './Card.astro';
+
+// chips: [{ label, value }]; filterBy: 'categories' | 'portfolio'
+const { posts, chips = [], filterBy = 'categories', showPortfolio = false } = Astro.props;
+---
+<div class="toolbar-wrapper">
+  <div class="toolbar-inner">
+    <div class="search-box">
+      <svg class="search-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+        <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2" fill="none"/>
+        <line x1="16.5" y1="16.5" x2="21" y2="21" stroke="currentColor" stroke-width="2"/>
+      </svg>
+      <input type="search" id="search-input" placeholder="Search projects, festivals, materials..." aria-label="Search projects">
+    </div>
+    {chips.length > 1 && (
+      <div class="categories-scroll" role="toolbar" aria-label="Filters" data-filter-by={filterBy}>
+        <button type="button" class="chip-btn active" data-value="" aria-pressed="true">All</button>
+        {chips.map((c) => <button type="button" class="chip-btn" data-value={c.value} aria-pressed="false">{c.label}</button>)}
+      </div>
+    )}
+  </div>
+</div>
+
+<section class="gallery-section" aria-label="Projects">
+  <div class="gallery-container" id="projects-grid">
+    {posts.map((post) => <Card post={post} showPortfolio={showPortfolio} />)}
+  </div>
+  <div class="empty-state" id="empty-state" hidden>
+    <p>No projects match your search or filter.</p>
+    <button type="button" class="btn-reset" id="btn-reset-filters">Clear filters</button>
+  </div>
+</section>
+
+<script>
+  const input = document.getElementById('search-input') as HTMLInputElement;
+  const bar = document.querySelector('.categories-scroll') as HTMLElement | null;
+  const cards = [...document.querySelectorAll<HTMLElement>('#projects-grid .card')];
+  const empty = document.getElementById('empty-state')!;
+  let chip = '';
+
+  function apply() {
+    const q = input.value.trim().toLowerCase();
+    const by = bar?.dataset.filterBy;
+    let shown = 0;
+    for (const card of cards) {
+      const inChip = !chip || (by === 'portfolio'
+        ? card.dataset.portfolio === chip
+        : (card.dataset.categories ?? '').split('|').includes(chip));
+      const ok = inChip && (!q || (card.dataset.search ?? '').includes(q));
+      card.hidden = !ok;
+      if (ok) shown++;
+    }
+    empty.hidden = shown > 0;
+  }
+
+  bar?.addEventListener('click', (e) => {
+    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('.chip-btn');
+    if (!btn) return;
+    chip = btn.dataset.value ?? '';
+    bar.querySelectorAll('.chip-btn').forEach((b) => {
+      b.classList.toggle('active', b === btn);
+      b.setAttribute('aria-pressed', String(b === btn));
+    });
+    apply();
+  });
+  input.addEventListener('input', apply);
+  document.getElementById('btn-reset-filters')!.addEventListener('click', () => {
+    input.value = '';
+    (bar?.querySelector('.chip-btn') as HTMLButtonElement | null)?.click();
+    apply();
+  });
+</script>

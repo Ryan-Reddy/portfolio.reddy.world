@@ -1,0 +1,82 @@
+---
+import '../styles/global.css';
+import { portfolios, contactUrl, SITE } from '../lib/portfolios.js';
+
+interface Props {
+  title: string;
+  description: string;
+  image?: string;
+  active?: string;
+  jsonLd?: object | object[];
+  type?: string;
+}
+
+const { title, description, image, active, jsonLd, type = 'website' } = Astro.props;
+const canonical = new URL(Astro.url.pathname, SITE).href;
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{title}</title>
+  <meta name="description" content={description}>
+  <link rel="canonical" href={canonical}>
+  <meta name="author" content="Ryan Reddy">
+  <meta property="og:type" content={type}>
+  <meta property="og:site_name" content="portfolio.reddy.world">
+  <meta property="og:title" content={title}>
+  <meta property="og:description" content={description}>
+  <meta property="og:url" content={canonical}>
+  {image && <meta property="og:image" content={image}>}
+  <meta name="twitter:card" content={image ? 'summary_large_image' : 'summary'}>
+  <link rel="sitemap" href="/sitemap-index.xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="header-brand">
+        <a href="/" class="brand-link" title="All projects">
+          <span class="brand-sub">reddy.world /</span>
+          <span class="brand-main">portfolio</span>
+        </a>
+      </div>
+
+      <nav class="portfolio-nav" aria-label="Portfolios">
+        {portfolios.map((p) => (
+          <a href={`/${p.id}/`} class:list={['tab-btn', { active: active === p.id }]} aria-current={active === p.id ? 'page' : undefined}>
+            <span class="tab-icon" aria-hidden="true">{p.icon}</span>
+            <span class="tab-title">{p.name}</span>
+            <span class="tab-count">{p.posts.length}</span>
+          </a>
+        ))}
+      </nav>
+
+      <div class="header-actions">
+        <a href={contactUrl()} class="btn-back">Plan a free talk</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <slot />
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <p class="footer-copy">&copy; Ryan Reddy &middot; Decor, art and stage builds, documented from the original productions.</p>
+      <div class="footer-links">
+        <a href="https://reddy.world">reddy.world</a>
+        <a href={contactUrl()}>Contact</a>
+        <a href="https://reddymaekers.com">reddymaekers.com</a>
+        <a href="https://github.com/Ryan-Reddy">GitHub</a>
+        <a href="https://www.linkedin.com/in/ryan-reddy-productions/">LinkedIn</a>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

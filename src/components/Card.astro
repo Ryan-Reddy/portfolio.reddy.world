@@ -1,0 +1,41 @@
+---
+import { formatDate, photos, altFor, portfolioById } from '../lib/portfolios.js';
+
+const { post, showPortfolio = false } = Astro.props;
+const imgs = photos(post);
+const cover = post.featured_image && imgs.find((m) => m.url === post.featured_image) ? post.featured_image : imgs[0]?.url;
+const coverAlt = imgs.length ? altFor(post, imgs.find((m) => m.url === cover) ?? imgs[0], 0) : '';
+const search = [post.title, post.excerpt, ...post.categories, ...post.tags].join(' ').toLowerCase();
+---
+<a
+  class="card"
+  href={post.path}
+  data-categories={post.categories.join('|')}
+  data-portfolio={post.portfolio}
+  data-search={search}
+>
+  <div class="card-media">
+    {cover
+      ? <img class="card-img" src={cover} alt={coverAlt} loading="lazy" decoding="async">
+      : <div class="card-placeholder" aria-hidden="true">🎨</div>}
+    {imgs.length > 0 && (
+      <span class="card-photo-count" aria-label={`${imgs.length} photos`}>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
+        {imgs.length}
+      </span>
+    )}
+  </div>
+  <div class="card-content">
+    <div class="card-meta">
+      <span>{formatDate(post.date)}</span>
+      {showPortfolio && <span>&bull; {portfolioById[post.portfolio].name}</span>}
+      {!showPortfolio && post.categories[0] && <span>&bull; {post.categories[0]}</span>}
+    </div>
+    <h2 class="card-title">{post.title.trim()}</h2>
+    <p class="card-excerpt">{post.excerpt}</p>
+    <div class="card-tags">
+      {post.categories.map((c) => <span class="card-tag">{c}</span>)}
+      {post.tags.slice(0, 3).map((t) => <span class="card-tag">#{t}</span>)}
+    </div>
+  </div>
+</a>

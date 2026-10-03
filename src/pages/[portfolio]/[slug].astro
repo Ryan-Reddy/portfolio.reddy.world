@@ -1,0 +1,165 @@
+---
+import Base from '../../layouts/Base.astro';
+import { portfolios, formatDate, isoDate, photos, altFor, contactUrl, titleCase, PERSON_ID, SITE } from '../../lib/portfolios.js';
+
+export function getStaticPaths() {
+  return portfolios.flatMap((p) =>
+    p.posts.map((post) => ({ params: { portfolio: p.id, slug: post.slug }, props: { p, post } })),
+  );
+}
+
+const { p, post } = Astro.props;
+const imgs = photos(post);
+const videos = post.media.filter((m) => m.type === 'video');
+const files = post.media.filter((m) => m.type === 'file');
+const name = titleCase(post.title);
+const description = (post.excerpt || `${name}, a ${p.name} project by Ryan Reddy.`).slice(0, 300);
+const pageUrl = `${SITE}${post.path}`;
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'CreativeWork',
+    '@id': `${pageUrl}#work`,
+    url: pageUrl,
+    name,
+    description,
+    dateCreated: isoDate(post.date),
+    creator: { '@id': PERSON_ID },
+    keywords: [...post.categories, ...post.tags].join(', ') || undefined,
+    isPartOf: { '@type': 'CollectionPage', name: p.name, url: `${SITE}/${p.id}/` },
+    image: imgs.map((m, i) => ({
+      '@type': 'ImageObject',
+      contentUrl: m.url,
+      caption: altFor(post, m, i),
+      creator: { '@id': PERSON_ID },
+      creditText: 'Ryan Reddy',
+      copyrightNotice: '© Ryan Reddy',
+    })),
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Portfolio', item: `${SITE}/` },
+      { '@type': 'ListItem', position: 2, name: p.name, item: `${SITE}/${p.id}/` },
+      { '@type': 'ListItem', position: 3, name, item: pageUrl },
+    ],
+  },
+];
+---
+<Base title={`${name} — ${p.name} | Ryan Reddy`} description={description} image={imgs[0]?.url} active={p.id} jsonLd={jsonLd} type="article">
+  <article class="project-page">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="/">Portfolio</a> <span aria-hidden="true">/</span> <a href={`/${p.id}/`}>{p.name}</a>
+    </nav>
+
+    <header class="modal-header">
+      <div class="modal-meta">
+        <time datetime={isoDate(post.date)}>{formatDate(post.date)}</time>
+        {post.categories.length > 0 && <span>&bull; {post.categories.join(', ')}</span>}
+      </div>
+      <h1 class="modal-title">{post.title.trim()}</h1>
+      {post.tags.length > 0 && (
+        <div class="card-tags">{post.tags.map((t) => <span class="card-tag">#{t}</span>)}</div>
+      )}
+    </header>
+
+    {post.content && <div class="modal-body-text" set:html={post.content} />}
+
+    <aside class="cta">
+      <p>Want something like this for your event, venue or home?</p>
+      <a class="btn-cta" href={contactUrl({ project: post.slug })}>Plan a free 30-minute talk</a>
+    </aside>
+
+    {imgs.length > 0 && (
+      <section class="modal-gallery-section" aria-labelledby="gallery-title">
+        <h2 class="modal-gallery-title" id="gallery-title">Gallery ({imgs.length} photographs)</h2>
+        <div class="modal-gallery-grid">
+          {imgs.map((m, i) => (
+            <figure class="gallery-item">
+              <button type="button" class="gallery-thumb" data-index={i} data-image={m.id} aria-label={`Enlarge: ${altFor(post, m, i)}`}>
+                <img src={m.url} alt={altFor(post, m, i)} loading={i < 4 ? 'eager' : 'lazy'} decoding="async">
+              </button>
+              <a class="ask-link" href={contactUrl({ project: post.slug, image: m.id || String(i + 1) })}>Ask about this picture</a>
+            </figure>
+          ))}
+        </div>
+      </section>
+    )}
+
+    {videos.length > 0 && (
+      <section class="modal-gallery-section" aria-label="Videos">
+        <h2 class="modal-gallery-title">Video</h2>
+        {videos.map((v) => <video class="project-video" src={v.url} controls preload="none"></video>)}
+      </section>
+    )}
+
+    {files.length > 0 && (
+      <section class="modal-gallery-section" aria-label="Documents">
+        <h2 class="modal-gallery-title">Documents</h2>
+        <ul>{files.map((f) => <li><a href={f.url}>{f.title || f.url.split('/').pop()}</a></li>)}</ul>
+      </section>
+    )}
+  </article>
+
+  <div class="lightbox" id="lightbox" hidden role="dialog" aria-modal="true" aria-label="Photo viewer">
+    <button type="button" class="lightbox-close" aria-label="Close">&times;</button>
+    <button type="button" class="lightbox-prev" aria-label="Previous photo">&#10094;</button>
+    <button type="button" class="lightbox-next" aria-label="Next photo">&#10095;</button>
+    <div class="lightbox-stage">
+      <img id="lightbox-img" src="" alt="">
+      <div class="lightbox-caption">
+        <span id="lightbox-count"></span>
+        <a id="lightbox-ask" class="ask-link" href="#">Ask about this picture</a>
+      </div>
+    </div>
+  </div>
+</Base>
+
+<script>
+  const box = document.getElementById('lightbox')!;
+  const img = document.getElementById('lightbox-img') as HTMLImageElement;
+  const count = document.getElementById('lightbox-count')!;
+  const ask = document.getElementById('lightbox-ask') as HTMLAnchorElement;
+  const items = [...document.querySelectorAll<HTMLElement>('.gallery-item')];
+  let index = 0;
+  let opener: HTMLElement | null = null;
+
+  function show(i: number) {
+    index = (i + items.length) % items.length;
+    const thumb = items[index].querySelector('img')!;
+    img.src = thumb.src;
+    img.alt = thumb.alt;
+    count.textContent = `${index + 1} / ${items.length}`;
+    ask.href = items[index].querySelector<HTMLAnchorElement>('.ask-link')!.href;
+  }
+  function open(i: number, from: HTMLElement) {
+    opener = from;
+    show(i);
+    box.hidden = false;
+    box.classList.add('open');
+    box.querySelector<HTMLButtonElement>('.lightbox-close')!.focus();
+  }
+  function close() {
+    box.classList.remove('open');
+    box.hidden = true;
+    opener?.focus();
+  }
+
+  document.querySelectorAll<HTMLButtonElement>('.gallery-thumb').forEach((b) =>
+    b.addEventListener('click', () => open(Number(b.dataset.index), b)),
+  );
+  box.querySelector('.lightbox-close')!.addEventListener('click', close);
+  box.querySelector('.lightbox-prev')!.addEventListener('click', () => show(index - 1));
+  box.querySelector('.lightbox-next')!.addEventListener('click', () => show(index + 1));
+  box.addEventListener('click', (e) => {
+    if (e.target === box || (e.target as HTMLElement).classList.contains('lightbox-stage')) close();
+  });
+  window.addEventListener('keydown', (e) => {
+    if (box.hidden) return;
+    if (e.key === 'Escape') close();
+    else if (e.key === 'ArrowLeft') show(index - 1);
+    else if (e.key === 'ArrowRight') show(index + 1);
+  });
+</script>
