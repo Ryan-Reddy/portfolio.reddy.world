@@ -11,6 +11,6 @@
     "import": "python scripts/parse_wordpress.py"
   },
   "devDependencies": {
-    "vite": "^5.4.10"
+    "vite": "^8.3.2"
   }
 }
