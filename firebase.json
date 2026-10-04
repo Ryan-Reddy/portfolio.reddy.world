@@ -1,0 +1,3160 @@
+{
+  "hosting": [
+    {
+      "target": "portfolio",
+      "public": "redirect-only",
+      "cleanUrls": true,
+      "trailingSlash": true,
+      "redirects": [
+        {
+          "source": "/2019/02/05/lightsurface-mk1-set",
+          "destination": "https://reddy.world/portfolio/rmaekers/lightsurface-mk1-set/",
+          "type": 301
+        },
+        {
+          "source": "/2019/02/05/lightsurface-mk1-set/",
+          "destination": "https://reddy.world/portfolio/rmaekers/lightsurface-mk1-set/",
+          "type": 301
+        },
+        {
+          "source": "/2019/02/05/lightsurface-mk1-set/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/lightsurface-mk1-set/",
+          "type": 301
+        },
+        {
+          "source": "/2018/12/01/beach-guard-houses",
+          "destination": "https://reddy.world/portfolio/rmaekers/beach-guard-houses/",
+          "type": 301
+        },
+        {
+          "source": "/2018/12/01/beach-guard-houses/",
+          "destination": "https://reddy.world/portfolio/rmaekers/beach-guard-houses/",
+          "type": 301
+        },
+        {
+          "source": "/2018/12/01/beach-guard-houses/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/beach-guard-houses/",
+          "type": 301
+        },
+        {
+          "source": "/2018/11/07/beau-battant",
+          "destination": "https://reddy.world/portfolio/rmaekers/beau-battant/",
+          "type": 301
+        },
+        {
+          "source": "/2018/11/07/beau-battant/",
+          "destination": "https://reddy.world/portfolio/rmaekers/beau-battant/",
+          "type": 301
+        },
+        {
+          "source": "/2018/11/07/beau-battant/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/beau-battant/",
+          "type": 301
+        },
+        {
+          "source": "/2018/11/02/tropical-stage-vunzige-deuntjes-festival",
+          "destination": "https://reddy.world/portfolio/rmaekers/tropical-stage-vunzige-deuntjes-festival/",
+          "type": 301
+        },
+        {
+          "source": "/2018/11/02/tropical-stage-vunzige-deuntjes-festival/",
+          "destination": "https://reddy.world/portfolio/rmaekers/tropical-stage-vunzige-deuntjes-festival/",
+          "type": 301
+        },
+        {
+          "source": "/2018/11/02/tropical-stage-vunzige-deuntjes-festival/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/tropical-stage-vunzige-deuntjes-festival/",
+          "type": 301
+        },
+        {
+          "source": "/2018/11/02/desperados-ade",
+          "destination": "https://reddy.world/portfolio/rmaekers/desperados-ade/",
+          "type": 301
+        },
+        {
+          "source": "/2018/11/02/desperados-ade/",
+          "destination": "https://reddy.world/portfolio/rmaekers/desperados-ade/",
+          "type": 301
+        },
+        {
+          "source": "/2018/11/02/desperados-ade/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/desperados-ade/",
+          "type": 301
+        },
+        {
+          "source": "/2018/11/01/lightinstallation-do-not-sit-ibiza",
+          "destination": "https://reddy.world/portfolio/rmaekers/lightinstallation-do-not-sit-ibiza/",
+          "type": 301
+        },
+        {
+          "source": "/2018/11/01/lightinstallation-do-not-sit-ibiza/",
+          "destination": "https://reddy.world/portfolio/rmaekers/lightinstallation-do-not-sit-ibiza/",
+          "type": 301
+        },
+        {
+          "source": "/2018/11/01/lightinstallation-do-not-sit-ibiza/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/lightinstallation-do-not-sit-ibiza/",
+          "type": 301
+        },
+        {
+          "source": "/2018/09/21/cafe-carter-terras",
+          "destination": "https://reddy.world/portfolio/rmaekers/cafe-carter-terras/",
+          "type": 301
+        },
+        {
+          "source": "/2018/09/21/cafe-carter-terras/",
+          "destination": "https://reddy.world/portfolio/rmaekers/cafe-carter-terras/",
+          "type": 301
+        },
+        {
+          "source": "/2018/09/21/cafe-carter-terras/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/cafe-carter-terras/",
+          "type": 301
+        },
+        {
+          "source": "/portfolio-3",
+          "destination": "https://reddy.world/portfolio/rmaekers/portfolio-3/",
+          "type": 301
+        },
+        {
+          "source": "/portfolio-3/",
+          "destination": "https://reddy.world/portfolio/rmaekers/portfolio-3/",
+          "type": 301
+        },
+        {
+          "source": "/portfolio-3/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/portfolio-3/",
+          "type": 301
+        },
+        {
+          "source": "/merchandising",
+          "destination": "https://reddy.world/portfolio/rmaekers/merchandising/",
+          "type": 301
+        },
+        {
+          "source": "/merchandising/",
+          "destination": "https://reddy.world/portfolio/rmaekers/merchandising/",
+          "type": 301
+        },
+        {
+          "source": "/merchandising/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/merchandising/",
+          "type": 301
+        },
+        {
+          "source": "/2018/09/18/giant-swings",
+          "destination": "https://reddy.world/portfolio/rmaekers/giant-swings/",
+          "type": 301
+        },
+        {
+          "source": "/2018/09/18/giant-swings/",
+          "destination": "https://reddy.world/portfolio/rmaekers/giant-swings/",
+          "type": 301
+        },
+        {
+          "source": "/2018/09/18/giant-swings/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/giant-swings/",
+          "type": 301
+        },
+        {
+          "source": "/2018/09/12/marktkantine-zomerkantine",
+          "destination": "https://reddy.world/portfolio/rmaekers/marktkantine-zomerkantine/",
+          "type": 301
+        },
+        {
+          "source": "/2018/09/12/marktkantine-zomerkantine/",
+          "destination": "https://reddy.world/portfolio/rmaekers/marktkantine-zomerkantine/",
+          "type": 301
+        },
+        {
+          "source": "/2018/09/12/marktkantine-zomerkantine/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/marktkantine-zomerkantine/",
+          "type": 301
+        },
+        {
+          "source": "/2018/08/31/by-the-creek-festival",
+          "destination": "https://reddy.world/portfolio/rmaekers/by-the-creek-festival/",
+          "type": 301
+        },
+        {
+          "source": "/2018/08/31/by-the-creek-festival/",
+          "destination": "https://reddy.world/portfolio/rmaekers/by-the-creek-festival/",
+          "type": 301
+        },
+        {
+          "source": "/2018/08/31/by-the-creek-festival/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/by-the-creek-festival/",
+          "type": 301
+        },
+        {
+          "source": "/2018/05/30/coupe-calorievrije-ijscobar",
+          "destination": "https://reddy.world/portfolio/rmaekers/coupe-calorievrije-ijscobar/",
+          "type": 301
+        },
+        {
+          "source": "/2018/05/30/coupe-calorievrije-ijscobar/",
+          "destination": "https://reddy.world/portfolio/rmaekers/coupe-calorievrije-ijscobar/",
+          "type": 301
+        },
+        {
+          "source": "/2018/05/30/coupe-calorievrije-ijscobar/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/coupe-calorievrije-ijscobar/",
+          "type": 301
+        },
+        {
+          "source": "/2018/05/30/hal-n8-voor-de-n8",
+          "destination": "https://reddy.world/portfolio/rmaekers/hal-n8-voor-de-n8/",
+          "type": 301
+        },
+        {
+          "source": "/2018/05/30/hal-n8-voor-de-n8/",
+          "destination": "https://reddy.world/portfolio/rmaekers/hal-n8-voor-de-n8/",
+          "type": 301
+        },
+        {
+          "source": "/2018/05/30/hal-n8-voor-de-n8/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/hal-n8-voor-de-n8/",
+          "type": 301
+        },
+        {
+          "source": "/2018/05/29/vbx-bret",
+          "destination": "https://reddy.world/portfolio/rmaekers/vbx-bret/",
+          "type": 301
+        },
+        {
+          "source": "/2018/05/29/vbx-bret/",
+          "destination": "https://reddy.world/portfolio/rmaekers/vbx-bret/",
+          "type": 301
+        },
+        {
+          "source": "/2018/05/29/vbx-bret/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/vbx-bret/",
+          "type": 301
+        },
+        {
+          "source": "/2018/05/28/vbx-shelter-kings-night",
+          "destination": "https://reddy.world/portfolio/rmaekers/vbx-shelter-kings-night/",
+          "type": 301
+        },
+        {
+          "source": "/2018/05/28/vbx-shelter-kings-night/",
+          "destination": "https://reddy.world/portfolio/rmaekers/vbx-shelter-kings-night/",
+          "type": 301
+        },
+        {
+          "source": "/2018/05/28/vbx-shelter-kings-night/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/vbx-shelter-kings-night/",
+          "type": 301
+        },
+        {
+          "source": "/cantina-2-35",
+          "destination": "https://reddy.world/portfolio/rmaekers/cantina-2-35/",
+          "type": 301
+        },
+        {
+          "source": "/cantina-2-35/",
+          "destination": "https://reddy.world/portfolio/rmaekers/cantina-2-35/",
+          "type": 301
+        },
+        {
+          "source": "/cantina-2-35/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/cantina-2-35/",
+          "type": 301
+        },
+        {
+          "source": "/2018/05/25/alter-ego-radion",
+          "destination": "https://reddy.world/portfolio/rmaekers/alter-ego-radion/",
+          "type": 301
+        },
+        {
+          "source": "/2018/05/25/alter-ego-radion/",
+          "destination": "https://reddy.world/portfolio/rmaekers/alter-ego-radion/",
+          "type": 301
+        },
+        {
+          "source": "/2018/05/25/alter-ego-radion/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/alter-ego-radion/",
+          "type": 301
+        },
+        {
+          "source": "/2018/05/24/desk-organizers",
+          "destination": "https://reddy.world/portfolio/rmaekers/desk-organizers/",
+          "type": 301
+        },
+        {
+          "source": "/2018/05/24/desk-organizers/",
+          "destination": "https://reddy.world/portfolio/rmaekers/desk-organizers/",
+          "type": 301
+        },
+        {
+          "source": "/2018/05/24/desk-organizers/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/desk-organizers/",
+          "type": 301
+        },
+        {
+          "source": "/2018/05/23/oranje-bloesem-techno-stage",
+          "destination": "https://reddy.world/portfolio/rmaekers/oranje-bloesem-techno-stage/",
+          "type": 301
+        },
+        {
+          "source": "/2018/05/23/oranje-bloesem-techno-stage/",
+          "destination": "https://reddy.world/portfolio/rmaekers/oranje-bloesem-techno-stage/",
+          "type": 301
+        },
+        {
+          "source": "/2018/05/23/oranje-bloesem-techno-stage/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/oranje-bloesem-techno-stage/",
+          "type": 301
+        },
+        {
+          "source": "/2017/12/04/peak-mystique-18-11",
+          "destination": "https://reddy.world/portfolio/rmaekers/peak-mystique-18-11/",
+          "type": 301
+        },
+        {
+          "source": "/2017/12/04/peak-mystique-18-11/",
+          "destination": "https://reddy.world/portfolio/rmaekers/peak-mystique-18-11/",
+          "type": 301
+        },
+        {
+          "source": "/2017/12/04/peak-mystique-18-11/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/peak-mystique-18-11/",
+          "type": 301
+        },
+        {
+          "source": "/2017/11/30/cantina-charlotte-de-witte",
+          "destination": "https://reddy.world/portfolio/rmaekers/cantina-charlotte-de-witte/",
+          "type": 301
+        },
+        {
+          "source": "/2017/11/30/cantina-charlotte-de-witte/",
+          "destination": "https://reddy.world/portfolio/rmaekers/cantina-charlotte-de-witte/",
+          "type": 301
+        },
+        {
+          "source": "/2017/11/30/cantina-charlotte-de-witte/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/cantina-charlotte-de-witte/",
+          "type": 301
+        },
+        {
+          "source": "/our-team",
+          "destination": "https://reddy.world/portfolio/rmaekers/our-team/",
+          "type": 301
+        },
+        {
+          "source": "/our-team/",
+          "destination": "https://reddy.world/portfolio/rmaekers/our-team/",
+          "type": 301
+        },
+        {
+          "source": "/our-team/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/our-team/",
+          "type": 301
+        },
+        {
+          "source": "/2017/11/23/cantina-halloween-thriller",
+          "destination": "https://reddy.world/portfolio/rmaekers/cantina-halloween-thriller/",
+          "type": 301
+        },
+        {
+          "source": "/2017/11/23/cantina-halloween-thriller/",
+          "destination": "https://reddy.world/portfolio/rmaekers/cantina-halloween-thriller/",
+          "type": 301
+        },
+        {
+          "source": "/2017/11/23/cantina-halloween-thriller/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/cantina-halloween-thriller/",
+          "type": 301
+        },
+        {
+          "source": "/2017/11/18/damsko-halloween-thriller",
+          "destination": "https://reddy.world/portfolio/rmaekers/damsko-halloween-thriller/",
+          "type": 301
+        },
+        {
+          "source": "/2017/11/18/damsko-halloween-thriller/",
+          "destination": "https://reddy.world/portfolio/rmaekers/damsko-halloween-thriller/",
+          "type": 301
+        },
+        {
+          "source": "/2017/11/18/damsko-halloween-thriller/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/damsko-halloween-thriller/",
+          "type": 301
+        },
+        {
+          "source": "/2017/11/14/cantina-aeroplane",
+          "destination": "https://reddy.world/portfolio/rmaekers/cantina-aeroplane/",
+          "type": 301
+        },
+        {
+          "source": "/2017/11/14/cantina-aeroplane/",
+          "destination": "https://reddy.world/portfolio/rmaekers/cantina-aeroplane/",
+          "type": 301
+        },
+        {
+          "source": "/2017/11/14/cantina-aeroplane/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/cantina-aeroplane/",
+          "type": 301
+        },
+        {
+          "source": "/2017/11/12/merktroubadour-adnight",
+          "destination": "https://reddy.world/portfolio/rmaekers/merktroubadour-adnight/",
+          "type": 301
+        },
+        {
+          "source": "/2017/11/12/merktroubadour-adnight/",
+          "destination": "https://reddy.world/portfolio/rmaekers/merktroubadour-adnight/",
+          "type": 301
+        },
+        {
+          "source": "/2017/11/12/merktroubadour-adnight/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/merktroubadour-adnight/",
+          "type": 301
+        },
+        {
+          "source": "/2017/11/11/lightbox-peak-mystique",
+          "destination": "https://reddy.world/portfolio/rmaekers/lightbox-peak-mystique/",
+          "type": 301
+        },
+        {
+          "source": "/2017/11/11/lightbox-peak-mystique/",
+          "destination": "https://reddy.world/portfolio/rmaekers/lightbox-peak-mystique/",
+          "type": 301
+        },
+        {
+          "source": "/2017/11/11/lightbox-peak-mystique/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/lightbox-peak-mystique/",
+          "type": 301
+        },
+        {
+          "source": "/2017/11/06/cantina-yung-internet-special",
+          "destination": "https://reddy.world/portfolio/rmaekers/cantina-yung-internet-special/",
+          "type": 301
+        },
+        {
+          "source": "/2017/11/06/cantina-yung-internet-special/",
+          "destination": "https://reddy.world/portfolio/rmaekers/cantina-yung-internet-special/",
+          "type": 301
+        },
+        {
+          "source": "/2017/11/06/cantina-yung-internet-special/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/cantina-yung-internet-special/",
+          "type": 301
+        },
+        {
+          "source": "/2017/10/31/studio-daan-roosegaarde",
+          "destination": "https://reddy.world/portfolio/rmaekers/studio-daan-roosegaarde/",
+          "type": 301
+        },
+        {
+          "source": "/2017/10/31/studio-daan-roosegaarde/",
+          "destination": "https://reddy.world/portfolio/rmaekers/studio-daan-roosegaarde/",
+          "type": 301
+        },
+        {
+          "source": "/2017/10/31/studio-daan-roosegaarde/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/studio-daan-roosegaarde/",
+          "type": 301
+        },
+        {
+          "source": "/2017/10/30/cantina",
+          "destination": "https://reddy.world/portfolio/rmaekers/cantina/",
+          "type": 301
+        },
+        {
+          "source": "/2017/10/30/cantina/",
+          "destination": "https://reddy.world/portfolio/rmaekers/cantina/",
+          "type": 301
+        },
+        {
+          "source": "/2017/10/30/cantina/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/cantina/",
+          "type": 301
+        },
+        {
+          "source": "/2017/08/26/the-return-of-the-church",
+          "destination": "https://reddy.world/portfolio/rmaekers/the-return-of-the-church/",
+          "type": 301
+        },
+        {
+          "source": "/2017/08/26/the-return-of-the-church/",
+          "destination": "https://reddy.world/portfolio/rmaekers/the-return-of-the-church/",
+          "type": 301
+        },
+        {
+          "source": "/2017/08/26/the-return-of-the-church/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/the-return-of-the-church/",
+          "type": 301
+        },
+        {
+          "source": "/2017/08/25/1278",
+          "destination": "https://reddy.world/portfolio/rmaekers/1278/",
+          "type": 301
+        },
+        {
+          "source": "/2017/08/25/1278/",
+          "destination": "https://reddy.world/portfolio/rmaekers/1278/",
+          "type": 301
+        },
+        {
+          "source": "/2017/08/25/1278/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/1278/",
+          "type": 301
+        },
+        {
+          "source": "/2017/08/24/photoshoot-flats",
+          "destination": "https://reddy.world/portfolio/rmaekers/photoshoot-flats/",
+          "type": 301
+        },
+        {
+          "source": "/2017/08/24/photoshoot-flats/",
+          "destination": "https://reddy.world/portfolio/rmaekers/photoshoot-flats/",
+          "type": 301
+        },
+        {
+          "source": "/2017/08/24/photoshoot-flats/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/photoshoot-flats/",
+          "type": 301
+        },
+        {
+          "source": "/2017/04/10/signing-54-stories",
+          "destination": "https://reddy.world/portfolio/rmaekers/signing-54-stories/",
+          "type": 301
+        },
+        {
+          "source": "/2017/04/10/signing-54-stories/",
+          "destination": "https://reddy.world/portfolio/rmaekers/signing-54-stories/",
+          "type": 301
+        },
+        {
+          "source": "/2017/04/10/signing-54-stories/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/signing-54-stories/",
+          "type": 301
+        },
+        {
+          "source": "/2017/04/06/heist-at-the-drake-concert",
+          "destination": "https://reddy.world/portfolio/rmaekers/heist-at-the-drake-concert/",
+          "type": 301
+        },
+        {
+          "source": "/2017/04/06/heist-at-the-drake-concert/",
+          "destination": "https://reddy.world/portfolio/rmaekers/heist-at-the-drake-concert/",
+          "type": 301
+        },
+        {
+          "source": "/2017/04/06/heist-at-the-drake-concert/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/heist-at-the-drake-concert/",
+          "type": 301
+        },
+        {
+          "source": "/2017/02/15/lady-lights",
+          "destination": "https://reddy.world/portfolio/rmaekers/lady-lights/",
+          "type": 301
+        },
+        {
+          "source": "/2017/02/15/lady-lights/",
+          "destination": "https://reddy.world/portfolio/rmaekers/lady-lights/",
+          "type": 301
+        },
+        {
+          "source": "/2017/02/15/lady-lights/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/lady-lights/",
+          "type": 301
+        },
+        {
+          "source": "/2017/01/22/lichtbak-social-swingers-club",
+          "destination": "https://reddy.world/portfolio/rmaekers/lichtbak-social-swingers-club/",
+          "type": 301
+        },
+        {
+          "source": "/2017/01/22/lichtbak-social-swingers-club/",
+          "destination": "https://reddy.world/portfolio/rmaekers/lichtbak-social-swingers-club/",
+          "type": 301
+        },
+        {
+          "source": "/2017/01/22/lichtbak-social-swingers-club/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/lichtbak-social-swingers-club/",
+          "type": 301
+        },
+        {
+          "source": "/2017/01/18/volunar-kitchen",
+          "destination": "https://reddy.world/portfolio/rmaekers/volunar-kitchen/",
+          "type": 301
+        },
+        {
+          "source": "/2017/01/18/volunar-kitchen/",
+          "destination": "https://reddy.world/portfolio/rmaekers/volunar-kitchen/",
+          "type": 301
+        },
+        {
+          "source": "/2017/01/18/volunar-kitchen/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/volunar-kitchen/",
+          "type": 301
+        },
+        {
+          "source": "/2017/01/15/platenkast-in-de-radion",
+          "destination": "https://reddy.world/portfolio/rmaekers/platenkast-in-de-radion/",
+          "type": 301
+        },
+        {
+          "source": "/2017/01/15/platenkast-in-de-radion/",
+          "destination": "https://reddy.world/portfolio/rmaekers/platenkast-in-de-radion/",
+          "type": 301
+        },
+        {
+          "source": "/2017/01/15/platenkast-in-de-radion/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/platenkast-in-de-radion/",
+          "type": 301
+        },
+        {
+          "source": "/2017/01/15/groove-village-deep-sea-creatures",
+          "destination": "https://reddy.world/portfolio/rmaekers/groove-village-deep-sea-creatures/",
+          "type": 301
+        },
+        {
+          "source": "/2017/01/15/groove-village-deep-sea-creatures/",
+          "destination": "https://reddy.world/portfolio/rmaekers/groove-village-deep-sea-creatures/",
+          "type": 301
+        },
+        {
+          "source": "/2017/01/15/groove-village-deep-sea-creatures/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/groove-village-deep-sea-creatures/",
+          "type": 301
+        },
+        {
+          "source": "/2017/01/09/carlitos",
+          "destination": "https://reddy.world/portfolio/rmaekers/carlitos/",
+          "type": 301
+        },
+        {
+          "source": "/2017/01/09/carlitos/",
+          "destination": "https://reddy.world/portfolio/rmaekers/carlitos/",
+          "type": 301
+        },
+        {
+          "source": "/2017/01/09/carlitos/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/carlitos/",
+          "type": 301
+        },
+        {
+          "source": "/2016/12/15/letters-komm-schon-alter",
+          "destination": "https://reddy.world/portfolio/rmaekers/letters-komm-schon-alter/",
+          "type": 301
+        },
+        {
+          "source": "/2016/12/15/letters-komm-schon-alter/",
+          "destination": "https://reddy.world/portfolio/rmaekers/letters-komm-schon-alter/",
+          "type": 301
+        },
+        {
+          "source": "/2016/12/15/letters-komm-schon-alter/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/letters-komm-schon-alter/",
+          "type": 301
+        },
+        {
+          "source": "/2016/11/21/lanterns",
+          "destination": "https://reddy.world/portfolio/rmaekers/lanterns/",
+          "type": 301
+        },
+        {
+          "source": "/2016/11/21/lanterns/",
+          "destination": "https://reddy.world/portfolio/rmaekers/lanterns/",
+          "type": 301
+        },
+        {
+          "source": "/2016/11/21/lanterns/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/lanterns/",
+          "type": 301
+        },
+        {
+          "source": "/2016/09/22/str△f_werk-festival",
+          "destination": "https://reddy.world/portfolio/rmaekers/str-f_werk-festival/",
+          "type": 301
+        },
+        {
+          "source": "/2016/09/22/str△f_werk-festival/",
+          "destination": "https://reddy.world/portfolio/rmaekers/str-f_werk-festival/",
+          "type": 301
+        },
+        {
+          "source": "/2016/09/22/str△f_werk-festival/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/str-f_werk-festival/",
+          "type": 301
+        },
+        {
+          "source": "/2016/08/15/riekerhaven",
+          "destination": "https://reddy.world/portfolio/rmaekers/riekerhaven/",
+          "type": 301
+        },
+        {
+          "source": "/2016/08/15/riekerhaven/",
+          "destination": "https://reddy.world/portfolio/rmaekers/riekerhaven/",
+          "type": 301
+        },
+        {
+          "source": "/2016/08/15/riekerhaven/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/riekerhaven/",
+          "type": 301
+        },
+        {
+          "source": "/2016/08/05/lentekabinet-2016",
+          "destination": "https://reddy.world/portfolio/rmaekers/lentekabinet-2016/",
+          "type": 301
+        },
+        {
+          "source": "/2016/08/05/lentekabinet-2016/",
+          "destination": "https://reddy.world/portfolio/rmaekers/lentekabinet-2016/",
+          "type": 301
+        },
+        {
+          "source": "/2016/08/05/lentekabinet-2016/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/lentekabinet-2016/",
+          "type": 301
+        },
+        {
+          "source": "/2016/07/20/wicked-jazz-sounds-festival",
+          "destination": "https://reddy.world/portfolio/rmaekers/wicked-jazz-sounds-festival/",
+          "type": 301
+        },
+        {
+          "source": "/2016/07/20/wicked-jazz-sounds-festival/",
+          "destination": "https://reddy.world/portfolio/rmaekers/wicked-jazz-sounds-festival/",
+          "type": 301
+        },
+        {
+          "source": "/2016/07/20/wicked-jazz-sounds-festival/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/wicked-jazz-sounds-festival/",
+          "type": 301
+        },
+        {
+          "source": "/2016/07/18/ballenbak",
+          "destination": "https://reddy.world/portfolio/rmaekers/ballenbak/",
+          "type": 301
+        },
+        {
+          "source": "/2016/07/18/ballenbak/",
+          "destination": "https://reddy.world/portfolio/rmaekers/ballenbak/",
+          "type": 301
+        },
+        {
+          "source": "/2016/07/18/ballenbak/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/ballenbak/",
+          "type": 301
+        },
+        {
+          "source": "/clients-rm",
+          "destination": "https://reddy.world/portfolio/rmaekers/clients-rm/",
+          "type": 301
+        },
+        {
+          "source": "/clients-rm/",
+          "destination": "https://reddy.world/portfolio/rmaekers/clients-rm/",
+          "type": 301
+        },
+        {
+          "source": "/clients-rm/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/clients-rm/",
+          "type": 301
+        },
+        {
+          "source": "/contact-us",
+          "destination": "https://reddy.world/portfolio/rmaekers/contact-us/",
+          "type": 301
+        },
+        {
+          "source": "/contact-us/",
+          "destination": "https://reddy.world/portfolio/rmaekers/contact-us/",
+          "type": 301
+        },
+        {
+          "source": "/contact-us/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/contact-us/",
+          "type": 301
+        },
+        {
+          "source": "/2014/08/20/11-11",
+          "destination": "https://reddy.world/portfolio/rmaekers/11-11/",
+          "type": 301
+        },
+        {
+          "source": "/2014/08/20/11-11/",
+          "destination": "https://reddy.world/portfolio/rmaekers/11-11/",
+          "type": 301
+        },
+        {
+          "source": "/2014/08/20/11-11/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/11-11/",
+          "type": 301
+        },
+        {
+          "source": "/2014/06/15/solstice-2014",
+          "destination": "https://reddy.world/portfolio/rmaekers/solstice-2014/",
+          "type": 301
+        },
+        {
+          "source": "/2014/06/15/solstice-2014/",
+          "destination": "https://reddy.world/portfolio/rmaekers/solstice-2014/",
+          "type": 301
+        },
+        {
+          "source": "/2014/06/15/solstice-2014/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/solstice-2014/",
+          "type": 301
+        },
+        {
+          "source": "/2013/10/09/nepco",
+          "destination": "https://reddy.world/portfolio/rmaekers/nepco/",
+          "type": 301
+        },
+        {
+          "source": "/2013/10/09/nepco/",
+          "destination": "https://reddy.world/portfolio/rmaekers/nepco/",
+          "type": 301
+        },
+        {
+          "source": "/2013/10/09/nepco/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/nepco/",
+          "type": 301
+        },
+        {
+          "source": "/2013/04/18/doorgedraaid-2",
+          "destination": "https://reddy.world/portfolio/rmaekers/doorgedraaid-2/",
+          "type": 301
+        },
+        {
+          "source": "/2013/04/18/doorgedraaid-2/",
+          "destination": "https://reddy.world/portfolio/rmaekers/doorgedraaid-2/",
+          "type": 301
+        },
+        {
+          "source": "/2013/04/18/doorgedraaid-2/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/doorgedraaid-2/",
+          "type": 301
+        },
+        {
+          "source": "/2013/04/02/jelte-reinders-2",
+          "destination": "https://reddy.world/portfolio/rmaekers/jelte-reinders-2/",
+          "type": 301
+        },
+        {
+          "source": "/2013/04/02/jelte-reinders-2/",
+          "destination": "https://reddy.world/portfolio/rmaekers/jelte-reinders-2/",
+          "type": 301
+        },
+        {
+          "source": "/2013/04/02/jelte-reinders-2/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/jelte-reinders-2/",
+          "type": 301
+        },
+        {
+          "source": "/2013/03/30/ewa-kielska-2",
+          "destination": "https://reddy.world/portfolio/rmaekers/ewa-kielska-2/",
+          "type": 301
+        },
+        {
+          "source": "/2013/03/30/ewa-kielska-2/",
+          "destination": "https://reddy.world/portfolio/rmaekers/ewa-kielska-2/",
+          "type": 301
+        },
+        {
+          "source": "/2013/03/30/ewa-kielska-2/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/ewa-kielska-2/",
+          "type": 301
+        },
+        {
+          "source": "/2013/03/28/meghan-sile-catherina",
+          "destination": "https://reddy.world/portfolio/rmaekers/meghan-sile-catherina/",
+          "type": 301
+        },
+        {
+          "source": "/2013/03/28/meghan-sile-catherina/",
+          "destination": "https://reddy.world/portfolio/rmaekers/meghan-sile-catherina/",
+          "type": 301
+        },
+        {
+          "source": "/2013/03/28/meghan-sile-catherina/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/meghan-sile-catherina/",
+          "type": 301
+        },
+        {
+          "source": "/2012/07/17/georgies-wundergarten-2014",
+          "destination": "https://reddy.world/portfolio/rmaekers/georgies-wundergarten-2014/",
+          "type": 301
+        },
+        {
+          "source": "/2012/07/17/georgies-wundergarten-2014/",
+          "destination": "https://reddy.world/portfolio/rmaekers/georgies-wundergarten-2014/",
+          "type": 301
+        },
+        {
+          "source": "/2012/07/17/georgies-wundergarten-2014/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/georgies-wundergarten-2014/",
+          "type": 301
+        },
+        {
+          "source": "/2012/04/12/pally-dynamic-upcycled-bench",
+          "destination": "https://reddy.world/portfolio/rmaekers/pally-dynamic-upcycled-bench/",
+          "type": 301
+        },
+        {
+          "source": "/2012/04/12/pally-dynamic-upcycled-bench/",
+          "destination": "https://reddy.world/portfolio/rmaekers/pally-dynamic-upcycled-bench/",
+          "type": 301
+        },
+        {
+          "source": "/2012/04/12/pally-dynamic-upcycled-bench/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/pally-dynamic-upcycled-bench/",
+          "type": 301
+        },
+        {
+          "source": "/2019/04/25/water-filtering",
+          "destination": "https://reddy.world/portfolio/rrproductions/water-filtering/",
+          "type": 301
+        },
+        {
+          "source": "/2019/04/25/water-filtering/",
+          "destination": "https://reddy.world/portfolio/rrproductions/water-filtering/",
+          "type": 301
+        },
+        {
+          "source": "/2019/04/25/water-filtering/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/water-filtering/",
+          "type": 301
+        },
+        {
+          "source": "/2019/04/25/giant-15-person-swings",
+          "destination": "https://reddy.world/portfolio/rrproductions/giant-15-person-swings/",
+          "type": 301
+        },
+        {
+          "source": "/2019/04/25/giant-15-person-swings/",
+          "destination": "https://reddy.world/portfolio/rrproductions/giant-15-person-swings/",
+          "type": 301
+        },
+        {
+          "source": "/2019/04/25/giant-15-person-swings/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/giant-15-person-swings/",
+          "type": 301
+        },
+        {
+          "source": "/2019/04/25/tangram-stagedesign",
+          "destination": "https://reddy.world/portfolio/rrproductions/tangram-stagedesign/",
+          "type": 301
+        },
+        {
+          "source": "/2019/04/25/tangram-stagedesign/",
+          "destination": "https://reddy.world/portfolio/rrproductions/tangram-stagedesign/",
+          "type": 301
+        },
+        {
+          "source": "/2019/04/25/tangram-stagedesign/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/tangram-stagedesign/",
+          "type": 301
+        },
+        {
+          "source": "/2016/07/23/concept-an-ecologic-answer-to-mosquitos",
+          "destination": "https://reddy.world/portfolio/rrproductions/concept-an-ecologic-answer-to-mosquitos/",
+          "type": 301
+        },
+        {
+          "source": "/2016/07/23/concept-an-ecologic-answer-to-mosquitos/",
+          "destination": "https://reddy.world/portfolio/rrproductions/concept-an-ecologic-answer-to-mosquitos/",
+          "type": 301
+        },
+        {
+          "source": "/2016/07/23/concept-an-ecologic-answer-to-mosquitos/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/concept-an-ecologic-answer-to-mosquitos/",
+          "type": 301
+        },
+        {
+          "source": "/2016/07/16/giant-sofa-backstage",
+          "destination": "https://reddy.world/portfolio/rrproductions/giant-sofa-backstage/",
+          "type": 301
+        },
+        {
+          "source": "/2016/07/16/giant-sofa-backstage/",
+          "destination": "https://reddy.world/portfolio/rrproductions/giant-sofa-backstage/",
+          "type": 301
+        },
+        {
+          "source": "/2016/07/16/giant-sofa-backstage/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/giant-sofa-backstage/",
+          "type": 301
+        },
+        {
+          "source": "/2016/07/15/moon-clock",
+          "destination": "https://reddy.world/portfolio/rrproductions/moon-clock/",
+          "type": 301
+        },
+        {
+          "source": "/2016/07/15/moon-clock/",
+          "destination": "https://reddy.world/portfolio/rrproductions/moon-clock/",
+          "type": 301
+        },
+        {
+          "source": "/2016/07/15/moon-clock/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/moon-clock/",
+          "type": 301
+        },
+        {
+          "source": "/2016/07/11/my-masterpiece",
+          "destination": "https://reddy.world/portfolio/rrproductions/my-masterpiece/",
+          "type": 301
+        },
+        {
+          "source": "/2016/07/11/my-masterpiece/",
+          "destination": "https://reddy.world/portfolio/rrproductions/my-masterpiece/",
+          "type": 301
+        },
+        {
+          "source": "/2016/07/11/my-masterpiece/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/my-masterpiece/",
+          "type": 301
+        },
+        {
+          "source": "/2016/04/29/lovenest-first-year",
+          "destination": "https://reddy.world/portfolio/rrproductions/lovenest-first-year/",
+          "type": 301
+        },
+        {
+          "source": "/2016/04/29/lovenest-first-year/",
+          "destination": "https://reddy.world/portfolio/rrproductions/lovenest-first-year/",
+          "type": 301
+        },
+        {
+          "source": "/2016/04/29/lovenest-first-year/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/lovenest-first-year/",
+          "type": 301
+        },
+        {
+          "source": "/2016/04/22/chestahedron-speaker-second-year",
+          "destination": "https://reddy.world/portfolio/rrproductions/chestahedron-speaker-second-year/",
+          "type": 301
+        },
+        {
+          "source": "/2016/04/22/chestahedron-speaker-second-year/",
+          "destination": "https://reddy.world/portfolio/rrproductions/chestahedron-speaker-second-year/",
+          "type": 301
+        },
+        {
+          "source": "/2016/04/22/chestahedron-speaker-second-year/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/chestahedron-speaker-second-year/",
+          "type": 301
+        },
+        {
+          "source": "/2016/03/15/internship-at-studio-nepco",
+          "destination": "https://reddy.world/portfolio/rrproductions/internship-at-studio-nepco/",
+          "type": 301
+        },
+        {
+          "source": "/2016/03/15/internship-at-studio-nepco/",
+          "destination": "https://reddy.world/portfolio/rrproductions/internship-at-studio-nepco/",
+          "type": 301
+        },
+        {
+          "source": "/2016/03/15/internship-at-studio-nepco/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/internship-at-studio-nepco/",
+          "type": 301
+        },
+        {
+          "source": "/2016/03/11/body-casting",
+          "destination": "https://reddy.world/portfolio/rrproductions/body-casting/",
+          "type": 301
+        },
+        {
+          "source": "/2016/03/11/body-casting/",
+          "destination": "https://reddy.world/portfolio/rrproductions/body-casting/",
+          "type": 301
+        },
+        {
+          "source": "/2016/03/11/body-casting/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/body-casting/",
+          "type": 301
+        },
+        {
+          "source": "/2016/03/07/room-for-thoughts",
+          "destination": "https://reddy.world/portfolio/rrproductions/room-for-thoughts/",
+          "type": 301
+        },
+        {
+          "source": "/2016/03/07/room-for-thoughts/",
+          "destination": "https://reddy.world/portfolio/rrproductions/room-for-thoughts/",
+          "type": 301
+        },
+        {
+          "source": "/2016/03/07/room-for-thoughts/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/room-for-thoughts/",
+          "type": 301
+        },
+        {
+          "source": "/2016/03/07/chair-part-iii-final",
+          "destination": "https://reddy.world/portfolio/rrproductions/chair-part-iii-final/",
+          "type": 301
+        },
+        {
+          "source": "/2016/03/07/chair-part-iii-final/",
+          "destination": "https://reddy.world/portfolio/rrproductions/chair-part-iii-final/",
+          "type": 301
+        },
+        {
+          "source": "/2016/03/07/chair-part-iii-final/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/chair-part-iii-final/",
+          "type": 301
+        },
+        {
+          "source": "/2016/01/22/sander-kleinenberg-felix-leiter-the-one-official-music-video",
+          "destination": "https://reddy.world/portfolio/rrproductions/sander-kleinenberg-felix-leiter-the-one-official-music-video/",
+          "type": 301
+        },
+        {
+          "source": "/2016/01/22/sander-kleinenberg-felix-leiter-the-one-official-music-video/",
+          "destination": "https://reddy.world/portfolio/rrproductions/sander-kleinenberg-felix-leiter-the-one-official-music-video/",
+          "type": 301
+        },
+        {
+          "source": "/2016/01/22/sander-kleinenberg-felix-leiter-the-one-official-music-video/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/sander-kleinenberg-felix-leiter-the-one-official-music-video/",
+          "type": 301
+        },
+        {
+          "source": "/2016/01/15/designing-a-clothes-store",
+          "destination": "https://reddy.world/portfolio/rrproductions/designing-a-clothes-store/",
+          "type": 301
+        },
+        {
+          "source": "/2016/01/15/designing-a-clothes-store/",
+          "destination": "https://reddy.world/portfolio/rrproductions/designing-a-clothes-store/",
+          "type": 301
+        },
+        {
+          "source": "/2016/01/15/designing-a-clothes-store/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/designing-a-clothes-store/",
+          "type": 301
+        },
+        {
+          "source": "/2015/12/15/designing-a-chair-part-2",
+          "destination": "https://reddy.world/portfolio/rrproductions/designing-a-chair-part-2/",
+          "type": 301
+        },
+        {
+          "source": "/2015/12/15/designing-a-chair-part-2/",
+          "destination": "https://reddy.world/portfolio/rrproductions/designing-a-chair-part-2/",
+          "type": 301
+        },
+        {
+          "source": "/2015/12/15/designing-a-chair-part-2/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/designing-a-chair-part-2/",
+          "type": 301
+        },
+        {
+          "source": "/2015/11/20/the-making-of-an-escape-room-puzzle",
+          "destination": "https://reddy.world/portfolio/rrproductions/the-making-of-an-escape-room-puzzle/",
+          "type": 301
+        },
+        {
+          "source": "/2015/11/20/the-making-of-an-escape-room-puzzle/",
+          "destination": "https://reddy.world/portfolio/rrproductions/the-making-of-an-escape-room-puzzle/",
+          "type": 301
+        },
+        {
+          "source": "/2015/11/20/the-making-of-an-escape-room-puzzle/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/the-making-of-an-escape-room-puzzle/",
+          "type": 301
+        },
+        {
+          "source": "/materialenmix-integraal-9",
+          "destination": "https://reddy.world/portfolio/rrproductions/materialenmix-integraal-9/",
+          "type": 301
+        },
+        {
+          "source": "/materialenmix-integraal-9/",
+          "destination": "https://reddy.world/portfolio/rrproductions/materialenmix-integraal-9/",
+          "type": 301
+        },
+        {
+          "source": "/materialenmix-integraal-9/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/materialenmix-integraal-9/",
+          "type": 301
+        },
+        {
+          "source": "/2015/10/28/designing-a-chair",
+          "destination": "https://reddy.world/portfolio/rrproductions/designing-a-chair/",
+          "type": 301
+        },
+        {
+          "source": "/2015/10/28/designing-a-chair/",
+          "destination": "https://reddy.world/portfolio/rrproductions/designing-a-chair/",
+          "type": 301
+        },
+        {
+          "source": "/2015/10/28/designing-a-chair/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/designing-a-chair/",
+          "type": 301
+        },
+        {
+          "source": "/2015/10/26/making-of-a-kaleidoscope",
+          "destination": "https://reddy.world/portfolio/rrproductions/making-of-a-kaleidoscope/",
+          "type": 301
+        },
+        {
+          "source": "/2015/10/26/making-of-a-kaleidoscope/",
+          "destination": "https://reddy.world/portfolio/rrproductions/making-of-a-kaleidoscope/",
+          "type": 301
+        },
+        {
+          "source": "/2015/10/26/making-of-a-kaleidoscope/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/making-of-a-kaleidoscope/",
+          "type": 301
+        },
+        {
+          "source": "/contact",
+          "destination": "https://reddy.world/portfolio/rrproductions/contact/",
+          "type": 301
+        },
+        {
+          "source": "/contact/",
+          "destination": "https://reddy.world/portfolio/rrproductions/contact/",
+          "type": 301
+        },
+        {
+          "source": "/contact/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/contact/",
+          "type": 301
+        },
+        {
+          "source": "/2015/10/07/394",
+          "destination": "https://reddy.world/portfolio/rrproductions/394/",
+          "type": 301
+        },
+        {
+          "source": "/2015/10/07/394/",
+          "destination": "https://reddy.world/portfolio/rrproductions/394/",
+          "type": 301
+        },
+        {
+          "source": "/2015/10/07/394/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/394/",
+          "type": 301
+        },
+        {
+          "source": "/2015/05/05/397",
+          "destination": "https://reddy.world/portfolio/rrproductions/397/",
+          "type": 301
+        },
+        {
+          "source": "/2015/05/05/397/",
+          "destination": "https://reddy.world/portfolio/rrproductions/397/",
+          "type": 301
+        },
+        {
+          "source": "/2015/05/05/397/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/397/",
+          "type": 301
+        },
+        {
+          "source": "/press-page",
+          "destination": "https://reddy.world/portfolio/rrproductions/press-page/",
+          "type": 301
+        },
+        {
+          "source": "/press-page/",
+          "destination": "https://reddy.world/portfolio/rrproductions/press-page/",
+          "type": 301
+        },
+        {
+          "source": "/press-page/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/press-page/",
+          "type": 301
+        },
+        {
+          "source": "/press-kit",
+          "destination": "https://reddy.world/portfolio/rrproductions/press-kit/",
+          "type": 301
+        },
+        {
+          "source": "/press-kit/",
+          "destination": "https://reddy.world/portfolio/rrproductions/press-kit/",
+          "type": 301
+        },
+        {
+          "source": "/press-kit/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/press-kit/",
+          "type": 301
+        },
+        {
+          "source": "/79-2",
+          "destination": "https://reddy.world/portfolio/rrproductions/79-2/",
+          "type": 301
+        },
+        {
+          "source": "/79-2/",
+          "destination": "https://reddy.world/portfolio/rrproductions/79-2/",
+          "type": 301
+        },
+        {
+          "source": "/79-2/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/79-2/",
+          "type": 301
+        },
+        {
+          "source": "/72-2",
+          "destination": "https://reddy.world/portfolio/rrproductions/72-2/",
+          "type": 301
+        },
+        {
+          "source": "/72-2/",
+          "destination": "https://reddy.world/portfolio/rrproductions/72-2/",
+          "type": 301
+        },
+        {
+          "source": "/72-2/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/72-2/",
+          "type": 301
+        },
+        {
+          "source": "/press",
+          "destination": "https://reddy.world/portfolio/rrproductions/press/",
+          "type": 301
+        },
+        {
+          "source": "/press/",
+          "destination": "https://reddy.world/portfolio/rrproductions/press/",
+          "type": 301
+        },
+        {
+          "source": "/press/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/press/",
+          "type": 301
+        },
+        {
+          "source": "/news",
+          "destination": "https://reddy.world/portfolio/rrproductions/news/",
+          "type": 301
+        },
+        {
+          "source": "/news/",
+          "destination": "https://reddy.world/portfolio/rrproductions/news/",
+          "type": 301
+        },
+        {
+          "source": "/news/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/news/",
+          "type": 301
+        },
+        {
+          "source": "/home",
+          "destination": "https://reddy.world/portfolio/rrproductions/home/",
+          "type": 301
+        },
+        {
+          "source": "/home/",
+          "destination": "https://reddy.world/portfolio/rrproductions/home/",
+          "type": 301
+        },
+        {
+          "source": "/home/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/home/",
+          "type": 301
+        },
+        {
+          "source": "/about",
+          "destination": "https://reddy.world/portfolio/rrproductions/about/",
+          "type": 301
+        },
+        {
+          "source": "/about/",
+          "destination": "https://reddy.world/portfolio/rrproductions/about/",
+          "type": 301
+        },
+        {
+          "source": "/about/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/about/",
+          "type": 301
+        },
+        {
+          "source": "/2014/11/08/georgies-wundergarten",
+          "destination": "https://reddy.world/portfolio/rrproductions/georgies-wundergarten/",
+          "type": 301
+        },
+        {
+          "source": "/2014/11/08/georgies-wundergarten/",
+          "destination": "https://reddy.world/portfolio/rrproductions/georgies-wundergarten/",
+          "type": 301
+        },
+        {
+          "source": "/2014/11/08/georgies-wundergarten/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/georgies-wundergarten/",
+          "type": 301
+        },
+        {
+          "source": "/2014/02/04/walking-sticks",
+          "destination": "https://reddy.world/portfolio/rrproductions/walking-sticks/",
+          "type": 301
+        },
+        {
+          "source": "/2014/02/04/walking-sticks/",
+          "destination": "https://reddy.world/portfolio/rrproductions/walking-sticks/",
+          "type": 301
+        },
+        {
+          "source": "/2014/02/04/walking-sticks/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/walking-sticks/",
+          "type": 301
+        },
+        {
+          "source": "/2013/09/19/diamonds-are-a-girls-best-friend",
+          "destination": "https://reddy.world/portfolio/rrproductions/diamonds-are-a-girls-best-friend/",
+          "type": 301
+        },
+        {
+          "source": "/2013/09/19/diamonds-are-a-girls-best-friend/",
+          "destination": "https://reddy.world/portfolio/rrproductions/diamonds-are-a-girls-best-friend/",
+          "type": 301
+        },
+        {
+          "source": "/2013/09/19/diamonds-are-a-girls-best-friend/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/diamonds-are-a-girls-best-friend/",
+          "type": 301
+        },
+        {
+          "source": "/2016/07/11/orientatie-meesterstuk-meubels-met-het-gemak-van-aanpassing-of-hervorming",
+          "destination": "https://reddy.world/portfolio/maup/orientatie-meesterstuk-meubels-met-het-gemak-van-aanpassing-of-hervorming/",
+          "type": 301
+        },
+        {
+          "source": "/2016/07/11/orientatie-meesterstuk-meubels-met-het-gemak-van-aanpassing-of-hervorming/",
+          "destination": "https://reddy.world/portfolio/maup/orientatie-meesterstuk-meubels-met-het-gemak-van-aanpassing-of-hervorming/",
+          "type": 301
+        },
+        {
+          "source": "/2016/07/11/orientatie-meesterstuk-meubels-met-het-gemak-van-aanpassing-of-hervorming/**",
+          "destination": "https://reddy.world/portfolio/maup/orientatie-meesterstuk-meubels-met-het-gemak-van-aanpassing-of-hervorming/",
+          "type": 301
+        },
+        {
+          "source": "/2016/04/05/birthinchair",
+          "destination": "https://reddy.world/portfolio/maup/birthinchair/",
+          "type": 301
+        },
+        {
+          "source": "/2016/04/05/birthinchair/",
+          "destination": "https://reddy.world/portfolio/maup/birthinchair/",
+          "type": 301
+        },
+        {
+          "source": "/2016/04/05/birthinchair/**",
+          "destination": "https://reddy.world/portfolio/maup/birthinchair/",
+          "type": 301
+        },
+        {
+          "source": "/2016/04/05/lightmaeker",
+          "destination": "https://reddy.world/portfolio/maup/lightmaeker/",
+          "type": 301
+        },
+        {
+          "source": "/2016/04/05/lightmaeker/",
+          "destination": "https://reddy.world/portfolio/maup/lightmaeker/",
+          "type": 301
+        },
+        {
+          "source": "/2016/04/05/lightmaeker/**",
+          "destination": "https://reddy.world/portfolio/maup/lightmaeker/",
+          "type": 301
+        },
+        {
+          "source": "/2016/04/04/loungechair",
+          "destination": "https://reddy.world/portfolio/maup/loungechair/",
+          "type": 301
+        },
+        {
+          "source": "/2016/04/04/loungechair/",
+          "destination": "https://reddy.world/portfolio/maup/loungechair/",
+          "type": 301
+        },
+        {
+          "source": "/2016/04/04/loungechair/**",
+          "destination": "https://reddy.world/portfolio/maup/loungechair/",
+          "type": 301
+        },
+        {
+          "source": "/2016/02/02/41",
+          "destination": "https://reddy.world/portfolio/maup/41/",
+          "type": 301
+        },
+        {
+          "source": "/2016/02/02/41/",
+          "destination": "https://reddy.world/portfolio/maup/41/",
+          "type": 301
+        },
+        {
+          "source": "/2016/02/02/41/**",
+          "destination": "https://reddy.world/portfolio/maup/41/",
+          "type": 301
+        },
+        {
+          "source": "/performances",
+          "destination": "https://reddy.world/portfolio/vaguelyvulgar/performances/",
+          "type": 301
+        },
+        {
+          "source": "/performances/",
+          "destination": "https://reddy.world/portfolio/vaguelyvulgar/performances/",
+          "type": 301
+        },
+        {
+          "source": "/performances/**",
+          "destination": "https://reddy.world/portfolio/vaguelyvulgar/performances/",
+          "type": 301
+        },
+        {
+          "source": "/film",
+          "destination": "https://reddy.world/portfolio/vaguelyvulgar/film/",
+          "type": 301
+        },
+        {
+          "source": "/film/",
+          "destination": "https://reddy.world/portfolio/vaguelyvulgar/film/",
+          "type": 301
+        },
+        {
+          "source": "/film/**",
+          "destination": "https://reddy.world/portfolio/vaguelyvulgar/film/",
+          "type": 301
+        },
+        {
+          "source": "/photo-cv",
+          "destination": "https://reddy.world/portfolio/vaguelyvulgar/photo-cv/",
+          "type": 301
+        },
+        {
+          "source": "/photo-cv/",
+          "destination": "https://reddy.world/portfolio/vaguelyvulgar/photo-cv/",
+          "type": 301
+        },
+        {
+          "source": "/photo-cv/**",
+          "destination": "https://reddy.world/portfolio/vaguelyvulgar/photo-cv/",
+          "type": 301
+        },
+        {
+          "source": "/sizes",
+          "destination": "https://reddy.world/portfolio/vaguelyvulgar/sizes/",
+          "type": 301
+        },
+        {
+          "source": "/sizes/",
+          "destination": "https://reddy.world/portfolio/vaguelyvulgar/sizes/",
+          "type": 301
+        },
+        {
+          "source": "/sizes/**",
+          "destination": "https://reddy.world/portfolio/vaguelyvulgar/sizes/",
+          "type": 301
+        },
+        {
+          "source": "/category/**",
+          "destination": "https://reddy.world/portfolio/",
+          "type": 301
+        },
+        {
+          "source": "/tag/**",
+          "destination": "https://reddy.world/portfolio/",
+          "type": 301
+        },
+        {
+          "source": "/201*/**",
+          "destination": "https://reddy.world/portfolio/",
+          "type": 301
+        },
+        {
+          "source": "/202*/**",
+          "destination": "https://reddy.world/portfolio/",
+          "type": 301
+        },
+        {
+          "source": "**",
+          "destination": "https://reddy.world/portfolio/",
+          "type": 301
+        }
+      ]
+    },
+    {
+      "target": "reddymaekers",
+      "public": "redirect-only",
+      "cleanUrls": true,
+      "trailingSlash": true,
+      "redirects": [
+        {
+          "source": "/2019/02/05/lightsurface-mk1-set",
+          "destination": "https://reddy.world/portfolio/rmaekers/lightsurface-mk1-set/",
+          "type": 301
+        },
+        {
+          "source": "/2019/02/05/lightsurface-mk1-set/",
+          "destination": "https://reddy.world/portfolio/rmaekers/lightsurface-mk1-set/",
+          "type": 301
+        },
+        {
+          "source": "/2019/02/05/lightsurface-mk1-set/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/lightsurface-mk1-set/",
+          "type": 301
+        },
+        {
+          "source": "/2018/12/01/beach-guard-houses",
+          "destination": "https://reddy.world/portfolio/rmaekers/beach-guard-houses/",
+          "type": 301
+        },
+        {
+          "source": "/2018/12/01/beach-guard-houses/",
+          "destination": "https://reddy.world/portfolio/rmaekers/beach-guard-houses/",
+          "type": 301
+        },
+        {
+          "source": "/2018/12/01/beach-guard-houses/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/beach-guard-houses/",
+          "type": 301
+        },
+        {
+          "source": "/2018/11/07/beau-battant",
+          "destination": "https://reddy.world/portfolio/rmaekers/beau-battant/",
+          "type": 301
+        },
+        {
+          "source": "/2018/11/07/beau-battant/",
+          "destination": "https://reddy.world/portfolio/rmaekers/beau-battant/",
+          "type": 301
+        },
+        {
+          "source": "/2018/11/07/beau-battant/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/beau-battant/",
+          "type": 301
+        },
+        {
+          "source": "/2018/11/02/tropical-stage-vunzige-deuntjes-festival",
+          "destination": "https://reddy.world/portfolio/rmaekers/tropical-stage-vunzige-deuntjes-festival/",
+          "type": 301
+        },
+        {
+          "source": "/2018/11/02/tropical-stage-vunzige-deuntjes-festival/",
+          "destination": "https://reddy.world/portfolio/rmaekers/tropical-stage-vunzige-deuntjes-festival/",
+          "type": 301
+        },
+        {
+          "source": "/2018/11/02/tropical-stage-vunzige-deuntjes-festival/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/tropical-stage-vunzige-deuntjes-festival/",
+          "type": 301
+        },
+        {
+          "source": "/2018/11/02/desperados-ade",
+          "destination": "https://reddy.world/portfolio/rmaekers/desperados-ade/",
+          "type": 301
+        },
+        {
+          "source": "/2018/11/02/desperados-ade/",
+          "destination": "https://reddy.world/portfolio/rmaekers/desperados-ade/",
+          "type": 301
+        },
+        {
+          "source": "/2018/11/02/desperados-ade/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/desperados-ade/",
+          "type": 301
+        },
+        {
+          "source": "/2018/11/01/lightinstallation-do-not-sit-ibiza",
+          "destination": "https://reddy.world/portfolio/rmaekers/lightinstallation-do-not-sit-ibiza/",
+          "type": 301
+        },
+        {
+          "source": "/2018/11/01/lightinstallation-do-not-sit-ibiza/",
+          "destination": "https://reddy.world/portfolio/rmaekers/lightinstallation-do-not-sit-ibiza/",
+          "type": 301
+        },
+        {
+          "source": "/2018/11/01/lightinstallation-do-not-sit-ibiza/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/lightinstallation-do-not-sit-ibiza/",
+          "type": 301
+        },
+        {
+          "source": "/2018/09/21/cafe-carter-terras",
+          "destination": "https://reddy.world/portfolio/rmaekers/cafe-carter-terras/",
+          "type": 301
+        },
+        {
+          "source": "/2018/09/21/cafe-carter-terras/",
+          "destination": "https://reddy.world/portfolio/rmaekers/cafe-carter-terras/",
+          "type": 301
+        },
+        {
+          "source": "/2018/09/21/cafe-carter-terras/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/cafe-carter-terras/",
+          "type": 301
+        },
+        {
+          "source": "/portfolio-3",
+          "destination": "https://reddy.world/portfolio/rmaekers/portfolio-3/",
+          "type": 301
+        },
+        {
+          "source": "/portfolio-3/",
+          "destination": "https://reddy.world/portfolio/rmaekers/portfolio-3/",
+          "type": 301
+        },
+        {
+          "source": "/portfolio-3/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/portfolio-3/",
+          "type": 301
+        },
+        {
+          "source": "/merchandising",
+          "destination": "https://reddy.world/portfolio/rmaekers/merchandising/",
+          "type": 301
+        },
+        {
+          "source": "/merchandising/",
+          "destination": "https://reddy.world/portfolio/rmaekers/merchandising/",
+          "type": 301
+        },
+        {
+          "source": "/merchandising/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/merchandising/",
+          "type": 301
+        },
+        {
+          "source": "/2018/09/18/giant-swings",
+          "destination": "https://reddy.world/portfolio/rmaekers/giant-swings/",
+          "type": 301
+        },
+        {
+          "source": "/2018/09/18/giant-swings/",
+          "destination": "https://reddy.world/portfolio/rmaekers/giant-swings/",
+          "type": 301
+        },
+        {
+          "source": "/2018/09/18/giant-swings/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/giant-swings/",
+          "type": 301
+        },
+        {
+          "source": "/2018/09/12/marktkantine-zomerkantine",
+          "destination": "https://reddy.world/portfolio/rmaekers/marktkantine-zomerkantine/",
+          "type": 301
+        },
+        {
+          "source": "/2018/09/12/marktkantine-zomerkantine/",
+          "destination": "https://reddy.world/portfolio/rmaekers/marktkantine-zomerkantine/",
+          "type": 301
+        },
+        {
+          "source": "/2018/09/12/marktkantine-zomerkantine/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/marktkantine-zomerkantine/",
+          "type": 301
+        },
+        {
+          "source": "/2018/08/31/by-the-creek-festival",
+          "destination": "https://reddy.world/portfolio/rmaekers/by-the-creek-festival/",
+          "type": 301
+        },
+        {
+          "source": "/2018/08/31/by-the-creek-festival/",
+          "destination": "https://reddy.world/portfolio/rmaekers/by-the-creek-festival/",
+          "type": 301
+        },
+        {
+          "source": "/2018/08/31/by-the-creek-festival/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/by-the-creek-festival/",
+          "type": 301
+        },
+        {
+          "source": "/2018/05/30/coupe-calorievrije-ijscobar",
+          "destination": "https://reddy.world/portfolio/rmaekers/coupe-calorievrije-ijscobar/",
+          "type": 301
+        },
+        {
+          "source": "/2018/05/30/coupe-calorievrije-ijscobar/",
+          "destination": "https://reddy.world/portfolio/rmaekers/coupe-calorievrije-ijscobar/",
+          "type": 301
+        },
+        {
+          "source": "/2018/05/30/coupe-calorievrije-ijscobar/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/coupe-calorievrije-ijscobar/",
+          "type": 301
+        },
+        {
+          "source": "/2018/05/30/hal-n8-voor-de-n8",
+          "destination": "https://reddy.world/portfolio/rmaekers/hal-n8-voor-de-n8/",
+          "type": 301
+        },
+        {
+          "source": "/2018/05/30/hal-n8-voor-de-n8/",
+          "destination": "https://reddy.world/portfolio/rmaekers/hal-n8-voor-de-n8/",
+          "type": 301
+        },
+        {
+          "source": "/2018/05/30/hal-n8-voor-de-n8/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/hal-n8-voor-de-n8/",
+          "type": 301
+        },
+        {
+          "source": "/2018/05/29/vbx-bret",
+          "destination": "https://reddy.world/portfolio/rmaekers/vbx-bret/",
+          "type": 301
+        },
+        {
+          "source": "/2018/05/29/vbx-bret/",
+          "destination": "https://reddy.world/portfolio/rmaekers/vbx-bret/",
+          "type": 301
+        },
+        {
+          "source": "/2018/05/29/vbx-bret/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/vbx-bret/",
+          "type": 301
+        },
+        {
+          "source": "/2018/05/28/vbx-shelter-kings-night",
+          "destination": "https://reddy.world/portfolio/rmaekers/vbx-shelter-kings-night/",
+          "type": 301
+        },
+        {
+          "source": "/2018/05/28/vbx-shelter-kings-night/",
+          "destination": "https://reddy.world/portfolio/rmaekers/vbx-shelter-kings-night/",
+          "type": 301
+        },
+        {
+          "source": "/2018/05/28/vbx-shelter-kings-night/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/vbx-shelter-kings-night/",
+          "type": 301
+        },
+        {
+          "source": "/cantina-2-35",
+          "destination": "https://reddy.world/portfolio/rmaekers/cantina-2-35/",
+          "type": 301
+        },
+        {
+          "source": "/cantina-2-35/",
+          "destination": "https://reddy.world/portfolio/rmaekers/cantina-2-35/",
+          "type": 301
+        },
+        {
+          "source": "/cantina-2-35/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/cantina-2-35/",
+          "type": 301
+        },
+        {
+          "source": "/2018/05/25/alter-ego-radion",
+          "destination": "https://reddy.world/portfolio/rmaekers/alter-ego-radion/",
+          "type": 301
+        },
+        {
+          "source": "/2018/05/25/alter-ego-radion/",
+          "destination": "https://reddy.world/portfolio/rmaekers/alter-ego-radion/",
+          "type": 301
+        },
+        {
+          "source": "/2018/05/25/alter-ego-radion/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/alter-ego-radion/",
+          "type": 301
+        },
+        {
+          "source": "/2018/05/24/desk-organizers",
+          "destination": "https://reddy.world/portfolio/rmaekers/desk-organizers/",
+          "type": 301
+        },
+        {
+          "source": "/2018/05/24/desk-organizers/",
+          "destination": "https://reddy.world/portfolio/rmaekers/desk-organizers/",
+          "type": 301
+        },
+        {
+          "source": "/2018/05/24/desk-organizers/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/desk-organizers/",
+          "type": 301
+        },
+        {
+          "source": "/2018/05/23/oranje-bloesem-techno-stage",
+          "destination": "https://reddy.world/portfolio/rmaekers/oranje-bloesem-techno-stage/",
+          "type": 301
+        },
+        {
+          "source": "/2018/05/23/oranje-bloesem-techno-stage/",
+          "destination": "https://reddy.world/portfolio/rmaekers/oranje-bloesem-techno-stage/",
+          "type": 301
+        },
+        {
+          "source": "/2018/05/23/oranje-bloesem-techno-stage/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/oranje-bloesem-techno-stage/",
+          "type": 301
+        },
+        {
+          "source": "/2017/12/04/peak-mystique-18-11",
+          "destination": "https://reddy.world/portfolio/rmaekers/peak-mystique-18-11/",
+          "type": 301
+        },
+        {
+          "source": "/2017/12/04/peak-mystique-18-11/",
+          "destination": "https://reddy.world/portfolio/rmaekers/peak-mystique-18-11/",
+          "type": 301
+        },
+        {
+          "source": "/2017/12/04/peak-mystique-18-11/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/peak-mystique-18-11/",
+          "type": 301
+        },
+        {
+          "source": "/2017/11/30/cantina-charlotte-de-witte",
+          "destination": "https://reddy.world/portfolio/rmaekers/cantina-charlotte-de-witte/",
+          "type": 301
+        },
+        {
+          "source": "/2017/11/30/cantina-charlotte-de-witte/",
+          "destination": "https://reddy.world/portfolio/rmaekers/cantina-charlotte-de-witte/",
+          "type": 301
+        },
+        {
+          "source": "/2017/11/30/cantina-charlotte-de-witte/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/cantina-charlotte-de-witte/",
+          "type": 301
+        },
+        {
+          "source": "/our-team",
+          "destination": "https://reddy.world/portfolio/rmaekers/our-team/",
+          "type": 301
+        },
+        {
+          "source": "/our-team/",
+          "destination": "https://reddy.world/portfolio/rmaekers/our-team/",
+          "type": 301
+        },
+        {
+          "source": "/our-team/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/our-team/",
+          "type": 301
+        },
+        {
+          "source": "/2017/11/23/cantina-halloween-thriller",
+          "destination": "https://reddy.world/portfolio/rmaekers/cantina-halloween-thriller/",
+          "type": 301
+        },
+        {
+          "source": "/2017/11/23/cantina-halloween-thriller/",
+          "destination": "https://reddy.world/portfolio/rmaekers/cantina-halloween-thriller/",
+          "type": 301
+        },
+        {
+          "source": "/2017/11/23/cantina-halloween-thriller/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/cantina-halloween-thriller/",
+          "type": 301
+        },
+        {
+          "source": "/2017/11/18/damsko-halloween-thriller",
+          "destination": "https://reddy.world/portfolio/rmaekers/damsko-halloween-thriller/",
+          "type": 301
+        },
+        {
+          "source": "/2017/11/18/damsko-halloween-thriller/",
+          "destination": "https://reddy.world/portfolio/rmaekers/damsko-halloween-thriller/",
+          "type": 301
+        },
+        {
+          "source": "/2017/11/18/damsko-halloween-thriller/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/damsko-halloween-thriller/",
+          "type": 301
+        },
+        {
+          "source": "/2017/11/14/cantina-aeroplane",
+          "destination": "https://reddy.world/portfolio/rmaekers/cantina-aeroplane/",
+          "type": 301
+        },
+        {
+          "source": "/2017/11/14/cantina-aeroplane/",
+          "destination": "https://reddy.world/portfolio/rmaekers/cantina-aeroplane/",
+          "type": 301
+        },
+        {
+          "source": "/2017/11/14/cantina-aeroplane/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/cantina-aeroplane/",
+          "type": 301
+        },
+        {
+          "source": "/2017/11/12/merktroubadour-adnight",
+          "destination": "https://reddy.world/portfolio/rmaekers/merktroubadour-adnight/",
+          "type": 301
+        },
+        {
+          "source": "/2017/11/12/merktroubadour-adnight/",
+          "destination": "https://reddy.world/portfolio/rmaekers/merktroubadour-adnight/",
+          "type": 301
+        },
+        {
+          "source": "/2017/11/12/merktroubadour-adnight/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/merktroubadour-adnight/",
+          "type": 301
+        },
+        {
+          "source": "/2017/11/11/lightbox-peak-mystique",
+          "destination": "https://reddy.world/portfolio/rmaekers/lightbox-peak-mystique/",
+          "type": 301
+        },
+        {
+          "source": "/2017/11/11/lightbox-peak-mystique/",
+          "destination": "https://reddy.world/portfolio/rmaekers/lightbox-peak-mystique/",
+          "type": 301
+        },
+        {
+          "source": "/2017/11/11/lightbox-peak-mystique/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/lightbox-peak-mystique/",
+          "type": 301
+        },
+        {
+          "source": "/2017/11/06/cantina-yung-internet-special",
+          "destination": "https://reddy.world/portfolio/rmaekers/cantina-yung-internet-special/",
+          "type": 301
+        },
+        {
+          "source": "/2017/11/06/cantina-yung-internet-special/",
+          "destination": "https://reddy.world/portfolio/rmaekers/cantina-yung-internet-special/",
+          "type": 301
+        },
+        {
+          "source": "/2017/11/06/cantina-yung-internet-special/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/cantina-yung-internet-special/",
+          "type": 301
+        },
+        {
+          "source": "/2017/10/31/studio-daan-roosegaarde",
+          "destination": "https://reddy.world/portfolio/rmaekers/studio-daan-roosegaarde/",
+          "type": 301
+        },
+        {
+          "source": "/2017/10/31/studio-daan-roosegaarde/",
+          "destination": "https://reddy.world/portfolio/rmaekers/studio-daan-roosegaarde/",
+          "type": 301
+        },
+        {
+          "source": "/2017/10/31/studio-daan-roosegaarde/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/studio-daan-roosegaarde/",
+          "type": 301
+        },
+        {
+          "source": "/2017/10/30/cantina",
+          "destination": "https://reddy.world/portfolio/rmaekers/cantina/",
+          "type": 301
+        },
+        {
+          "source": "/2017/10/30/cantina/",
+          "destination": "https://reddy.world/portfolio/rmaekers/cantina/",
+          "type": 301
+        },
+        {
+          "source": "/2017/10/30/cantina/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/cantina/",
+          "type": 301
+        },
+        {
+          "source": "/2017/08/26/the-return-of-the-church",
+          "destination": "https://reddy.world/portfolio/rmaekers/the-return-of-the-church/",
+          "type": 301
+        },
+        {
+          "source": "/2017/08/26/the-return-of-the-church/",
+          "destination": "https://reddy.world/portfolio/rmaekers/the-return-of-the-church/",
+          "type": 301
+        },
+        {
+          "source": "/2017/08/26/the-return-of-the-church/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/the-return-of-the-church/",
+          "type": 301
+        },
+        {
+          "source": "/2017/08/25/1278",
+          "destination": "https://reddy.world/portfolio/rmaekers/1278/",
+          "type": 301
+        },
+        {
+          "source": "/2017/08/25/1278/",
+          "destination": "https://reddy.world/portfolio/rmaekers/1278/",
+          "type": 301
+        },
+        {
+          "source": "/2017/08/25/1278/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/1278/",
+          "type": 301
+        },
+        {
+          "source": "/2017/08/24/photoshoot-flats",
+          "destination": "https://reddy.world/portfolio/rmaekers/photoshoot-flats/",
+          "type": 301
+        },
+        {
+          "source": "/2017/08/24/photoshoot-flats/",
+          "destination": "https://reddy.world/portfolio/rmaekers/photoshoot-flats/",
+          "type": 301
+        },
+        {
+          "source": "/2017/08/24/photoshoot-flats/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/photoshoot-flats/",
+          "type": 301
+        },
+        {
+          "source": "/2017/04/10/signing-54-stories",
+          "destination": "https://reddy.world/portfolio/rmaekers/signing-54-stories/",
+          "type": 301
+        },
+        {
+          "source": "/2017/04/10/signing-54-stories/",
+          "destination": "https://reddy.world/portfolio/rmaekers/signing-54-stories/",
+          "type": 301
+        },
+        {
+          "source": "/2017/04/10/signing-54-stories/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/signing-54-stories/",
+          "type": 301
+        },
+        {
+          "source": "/2017/04/06/heist-at-the-drake-concert",
+          "destination": "https://reddy.world/portfolio/rmaekers/heist-at-the-drake-concert/",
+          "type": 301
+        },
+        {
+          "source": "/2017/04/06/heist-at-the-drake-concert/",
+          "destination": "https://reddy.world/portfolio/rmaekers/heist-at-the-drake-concert/",
+          "type": 301
+        },
+        {
+          "source": "/2017/04/06/heist-at-the-drake-concert/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/heist-at-the-drake-concert/",
+          "type": 301
+        },
+        {
+          "source": "/2017/02/15/lady-lights",
+          "destination": "https://reddy.world/portfolio/rmaekers/lady-lights/",
+          "type": 301
+        },
+        {
+          "source": "/2017/02/15/lady-lights/",
+          "destination": "https://reddy.world/portfolio/rmaekers/lady-lights/",
+          "type": 301
+        },
+        {
+          "source": "/2017/02/15/lady-lights/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/lady-lights/",
+          "type": 301
+        },
+        {
+          "source": "/2017/01/22/lichtbak-social-swingers-club",
+          "destination": "https://reddy.world/portfolio/rmaekers/lichtbak-social-swingers-club/",
+          "type": 301
+        },
+        {
+          "source": "/2017/01/22/lichtbak-social-swingers-club/",
+          "destination": "https://reddy.world/portfolio/rmaekers/lichtbak-social-swingers-club/",
+          "type": 301
+        },
+        {
+          "source": "/2017/01/22/lichtbak-social-swingers-club/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/lichtbak-social-swingers-club/",
+          "type": 301
+        },
+        {
+          "source": "/2017/01/18/volunar-kitchen",
+          "destination": "https://reddy.world/portfolio/rmaekers/volunar-kitchen/",
+          "type": 301
+        },
+        {
+          "source": "/2017/01/18/volunar-kitchen/",
+          "destination": "https://reddy.world/portfolio/rmaekers/volunar-kitchen/",
+          "type": 301
+        },
+        {
+          "source": "/2017/01/18/volunar-kitchen/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/volunar-kitchen/",
+          "type": 301
+        },
+        {
+          "source": "/2017/01/15/platenkast-in-de-radion",
+          "destination": "https://reddy.world/portfolio/rmaekers/platenkast-in-de-radion/",
+          "type": 301
+        },
+        {
+          "source": "/2017/01/15/platenkast-in-de-radion/",
+          "destination": "https://reddy.world/portfolio/rmaekers/platenkast-in-de-radion/",
+          "type": 301
+        },
+        {
+          "source": "/2017/01/15/platenkast-in-de-radion/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/platenkast-in-de-radion/",
+          "type": 301
+        },
+        {
+          "source": "/2017/01/15/groove-village-deep-sea-creatures",
+          "destination": "https://reddy.world/portfolio/rmaekers/groove-village-deep-sea-creatures/",
+          "type": 301
+        },
+        {
+          "source": "/2017/01/15/groove-village-deep-sea-creatures/",
+          "destination": "https://reddy.world/portfolio/rmaekers/groove-village-deep-sea-creatures/",
+          "type": 301
+        },
+        {
+          "source": "/2017/01/15/groove-village-deep-sea-creatures/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/groove-village-deep-sea-creatures/",
+          "type": 301
+        },
+        {
+          "source": "/2017/01/09/carlitos",
+          "destination": "https://reddy.world/portfolio/rmaekers/carlitos/",
+          "type": 301
+        },
+        {
+          "source": "/2017/01/09/carlitos/",
+          "destination": "https://reddy.world/portfolio/rmaekers/carlitos/",
+          "type": 301
+        },
+        {
+          "source": "/2017/01/09/carlitos/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/carlitos/",
+          "type": 301
+        },
+        {
+          "source": "/2016/12/15/letters-komm-schon-alter",
+          "destination": "https://reddy.world/portfolio/rmaekers/letters-komm-schon-alter/",
+          "type": 301
+        },
+        {
+          "source": "/2016/12/15/letters-komm-schon-alter/",
+          "destination": "https://reddy.world/portfolio/rmaekers/letters-komm-schon-alter/",
+          "type": 301
+        },
+        {
+          "source": "/2016/12/15/letters-komm-schon-alter/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/letters-komm-schon-alter/",
+          "type": 301
+        },
+        {
+          "source": "/2016/11/21/lanterns",
+          "destination": "https://reddy.world/portfolio/rmaekers/lanterns/",
+          "type": 301
+        },
+        {
+          "source": "/2016/11/21/lanterns/",
+          "destination": "https://reddy.world/portfolio/rmaekers/lanterns/",
+          "type": 301
+        },
+        {
+          "source": "/2016/11/21/lanterns/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/lanterns/",
+          "type": 301
+        },
+        {
+          "source": "/2016/09/22/str△f_werk-festival",
+          "destination": "https://reddy.world/portfolio/rmaekers/str-f_werk-festival/",
+          "type": 301
+        },
+        {
+          "source": "/2016/09/22/str△f_werk-festival/",
+          "destination": "https://reddy.world/portfolio/rmaekers/str-f_werk-festival/",
+          "type": 301
+        },
+        {
+          "source": "/2016/09/22/str△f_werk-festival/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/str-f_werk-festival/",
+          "type": 301
+        },
+        {
+          "source": "/2016/08/15/riekerhaven",
+          "destination": "https://reddy.world/portfolio/rmaekers/riekerhaven/",
+          "type": 301
+        },
+        {
+          "source": "/2016/08/15/riekerhaven/",
+          "destination": "https://reddy.world/portfolio/rmaekers/riekerhaven/",
+          "type": 301
+        },
+        {
+          "source": "/2016/08/15/riekerhaven/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/riekerhaven/",
+          "type": 301
+        },
+        {
+          "source": "/2016/08/05/lentekabinet-2016",
+          "destination": "https://reddy.world/portfolio/rmaekers/lentekabinet-2016/",
+          "type": 301
+        },
+        {
+          "source": "/2016/08/05/lentekabinet-2016/",
+          "destination": "https://reddy.world/portfolio/rmaekers/lentekabinet-2016/",
+          "type": 301
+        },
+        {
+          "source": "/2016/08/05/lentekabinet-2016/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/lentekabinet-2016/",
+          "type": 301
+        },
+        {
+          "source": "/2016/07/20/wicked-jazz-sounds-festival",
+          "destination": "https://reddy.world/portfolio/rmaekers/wicked-jazz-sounds-festival/",
+          "type": 301
+        },
+        {
+          "source": "/2016/07/20/wicked-jazz-sounds-festival/",
+          "destination": "https://reddy.world/portfolio/rmaekers/wicked-jazz-sounds-festival/",
+          "type": 301
+        },
+        {
+          "source": "/2016/07/20/wicked-jazz-sounds-festival/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/wicked-jazz-sounds-festival/",
+          "type": 301
+        },
+        {
+          "source": "/2016/07/18/ballenbak",
+          "destination": "https://reddy.world/portfolio/rmaekers/ballenbak/",
+          "type": 301
+        },
+        {
+          "source": "/2016/07/18/ballenbak/",
+          "destination": "https://reddy.world/portfolio/rmaekers/ballenbak/",
+          "type": 301
+        },
+        {
+          "source": "/2016/07/18/ballenbak/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/ballenbak/",
+          "type": 301
+        },
+        {
+          "source": "/clients-rm",
+          "destination": "https://reddy.world/portfolio/rmaekers/clients-rm/",
+          "type": 301
+        },
+        {
+          "source": "/clients-rm/",
+          "destination": "https://reddy.world/portfolio/rmaekers/clients-rm/",
+          "type": 301
+        },
+        {
+          "source": "/clients-rm/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/clients-rm/",
+          "type": 301
+        },
+        {
+          "source": "/contact-us",
+          "destination": "https://reddy.world/portfolio/rmaekers/contact-us/",
+          "type": 301
+        },
+        {
+          "source": "/contact-us/",
+          "destination": "https://reddy.world/portfolio/rmaekers/contact-us/",
+          "type": 301
+        },
+        {
+          "source": "/contact-us/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/contact-us/",
+          "type": 301
+        },
+        {
+          "source": "/2014/08/20/11-11",
+          "destination": "https://reddy.world/portfolio/rmaekers/11-11/",
+          "type": 301
+        },
+        {
+          "source": "/2014/08/20/11-11/",
+          "destination": "https://reddy.world/portfolio/rmaekers/11-11/",
+          "type": 301
+        },
+        {
+          "source": "/2014/08/20/11-11/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/11-11/",
+          "type": 301
+        },
+        {
+          "source": "/2014/06/15/solstice-2014",
+          "destination": "https://reddy.world/portfolio/rmaekers/solstice-2014/",
+          "type": 301
+        },
+        {
+          "source": "/2014/06/15/solstice-2014/",
+          "destination": "https://reddy.world/portfolio/rmaekers/solstice-2014/",
+          "type": 301
+        },
+        {
+          "source": "/2014/06/15/solstice-2014/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/solstice-2014/",
+          "type": 301
+        },
+        {
+          "source": "/2013/10/09/nepco",
+          "destination": "https://reddy.world/portfolio/rmaekers/nepco/",
+          "type": 301
+        },
+        {
+          "source": "/2013/10/09/nepco/",
+          "destination": "https://reddy.world/portfolio/rmaekers/nepco/",
+          "type": 301
+        },
+        {
+          "source": "/2013/10/09/nepco/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/nepco/",
+          "type": 301
+        },
+        {
+          "source": "/2013/04/18/doorgedraaid-2",
+          "destination": "https://reddy.world/portfolio/rmaekers/doorgedraaid-2/",
+          "type": 301
+        },
+        {
+          "source": "/2013/04/18/doorgedraaid-2/",
+          "destination": "https://reddy.world/portfolio/rmaekers/doorgedraaid-2/",
+          "type": 301
+        },
+        {
+          "source": "/2013/04/18/doorgedraaid-2/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/doorgedraaid-2/",
+          "type": 301
+        },
+        {
+          "source": "/2013/04/02/jelte-reinders-2",
+          "destination": "https://reddy.world/portfolio/rmaekers/jelte-reinders-2/",
+          "type": 301
+        },
+        {
+          "source": "/2013/04/02/jelte-reinders-2/",
+          "destination": "https://reddy.world/portfolio/rmaekers/jelte-reinders-2/",
+          "type": 301
+        },
+        {
+          "source": "/2013/04/02/jelte-reinders-2/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/jelte-reinders-2/",
+          "type": 301
+        },
+        {
+          "source": "/2013/03/30/ewa-kielska-2",
+          "destination": "https://reddy.world/portfolio/rmaekers/ewa-kielska-2/",
+          "type": 301
+        },
+        {
+          "source": "/2013/03/30/ewa-kielska-2/",
+          "destination": "https://reddy.world/portfolio/rmaekers/ewa-kielska-2/",
+          "type": 301
+        },
+        {
+          "source": "/2013/03/30/ewa-kielska-2/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/ewa-kielska-2/",
+          "type": 301
+        },
+        {
+          "source": "/2013/03/28/meghan-sile-catherina",
+          "destination": "https://reddy.world/portfolio/rmaekers/meghan-sile-catherina/",
+          "type": 301
+        },
+        {
+          "source": "/2013/03/28/meghan-sile-catherina/",
+          "destination": "https://reddy.world/portfolio/rmaekers/meghan-sile-catherina/",
+          "type": 301
+        },
+        {
+          "source": "/2013/03/28/meghan-sile-catherina/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/meghan-sile-catherina/",
+          "type": 301
+        },
+        {
+          "source": "/2012/07/17/georgies-wundergarten-2014",
+          "destination": "https://reddy.world/portfolio/rmaekers/georgies-wundergarten-2014/",
+          "type": 301
+        },
+        {
+          "source": "/2012/07/17/georgies-wundergarten-2014/",
+          "destination": "https://reddy.world/portfolio/rmaekers/georgies-wundergarten-2014/",
+          "type": 301
+        },
+        {
+          "source": "/2012/07/17/georgies-wundergarten-2014/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/georgies-wundergarten-2014/",
+          "type": 301
+        },
+        {
+          "source": "/2012/04/12/pally-dynamic-upcycled-bench",
+          "destination": "https://reddy.world/portfolio/rmaekers/pally-dynamic-upcycled-bench/",
+          "type": 301
+        },
+        {
+          "source": "/2012/04/12/pally-dynamic-upcycled-bench/",
+          "destination": "https://reddy.world/portfolio/rmaekers/pally-dynamic-upcycled-bench/",
+          "type": 301
+        },
+        {
+          "source": "/2012/04/12/pally-dynamic-upcycled-bench/**",
+          "destination": "https://reddy.world/portfolio/rmaekers/pally-dynamic-upcycled-bench/",
+          "type": 301
+        },
+        {
+          "source": "/2019/04/25/water-filtering",
+          "destination": "https://reddy.world/portfolio/rrproductions/water-filtering/",
+          "type": 301
+        },
+        {
+          "source": "/2019/04/25/water-filtering/",
+          "destination": "https://reddy.world/portfolio/rrproductions/water-filtering/",
+          "type": 301
+        },
+        {
+          "source": "/2019/04/25/water-filtering/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/water-filtering/",
+          "type": 301
+        },
+        {
+          "source": "/2019/04/25/giant-15-person-swings",
+          "destination": "https://reddy.world/portfolio/rrproductions/giant-15-person-swings/",
+          "type": 301
+        },
+        {
+          "source": "/2019/04/25/giant-15-person-swings/",
+          "destination": "https://reddy.world/portfolio/rrproductions/giant-15-person-swings/",
+          "type": 301
+        },
+        {
+          "source": "/2019/04/25/giant-15-person-swings/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/giant-15-person-swings/",
+          "type": 301
+        },
+        {
+          "source": "/2019/04/25/tangram-stagedesign",
+          "destination": "https://reddy.world/portfolio/rrproductions/tangram-stagedesign/",
+          "type": 301
+        },
+        {
+          "source": "/2019/04/25/tangram-stagedesign/",
+          "destination": "https://reddy.world/portfolio/rrproductions/tangram-stagedesign/",
+          "type": 301
+        },
+        {
+          "source": "/2019/04/25/tangram-stagedesign/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/tangram-stagedesign/",
+          "type": 301
+        },
+        {
+          "source": "/2016/07/23/concept-an-ecologic-answer-to-mosquitos",
+          "destination": "https://reddy.world/portfolio/rrproductions/concept-an-ecologic-answer-to-mosquitos/",
+          "type": 301
+        },
+        {
+          "source": "/2016/07/23/concept-an-ecologic-answer-to-mosquitos/",
+          "destination": "https://reddy.world/portfolio/rrproductions/concept-an-ecologic-answer-to-mosquitos/",
+          "type": 301
+        },
+        {
+          "source": "/2016/07/23/concept-an-ecologic-answer-to-mosquitos/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/concept-an-ecologic-answer-to-mosquitos/",
+          "type": 301
+        },
+        {
+          "source": "/2016/07/16/giant-sofa-backstage",
+          "destination": "https://reddy.world/portfolio/rrproductions/giant-sofa-backstage/",
+          "type": 301
+        },
+        {
+          "source": "/2016/07/16/giant-sofa-backstage/",
+          "destination": "https://reddy.world/portfolio/rrproductions/giant-sofa-backstage/",
+          "type": 301
+        },
+        {
+          "source": "/2016/07/16/giant-sofa-backstage/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/giant-sofa-backstage/",
+          "type": 301
+        },
+        {
+          "source": "/2016/07/15/moon-clock",
+          "destination": "https://reddy.world/portfolio/rrproductions/moon-clock/",
+          "type": 301
+        },
+        {
+          "source": "/2016/07/15/moon-clock/",
+          "destination": "https://reddy.world/portfolio/rrproductions/moon-clock/",
+          "type": 301
+        },
+        {
+          "source": "/2016/07/15/moon-clock/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/moon-clock/",
+          "type": 301
+        },
+        {
+          "source": "/2016/07/11/my-masterpiece",
+          "destination": "https://reddy.world/portfolio/rrproductions/my-masterpiece/",
+          "type": 301
+        },
+        {
+          "source": "/2016/07/11/my-masterpiece/",
+          "destination": "https://reddy.world/portfolio/rrproductions/my-masterpiece/",
+          "type": 301
+        },
+        {
+          "source": "/2016/07/11/my-masterpiece/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/my-masterpiece/",
+          "type": 301
+        },
+        {
+          "source": "/2016/04/29/lovenest-first-year",
+          "destination": "https://reddy.world/portfolio/rrproductions/lovenest-first-year/",
+          "type": 301
+        },
+        {
+          "source": "/2016/04/29/lovenest-first-year/",
+          "destination": "https://reddy.world/portfolio/rrproductions/lovenest-first-year/",
+          "type": 301
+        },
+        {
+          "source": "/2016/04/29/lovenest-first-year/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/lovenest-first-year/",
+          "type": 301
+        },
+        {
+          "source": "/2016/04/22/chestahedron-speaker-second-year",
+          "destination": "https://reddy.world/portfolio/rrproductions/chestahedron-speaker-second-year/",
+          "type": 301
+        },
+        {
+          "source": "/2016/04/22/chestahedron-speaker-second-year/",
+          "destination": "https://reddy.world/portfolio/rrproductions/chestahedron-speaker-second-year/",
+          "type": 301
+        },
+        {
+          "source": "/2016/04/22/chestahedron-speaker-second-year/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/chestahedron-speaker-second-year/",
+          "type": 301
+        },
+        {
+          "source": "/2016/03/15/internship-at-studio-nepco",
+          "destination": "https://reddy.world/portfolio/rrproductions/internship-at-studio-nepco/",
+          "type": 301
+        },
+        {
+          "source": "/2016/03/15/internship-at-studio-nepco/",
+          "destination": "https://reddy.world/portfolio/rrproductions/internship-at-studio-nepco/",
+          "type": 301
+        },
+        {
+          "source": "/2016/03/15/internship-at-studio-nepco/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/internship-at-studio-nepco/",
+          "type": 301
+        },
+        {
+          "source": "/2016/03/11/body-casting",
+          "destination": "https://reddy.world/portfolio/rrproductions/body-casting/",
+          "type": 301
+        },
+        {
+          "source": "/2016/03/11/body-casting/",
+          "destination": "https://reddy.world/portfolio/rrproductions/body-casting/",
+          "type": 301
+        },
+        {
+          "source": "/2016/03/11/body-casting/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/body-casting/",
+          "type": 301
+        },
+        {
+          "source": "/2016/03/07/room-for-thoughts",
+          "destination": "https://reddy.world/portfolio/rrproductions/room-for-thoughts/",
+          "type": 301
+        },
+        {
+          "source": "/2016/03/07/room-for-thoughts/",
+          "destination": "https://reddy.world/portfolio/rrproductions/room-for-thoughts/",
+          "type": 301
+        },
+        {
+          "source": "/2016/03/07/room-for-thoughts/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/room-for-thoughts/",
+          "type": 301
+        },
+        {
+          "source": "/2016/03/07/chair-part-iii-final",
+          "destination": "https://reddy.world/portfolio/rrproductions/chair-part-iii-final/",
+          "type": 301
+        },
+        {
+          "source": "/2016/03/07/chair-part-iii-final/",
+          "destination": "https://reddy.world/portfolio/rrproductions/chair-part-iii-final/",
+          "type": 301
+        },
+        {
+          "source": "/2016/03/07/chair-part-iii-final/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/chair-part-iii-final/",
+          "type": 301
+        },
+        {
+          "source": "/2016/01/22/sander-kleinenberg-felix-leiter-the-one-official-music-video",
+          "destination": "https://reddy.world/portfolio/rrproductions/sander-kleinenberg-felix-leiter-the-one-official-music-video/",
+          "type": 301
+        },
+        {
+          "source": "/2016/01/22/sander-kleinenberg-felix-leiter-the-one-official-music-video/",
+          "destination": "https://reddy.world/portfolio/rrproductions/sander-kleinenberg-felix-leiter-the-one-official-music-video/",
+          "type": 301
+        },
+        {
+          "source": "/2016/01/22/sander-kleinenberg-felix-leiter-the-one-official-music-video/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/sander-kleinenberg-felix-leiter-the-one-official-music-video/",
+          "type": 301
+        },
+        {
+          "source": "/2016/01/15/designing-a-clothes-store",
+          "destination": "https://reddy.world/portfolio/rrproductions/designing-a-clothes-store/",
+          "type": 301
+        },
+        {
+          "source": "/2016/01/15/designing-a-clothes-store/",
+          "destination": "https://reddy.world/portfolio/rrproductions/designing-a-clothes-store/",
+          "type": 301
+        },
+        {
+          "source": "/2016/01/15/designing-a-clothes-store/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/designing-a-clothes-store/",
+          "type": 301
+        },
+        {
+          "source": "/2015/12/15/designing-a-chair-part-2",
+          "destination": "https://reddy.world/portfolio/rrproductions/designing-a-chair-part-2/",
+          "type": 301
+        },
+        {
+          "source": "/2015/12/15/designing-a-chair-part-2/",
+          "destination": "https://reddy.world/portfolio/rrproductions/designing-a-chair-part-2/",
+          "type": 301
+        },
+        {
+          "source": "/2015/12/15/designing-a-chair-part-2/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/designing-a-chair-part-2/",
+          "type": 301
+        },
+        {
+          "source": "/2015/11/20/the-making-of-an-escape-room-puzzle",
+          "destination": "https://reddy.world/portfolio/rrproductions/the-making-of-an-escape-room-puzzle/",
+          "type": 301
+        },
+        {
+          "source": "/2015/11/20/the-making-of-an-escape-room-puzzle/",
+          "destination": "https://reddy.world/portfolio/rrproductions/the-making-of-an-escape-room-puzzle/",
+          "type": 301
+        },
+        {
+          "source": "/2015/11/20/the-making-of-an-escape-room-puzzle/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/the-making-of-an-escape-room-puzzle/",
+          "type": 301
+        },
+        {
+          "source": "/materialenmix-integraal-9",
+          "destination": "https://reddy.world/portfolio/rrproductions/materialenmix-integraal-9/",
+          "type": 301
+        },
+        {
+          "source": "/materialenmix-integraal-9/",
+          "destination": "https://reddy.world/portfolio/rrproductions/materialenmix-integraal-9/",
+          "type": 301
+        },
+        {
+          "source": "/materialenmix-integraal-9/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/materialenmix-integraal-9/",
+          "type": 301
+        },
+        {
+          "source": "/2015/10/28/designing-a-chair",
+          "destination": "https://reddy.world/portfolio/rrproductions/designing-a-chair/",
+          "type": 301
+        },
+        {
+          "source": "/2015/10/28/designing-a-chair/",
+          "destination": "https://reddy.world/portfolio/rrproductions/designing-a-chair/",
+          "type": 301
+        },
+        {
+          "source": "/2015/10/28/designing-a-chair/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/designing-a-chair/",
+          "type": 301
+        },
+        {
+          "source": "/2015/10/26/making-of-a-kaleidoscope",
+          "destination": "https://reddy.world/portfolio/rrproductions/making-of-a-kaleidoscope/",
+          "type": 301
+        },
+        {
+          "source": "/2015/10/26/making-of-a-kaleidoscope/",
+          "destination": "https://reddy.world/portfolio/rrproductions/making-of-a-kaleidoscope/",
+          "type": 301
+        },
+        {
+          "source": "/2015/10/26/making-of-a-kaleidoscope/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/making-of-a-kaleidoscope/",
+          "type": 301
+        },
+        {
+          "source": "/contact",
+          "destination": "https://reddy.world/portfolio/rrproductions/contact/",
+          "type": 301
+        },
+        {
+          "source": "/contact/",
+          "destination": "https://reddy.world/portfolio/rrproductions/contact/",
+          "type": 301
+        },
+        {
+          "source": "/contact/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/contact/",
+          "type": 301
+        },
+        {
+          "source": "/2015/10/07/394",
+          "destination": "https://reddy.world/portfolio/rrproductions/394/",
+          "type": 301
+        },
+        {
+          "source": "/2015/10/07/394/",
+          "destination": "https://reddy.world/portfolio/rrproductions/394/",
+          "type": 301
+        },
+        {
+          "source": "/2015/10/07/394/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/394/",
+          "type": 301
+        },
+        {
+          "source": "/2015/05/05/397",
+          "destination": "https://reddy.world/portfolio/rrproductions/397/",
+          "type": 301
+        },
+        {
+          "source": "/2015/05/05/397/",
+          "destination": "https://reddy.world/portfolio/rrproductions/397/",
+          "type": 301
+        },
+        {
+          "source": "/2015/05/05/397/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/397/",
+          "type": 301
+        },
+        {
+          "source": "/press-page",
+          "destination": "https://reddy.world/portfolio/rrproductions/press-page/",
+          "type": 301
+        },
+        {
+          "source": "/press-page/",
+          "destination": "https://reddy.world/portfolio/rrproductions/press-page/",
+          "type": 301
+        },
+        {
+          "source": "/press-page/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/press-page/",
+          "type": 301
+        },
+        {
+          "source": "/press-kit",
+          "destination": "https://reddy.world/portfolio/rrproductions/press-kit/",
+          "type": 301
+        },
+        {
+          "source": "/press-kit/",
+          "destination": "https://reddy.world/portfolio/rrproductions/press-kit/",
+          "type": 301
+        },
+        {
+          "source": "/press-kit/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/press-kit/",
+          "type": 301
+        },
+        {
+          "source": "/79-2",
+          "destination": "https://reddy.world/portfolio/rrproductions/79-2/",
+          "type": 301
+        },
+        {
+          "source": "/79-2/",
+          "destination": "https://reddy.world/portfolio/rrproductions/79-2/",
+          "type": 301
+        },
+        {
+          "source": "/79-2/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/79-2/",
+          "type": 301
+        },
+        {
+          "source": "/72-2",
+          "destination": "https://reddy.world/portfolio/rrproductions/72-2/",
+          "type": 301
+        },
+        {
+          "source": "/72-2/",
+          "destination": "https://reddy.world/portfolio/rrproductions/72-2/",
+          "type": 301
+        },
+        {
+          "source": "/72-2/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/72-2/",
+          "type": 301
+        },
+        {
+          "source": "/press",
+          "destination": "https://reddy.world/portfolio/rrproductions/press/",
+          "type": 301
+        },
+        {
+          "source": "/press/",
+          "destination": "https://reddy.world/portfolio/rrproductions/press/",
+          "type": 301
+        },
+        {
+          "source": "/press/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/press/",
+          "type": 301
+        },
+        {
+          "source": "/news",
+          "destination": "https://reddy.world/portfolio/rrproductions/news/",
+          "type": 301
+        },
+        {
+          "source": "/news/",
+          "destination": "https://reddy.world/portfolio/rrproductions/news/",
+          "type": 301
+        },
+        {
+          "source": "/news/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/news/",
+          "type": 301
+        },
+        {
+          "source": "/home",
+          "destination": "https://reddy.world/portfolio/rrproductions/home/",
+          "type": 301
+        },
+        {
+          "source": "/home/",
+          "destination": "https://reddy.world/portfolio/rrproductions/home/",
+          "type": 301
+        },
+        {
+          "source": "/home/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/home/",
+          "type": 301
+        },
+        {
+          "source": "/about",
+          "destination": "https://reddy.world/portfolio/rrproductions/about/",
+          "type": 301
+        },
+        {
+          "source": "/about/",
+          "destination": "https://reddy.world/portfolio/rrproductions/about/",
+          "type": 301
+        },
+        {
+          "source": "/about/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/about/",
+          "type": 301
+        },
+        {
+          "source": "/2014/11/08/georgies-wundergarten",
+          "destination": "https://reddy.world/portfolio/rrproductions/georgies-wundergarten/",
+          "type": 301
+        },
+        {
+          "source": "/2014/11/08/georgies-wundergarten/",
+          "destination": "https://reddy.world/portfolio/rrproductions/georgies-wundergarten/",
+          "type": 301
+        },
+        {
+          "source": "/2014/11/08/georgies-wundergarten/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/georgies-wundergarten/",
+          "type": 301
+        },
+        {
+          "source": "/2014/02/04/walking-sticks",
+          "destination": "https://reddy.world/portfolio/rrproductions/walking-sticks/",
+          "type": 301
+        },
+        {
+          "source": "/2014/02/04/walking-sticks/",
+          "destination": "https://reddy.world/portfolio/rrproductions/walking-sticks/",
+          "type": 301
+        },
+        {
+          "source": "/2014/02/04/walking-sticks/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/walking-sticks/",
+          "type": 301
+        },
+        {
+          "source": "/2013/09/19/diamonds-are-a-girls-best-friend",
+          "destination": "https://reddy.world/portfolio/rrproductions/diamonds-are-a-girls-best-friend/",
+          "type": 301
+        },
+        {
+          "source": "/2013/09/19/diamonds-are-a-girls-best-friend/",
+          "destination": "https://reddy.world/portfolio/rrproductions/diamonds-are-a-girls-best-friend/",
+          "type": 301
+        },
+        {
+          "source": "/2013/09/19/diamonds-are-a-girls-best-friend/**",
+          "destination": "https://reddy.world/portfolio/rrproductions/diamonds-are-a-girls-best-friend/",
+          "type": 301
+        },
+        {
+          "source": "/2016/07/11/orientatie-meesterstuk-meubels-met-het-gemak-van-aanpassing-of-hervorming",
+          "destination": "https://reddy.world/portfolio/maup/orientatie-meesterstuk-meubels-met-het-gemak-van-aanpassing-of-hervorming/",
+          "type": 301
+        },
+        {
+          "source": "/2016/07/11/orientatie-meesterstuk-meubels-met-het-gemak-van-aanpassing-of-hervorming/",
+          "destination": "https://reddy.world/portfolio/maup/orientatie-meesterstuk-meubels-met-het-gemak-van-aanpassing-of-hervorming/",
+          "type": 301
+        },
+        {
+          "source": "/2016/07/11/orientatie-meesterstuk-meubels-met-het-gemak-van-aanpassing-of-hervorming/**",
+          "destination": "https://reddy.world/portfolio/maup/orientatie-meesterstuk-meubels-met-het-gemak-van-aanpassing-of-hervorming/",
+          "type": 301
+        },
+        {
+          "source": "/2016/04/05/birthinchair",
+          "destination": "https://reddy.world/portfolio/maup/birthinchair/",
+          "type": 301
+        },
+        {
+          "source": "/2016/04/05/birthinchair/",
+          "destination": "https://reddy.world/portfolio/maup/birthinchair/",
+          "type": 301
+        },
+        {
+          "source": "/2016/04/05/birthinchair/**",
+          "destination": "https://reddy.world/portfolio/maup/birthinchair/",
+          "type": 301
+        },
+        {
+          "source": "/2016/04/05/lightmaeker",
+          "destination": "https://reddy.world/portfolio/maup/lightmaeker/",
+          "type": 301
+        },
+        {
+          "source": "/2016/04/05/lightmaeker/",
+          "destination": "https://reddy.world/portfolio/maup/lightmaeker/",
+          "type": 301
+        },
+        {
+          "source": "/2016/04/05/lightmaeker/**",
+          "destination": "https://reddy.world/portfolio/maup/lightmaeker/",
+          "type": 301
+        },
+        {
+          "source": "/2016/04/04/loungechair",
+          "destination": "https://reddy.world/portfolio/maup/loungechair/",
+          "type": 301
+        },
+        {
+          "source": "/2016/04/04/loungechair/",
+          "destination": "https://reddy.world/portfolio/maup/loungechair/",
+          "type": 301
+        },
+        {
+          "source": "/2016/04/04/loungechair/**",
+          "destination": "https://reddy.world/portfolio/maup/loungechair/",
+          "type": 301
+        },
+        {
+          "source": "/2016/02/02/41",
+          "destination": "https://reddy.world/portfolio/maup/41/",
+          "type": 301
+        },
+        {
+          "source": "/2016/02/02/41/",
+          "destination": "https://reddy.world/portfolio/maup/41/",
+          "type": 301
+        },
+        {
+          "source": "/2016/02/02/41/**",
+          "destination": "https://reddy.world/portfolio/maup/41/",
+          "type": 301
+        },
+        {
+          "source": "/performances",
+          "destination": "https://reddy.world/portfolio/vaguelyvulgar/performances/",
+          "type": 301
+        },
+        {
+          "source": "/performances/",
+          "destination": "https://reddy.world/portfolio/vaguelyvulgar/performances/",
+          "type": 301
+        },
+        {
+          "source": "/performances/**",
+          "destination": "https://reddy.world/portfolio/vaguelyvulgar/performances/",
+          "type": 301
+        },
+        {
+          "source": "/film",
+          "destination": "https://reddy.world/portfolio/vaguelyvulgar/film/",
+          "type": 301
+        },
+        {
+          "source": "/film/",
+          "destination": "https://reddy.world/portfolio/vaguelyvulgar/film/",
+          "type": 301
+        },
+        {
+          "source": "/film/**",
+          "destination": "https://reddy.world/portfolio/vaguelyvulgar/film/",
+          "type": 301
+        },
+        {
+          "source": "/photo-cv",
+          "destination": "https://reddy.world/portfolio/vaguelyvulgar/photo-cv/",
+          "type": 301
+        },
+        {
+          "source": "/photo-cv/",
+          "destination": "https://reddy.world/portfolio/vaguelyvulgar/photo-cv/",
+          "type": 301
+        },
+        {
+          "source": "/photo-cv/**",
+          "destination": "https://reddy.world/portfolio/vaguelyvulgar/photo-cv/",
+          "type": 301
+        },
+        {
+          "source": "/sizes",
+          "destination": "https://reddy.world/portfolio/vaguelyvulgar/sizes/",
+          "type": 301
+        },
+        {
+          "source": "/sizes/",
+          "destination": "https://reddy.world/portfolio/vaguelyvulgar/sizes/",
+          "type": 301
+        },
+        {
+          "source": "/sizes/**",
+          "destination": "https://reddy.world/portfolio/vaguelyvulgar/sizes/",
+          "type": 301
+        },
+        {
+          "source": "/category/**",
+          "destination": "https://reddy.world/portfolio/",
+          "type": 301
+        },
+        {
+          "source": "/tag/**",
+          "destination": "https://reddy.world/portfolio/",
+          "type": 301
+        },
+        {
+          "source": "/201*/**",
+          "destination": "https://reddy.world/portfolio/",
+          "type": 301
+        },
+        {
+          "source": "/202*/**",
+          "destination": "https://reddy.world/portfolio/",
+          "type": 301
+        },
+        {
+          "source": "**",
+          "destination": "https://reddy.world/portfolio/",
+          "type": 301
+        }
+      ]
+    }
+  ]
+}
