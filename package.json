@@ -2,15 +2,19 @@
   "name": "portfolio.reddy.world",
   "version": "1.0.0",
   "private": true,
-  "description": "Visual archive & inner portfolio for RMaekers, RRproductions, Maup de Kleermaeker, and Vaguely Vulgar",
+  "description": "Visual archive of Ryan Reddy: ReddyMaekers, RRproductions, Maup de Kleermaeker and Vaguely Vulgar",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
+    "dev": "astro dev",
+    "build": "astro build && node scripts/firebase-config.mjs",
+    "preview": "astro preview",
     "import": "python scripts/parse_wordpress.py"
   },
   "devDependencies": {
-    "vite": "^8.3.2"
+    "@astrojs/sitemap": "^3.7.4",
+    "astro": "^7.3.5"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true
   }
 }
