@@ -17,3 +17,6 @@ Thumbs.db
 
 # Local WordPress export backups (contain contact-form messages from real people)
 src/.zOld/
+
+# Astro cache
+.astro/

@@ -3,7 +3,10 @@ import rrproductions from '../data/rrproductions.json';
 import maup from '../data/maup.json';
 import vaguelyvulgar from '../data/vaguelyvulgar.json';
 
-export const SITE = 'https://portfolio.reddy.world';
+export const ORIGIN = 'https://reddy.world';
+export const BASE = '/portfolio';
+// Full URL of this build; every absolute URL is built from it
+export const SITE = `${ORIGIN}${BASE}`;
 export const CONTACT = 'https://reddy.world/contact';
 export const PERSON_ID = 'https://reddy.world/#ryan';
 

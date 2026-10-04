@@ -2,8 +2,10 @@ import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
 import { imagesForPage } from './src/lib/sitemap-images.js';
 
+// Built here, published by reddy.world under /portfolio (see src/lib/portfolios.js)
 export default defineConfig({
-  site: 'https://portfolio.reddy.world',
+  site: 'https://reddy.world',
+  base: '/portfolio',
   trailingSlash: 'always',
   integrations: [
     sitemap({

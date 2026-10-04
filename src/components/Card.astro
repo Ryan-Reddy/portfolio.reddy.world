@@ -1,6 +1,8 @@
 ---
 import { formatDate, photos, altFor, portfolioById } from '../lib/portfolios.js';
 
+import { BASE } from '../lib/portfolios.js';
+
 const { post, showPortfolio = false } = Astro.props;
 const imgs = photos(post);
 const cover = post.featured_image && imgs.find((m) => m.url === post.featured_image) ? post.featured_image : imgs[0]?.url;
@@ -9,7 +11,7 @@ const search = [post.title, post.excerpt, ...post.categories, ...post.tags].join
 ---
 <a
   class="card"
-  href={post.path}
+  href={`${BASE}${post.path}`}
   data-categories={post.categories.join('|')}
   data-portfolio={post.portfolio}
   data-search={search}

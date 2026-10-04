@@ -1,6 +1,6 @@
 ---
 import '../styles/global.css';
-import { portfolios, contactUrl, SITE } from '../lib/portfolios.js';
+import { portfolios, contactUrl, ORIGIN, BASE } from '../lib/portfolios.js';
 
 interface Props {
   title: string;
@@ -12,7 +12,8 @@ interface Props {
 }
 
 const { title, description, image, active, jsonLd, type = 'website' } = Astro.props;
-const canonical = new URL(Astro.url.pathname, SITE).href;
+// Astro.url includes the base, so this is the page's reddy.world/portfolio URL
+const canonical = new URL(Astro.url.pathname, ORIGIN).href;
 ---
 <!doctype html>
 <html lang="en">
@@ -30,7 +31,7 @@ const canonical = new URL(Astro.url.pathname, SITE).href;
   <meta property="og:url" content={canonical}>
   {image && <meta property="og:image" content={image}>}
   <meta name="twitter:card" content={image ? 'summary_large_image' : 'summary'}>
-  <link rel="sitemap" href="/sitemap-index.xml">
+  <link rel="sitemap" href={`${BASE}/sitemap-index.xml`}>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -40,7 +41,7 @@ const canonical = new URL(Astro.url.pathname, SITE).href;
   <header class="site-header">
     <div class="header-inner">
       <div class="header-brand">
-        <a href="/" class="brand-link" title="All projects">
+        <a href={`${BASE}/`} class="brand-link" title="All projects">
           <span class="brand-sub">reddy.world /</span>
           <span class="brand-main">portfolio</span>
         </a>
@@ -48,7 +49,7 @@ const canonical = new URL(Astro.url.pathname, SITE).href;
 
       <nav class="portfolio-nav" aria-label="Portfolios">
         {portfolios.map((p) => (
-          <a href={`/${p.id}/`} class:list={['tab-btn', { active: active === p.id }]} aria-current={active === p.id ? 'page' : undefined}>
+          <a href={`${BASE}/${p.id}/`} class:list={['tab-btn', { active: active === p.id }]} aria-current={active === p.id ? 'page' : undefined}>
             <span class="tab-icon" aria-hidden="true">{p.icon}</span>
             <span class="tab-title">{p.name}</span>
             <span class="tab-count">{p.posts.length}</span>

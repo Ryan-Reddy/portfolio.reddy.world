@@ -38,8 +38,8 @@ const jsonLd = {
   />
 
   <script is:inline>
-    // Old links used #rmaekers etc.; send them to the real page
+    // Old links used #rmaekers etc.; send them to the real page (base is /portfolio)
     const key = location.hash.slice(1);
-    if (['rmaekers', 'rrproductions', 'maup', 'vaguelyvulgar'].includes(key)) location.replace(`/${key}/`);
+    if (['rmaekers', 'rrproductions', 'maup', 'vaguelyvulgar'].includes(key)) location.replace(`/portfolio/${key}/`);
   </script>
 </Base>

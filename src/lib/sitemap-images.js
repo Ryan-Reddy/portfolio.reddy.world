@@ -2,7 +2,7 @@
 import { readFileSync } from 'node:fs';
 
 const KEYS = ['rmaekers', 'rrproductions', 'maup', 'vaguelyvulgar'];
-const SITE = 'https://portfolio.reddy.world';
+const SITE = 'https://reddy.world/portfolio';
 
 const byPath = new Map();
 for (const key of KEYS) {

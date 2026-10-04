@@ -1,6 +1,6 @@
 ---
 import Base from '../../layouts/Base.astro';
-import { portfolios, formatDate, isoDate, photos, altFor, contactUrl, titleCase, PERSON_ID, SITE } from '../../lib/portfolios.js';
+import { portfolios, formatDate, isoDate, photos, altFor, contactUrl, titleCase, PERSON_ID, SITE, BASE } from '../../lib/portfolios.js';
 
 export function getStaticPaths() {
   return portfolios.flatMap((p) =>
@@ -51,7 +51,7 @@ const jsonLd = [
 <Base title={`${name} — ${p.name} | Ryan Reddy`} description={description} image={imgs[0]?.url} active={p.id} jsonLd={jsonLd} type="article">
   <article class="project-page">
     <nav class="breadcrumb" aria-label="Breadcrumb">
-      <a href="/">Portfolio</a> <span aria-hidden="true">/</span> <a href={`/${p.id}/`}>{p.name}</a>
+      <a href={`${BASE}/`}>Portfolio</a> <span aria-hidden="true">/</span> <a href={`${BASE}/${p.id}/`}>{p.name}</a>
     </nav>
 
     <header class="modal-header">
