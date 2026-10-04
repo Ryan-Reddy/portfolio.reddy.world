@@ -9,7 +9,7 @@ import re
 import json
 import html
 import xml.etree.ElementTree as ET
-from urllib.parse import urlparse
+from urllib.parse import unquote, urlparse
 
 ROOT = os.path.join(os.path.dirname(__file__), '..')
 OLD = os.path.join(ROOT, 'src', '.zOld')
@@ -169,6 +169,9 @@ def parse_wxr(key, src):
         old_link = (it.find('link').text or '').strip()
         title = html.unescape(it.find('title').text or '').strip() or '(Untitled)'
         slug = text(it, 'wp:post_name') or f'project-{post_id}'
+        # Percent-encoded slugs (e.g. str%e2%96%b3f) don't match the decoded route param
+        if '%' in slug:
+            slug = re.sub(r'[^A-Za-z0-9_-]+', '-', unquote(slug)).strip('-') or f'project-{post_id}'
 
         posts.append({
             'id': post_id,
