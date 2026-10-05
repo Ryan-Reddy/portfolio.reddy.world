@@ -13,8 +13,14 @@ Visual archive and physical production portfolios of **Ryan Reddy** and friends:
 
 - Extracted from original WordPress WXR XML exports via `scripts/parse_wordpress.py`.
 - Normalized into structured JSON under `src/data/`.
-- Built with modern HTML5, CSS custom properties, and Vite.
-- Real-time client-side search, category filtering, responsive cards, project detail dialogs, and fullscreen image lightbox with keyboard navigation.
+- Built with Astro as one static page per project, under the base `/portfolio`.
+- Client-side search and category filtering, and a fullscreen image lightbox with keyboard navigation.
+
+## Where it is published
+
+- **The pages:** https://reddy.world/portfolio/. The reddy.world deploy builds this repo and publishes `dist/` under `/portfolio`.
+- **The old host:** portfolio.reddy.world is the Firebase Hosting site `portfolio-reddy` (project `getreddyworld`). It only redirects: every old WordPress URL 301s to its page on reddy.world/portfolio. [deploy-redirects.yml](.github/workflows/deploy-redirects.yml) deploys it on every push to `main`.
+- `npm run build` writes `firebase.json` ([firebase-config.mjs](scripts/firebase-config.mjs)) and fails if a redirect target is missing from the build.
 
 ---
 
