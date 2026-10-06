@@ -764,9 +764,39 @@ body {
 }
 
 .project-video {
+  display: block;
   width: 100%;
   border-radius: var(--border-radius);
-  margin-bottom: 1rem;
+  background: #000;
+}
+
+.video-embed {
+  margin: 0 0 1.5rem;
+}
+
+.video-frame {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  background: #000;
+}
+
+.video-frame iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.video-embed figcaption {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.video-embed figcaption a {
+  color: var(--gold);
 }
 
 .card[hidden] {
