@@ -1,8 +1,13 @@
 """Extract the WordPress WXR exports into src/data/*.json.
 
 Keeps everything the static site needs for SEO: the old URL (for redirects),
-attachment ids and alt text per image, and the original post text.
-Exports live in src/.zOld/ (git-ignored: they contain contact-form messages).
+the featured image, the publish and edit dates, and the original post text with
+its pictures where the post placed them: each [gallery], [caption] or <img>
+becomes a <figure data-media="i,j"> placeholder pointing into the post's media
+list, which holds only placed pictures (uploads never placed in the post are
+mostly near-duplicate burst shots). A post without any placed picture keeps
+its uploads. Exports live in src/.zOld/ (git-ignored: they contain
+contact-form messages).
 """
 import os
 import re
@@ -64,20 +69,40 @@ def base_url(url):
     return url.split('?')[0]
 
 
+SHORTCODES = r'\[/?(gallery|caption|wpvideo|embed|audio|video)[^\]]*\]'
+IMG_TAG = r'(?:<a\b[^>]*>\s*)?(<img\b[^>]*>)(?:\s*</a>)?'
+
+
 def clean_html(raw_html):
-    """Post text without images, galleries or shortcodes; the gallery shows the media."""
+    """Tidy post html: no leftover shortcodes, no empty paragraphs."""
     if not raw_html:
         return ''
-    t = re.sub(r'\[/?(gallery|caption|wpvideo|embed|audio|video)[^\]]*\]', '', raw_html)
-    t = re.sub(r'<a[^>]*>\s*(<img[^>]*>)\s*</a>', r'\1', t, flags=re.I)
-    t = re.sub(r'<img[^>]*>', '', t, flags=re.I)
+    t = re.sub(SHORTCODES, '', raw_html)
     t = re.sub(r'<p>\s*(&nbsp;)?\s*</p>', '', t)
     return t.strip()
 
 
 def plain(raw_html):
-    t = re.sub(r'<[^>]+>', ' ', clean_html(raw_html))
+    t = re.sub(r'\[caption[^\]]*\][\s\S]*?\[/caption\]', ' ', raw_html or '')
+    t = re.sub(IMG_TAG, ' ', clean_html(t), flags=re.I)
+    t = re.sub(r'<[^>]+>', ' ', t)
     return ' '.join(html.unescape(t).split())
+
+
+def size(metadata):
+    """Width and height from a serialized _wp_attachment_metadata (the full-size entry comes first)."""
+    m = re.search(r's:5:"width";i:(\d+);s:6:"height";i:(\d+);', metadata or '')
+    return (int(m.group(1)), int(m.group(2))) if m else (None, None)
+
+
+def utc(gmt):
+    """'2016-07-20 14:17:41' (WordPress GMT) as ISO 8601 UTC, or None for drafts' zero date"""
+    return gmt.replace(' ', 'T') + 'Z' if gmt and not gmt.startswith('0000') else None
+
+
+def attr(tag, name):
+    m = re.search(rf'\b{name}=["\']([^"\']*)["\']', tag, re.I)
+    return html.unescape(m.group(1)).strip() if m else ''
 
 
 def media_in_content(content):
@@ -103,12 +128,16 @@ def parse_wxr(key, src):
     for it in items:
         if text(it, 'wp:post_type') != 'attachment':
             continue
+        width, height = size(meta(it, '_wp_attachment_metadata'))
         att = {
             'id': text(it, 'wp:post_id'),
             'url': base_url(text(it, 'wp:attachment_url')),
             'title': html.unescape(it.find('title').text or ''),
             'alt': html.unescape(meta(it, '_wp_attachment_image_alt')),
+            'caption': plain(text(it, 'excerpt:encoded')),
             'description': plain(text(it, 'content:encoded')),
+            'width': width,
+            'height': height,
         }
         if not att['url']:
             continue
@@ -120,10 +149,68 @@ def parse_wxr(key, src):
 
     def media_for(url):
         url = base_url(url)
-        att = by_url.get(url, {'id': '', 'url': url, 'title': '', 'alt': '', 'description': ''})
+        # WordPress size variants like photo-300x200.jpg point at the original upload
+        original = re.sub(r'-\d+x\d+(\.\w+)$', r'\1', url)
+        if original in by_url:
+            url = original
+        att = by_url.get(url, {'id': '', 'url': url, 'title': '', 'alt': '', 'caption': '',
+                               'description': '', 'width': None, 'height': None})
         lower = url.lower()
         kind = 'video' if lower.endswith(VIDEO_EXT) else 'image' if lower.endswith(IMAGE_EXT) else 'file'
         return {**att, 'type': kind}
+
+    def own(url):
+        """Pictures hosted by the post's own WordPress site; third-party hotlinks are left out"""
+        return urlparse(url).netloc.endswith('wordpress.com')
+
+    def place(raw):
+        """Post html with each placed picture swapped for a <figure data-media> placeholder"""
+        media, index = [], {}
+
+        def ref(att, caption='', alt=''):
+            if att['url'] not in index:
+                index[att['url']] = len(media)
+                media.append(att)
+            m = media[index[att['url']]]
+            if caption and not m['caption']:
+                m['caption'] = caption
+            if alt and not m['alt']:
+                m['alt'] = alt
+            return index[att['url']]
+
+        def img(tag, caption=''):
+            wp_id = re.search(r'wp-image-(\d+)', tag)
+            src = attr(tag, 'src')
+            att = by_id.get(wp_id.group(1)) if wp_id else None
+            if att is None:
+                if not src or not own(src):
+                    return None
+                att = media_for(src)
+            if not att['url'].lower().endswith(IMAGE_EXT):
+                return None
+            return ref({**att, 'type': 'image'}, caption, attr(tag, 'alt'))
+
+        def figure(indices):
+            indices = [i for i in indices if i is not None]
+            return f'\n\n<figure data-media="{",".join(map(str, indices))}"></figure>\n\n' if indices else ''
+
+        def captioned(m):
+            tag = re.search(IMG_TAG, m.group(1), re.I)
+            if not tag:
+                return ''
+            caption = plain(re.sub(IMG_TAG, '', m.group(1), flags=re.I))
+            return figure([img(tag.group(1), caption)])
+
+        def gallery(m):
+            ids = [g.strip() for g in m.group(1).split(',')]
+            return figure([ref({**by_id[g], 'type': 'image'}) for g in ids if g in by_id])
+
+        t = re.sub(r'\[caption[^\]]*\]([\s\S]*?)\[/caption\]', captioned, raw)
+        t = re.sub(r'\[gallery[^\]]*ids=["\']([^"\']+)["\'][^\]]*\]', gallery, t)
+        t = re.sub(IMG_TAG, lambda m: figure([img(m.group(1))]), t, flags=re.I)
+        # a placeholder alone in a paragraph is a block of its own
+        t = re.sub(r'<p\b[^>]*>\s*(<figure data-media="[^"]*"></figure>)\s*</p>', r'\1', t)
+        return clean_html(re.sub(r'\n{3,}', '\n\n', t)), media
 
     posts = []
     for it in items:
@@ -149,22 +236,23 @@ def parse_wxr(key, src):
             elif cat.attrib.get('domain') == 'post_tag' and val:
                 tags.append(val)
 
-        urls = media_in_content(raw) + [a['url'] for a in by_parent.get(post_id, [])]
-        for m in re.finditer(r'\[gallery[^\]]*ids=["\']([^"\']+)["\']', raw):
-            urls += [by_id[g]['url'] for g in m.group(1).split(',') if g.strip() in by_id]
-        media, seen = [], set()
+        content, media = place(raw)
+        # videos and documents linked in the text; uploads only when the post placed no picture
+        urls = [u for u in media_in_content(raw) if not base_url(u).lower().endswith(IMAGE_EXT)]
+        if not media:
+            urls += [a['url'] for a in by_parent.get(post_id, [])]
+        seen = {m['url'] for m in media}
         for u in urls:
-            b = base_url(u)
-            # skip WordPress size variants like photo-300x200.jpg when the original is known
-            original = re.sub(r'-\d+x\d+(\.\w+)$', r'\1', b)
-            if original in by_url:
-                b = original
-            if b not in seen:
-                seen.add(b)
-                media.append(media_for(b))
+            m = media_for(u)
+            if m['url'] not in seen and (m['type'] != 'image' or own(m['url'])):
+                seen.add(m['url'])
+                media.append(m)
 
         featured_id = meta(it, '_thumbnail_id')
-        featured = by_id[featured_id]['url'] if featured_id in by_id else (media[0]['url'] if media else None)
+        images = [m for m in media if m['type'] == 'image']
+        featured = by_id.get(featured_id) or (images[0] if images else None)
+        if featured is not None and not featured['url'].lower().endswith(IMAGE_EXT):
+            featured = images[0] if images else None
 
         old_link = (it.find('link').text or '').strip()
         title = html.unescape(it.find('title').text or '').strip() or '(Untitled)'
@@ -179,13 +267,15 @@ def parse_wxr(key, src):
             'title': title,
             'slug': slug,
             'date': text(it, 'wp:post_date'),
+            'published': utc(text(it, 'wp:post_date_gmt')),
+            'modified': utc(text(it, 'wp:post_modified_gmt')),
             'status': status,
             'old_url': old_link,
             'excerpt': excerpt,
-            'content': clean_html(raw),
+            'content': content,
             'categories': sorted(set(categories)),
             'tags': sorted(set(tags)),
-            'featured_image': featured,
+            'featured': featured and {k: featured[k] for k in ('id', 'url', 'alt', 'caption', 'width', 'height')},
             'media': media,
         })
 
@@ -220,9 +310,12 @@ def main():
             continue
         with open(os.path.join(out_dir, f'{key}.json'), 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
-        n_media = sum(len(p['media']) for p in data['posts'])
-        n_alt = sum(1 for p in data['posts'] for m in p['media'] if m['alt'])
-        print(f"  {key}.json: {data['post_count']} posts/pages, {n_media} media used, {n_alt} with alt text")
+        imgs = [m for p in data['posts'] for m in p['media'] if m['type'] == 'image']
+        n_inline = sum(len(re.findall(r'data-media="([^"]*)"', p['content'])) for p in data['posts'])
+        print(f"  {key}.json: {data['post_count']} posts/pages, {len(imgs)} pictures"
+              f" ({n_inline} placements, {sum(1 for m in imgs if m['caption'])} captioned,"
+              f" {sum(1 for m in imgs if m['width'])} with size),"
+              f" {sum(1 for p in data['posts'] if p['featured'])} with a featured image")
 
 
 if __name__ == '__main__':

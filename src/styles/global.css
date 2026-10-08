@@ -706,8 +706,42 @@ body {
   color: var(--gold);
 }
 
-.modal-body-text img {
-  display: none;
+/* Pictures where the post placed them: a grid for a gallery, full width for one */
+.post-figure {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0 2rem;
+}
+
+.post-figure.single {
+  grid-template-columns: 1fr;
+}
+
+.post-figure.single .gallery-thumb {
+  aspect-ratio: auto;
+}
+
+.post-figure.single .gallery-thumb img {
+  height: auto;
+}
+
+.gallery-item figcaption,
+.post-hero figcaption {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--fg-muted);
+}
+
+.post-hero {
+  margin: 0 0 2rem;
+}
+
+.post-hero img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--border-radius-lg);
 }
 
 .cta {
