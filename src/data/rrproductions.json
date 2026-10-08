@@ -602,7 +602,8 @@
           "description": "",
           "width": 1024,
           "height": 768,
-          "type": "image"
+          "type": "image",
+          "duplicate_of": 1
         },
         {
           "id": "1484",
@@ -767,7 +768,7 @@
       "featured": {
         "id": "903",
         "url": "https://ryanvanlil.wordpress.com/wp-content/uploads/2016/03/dsc01981.jpg",
-        "alt": "",
+        "alt": "dsc01981.jpg",
         "caption": "",
         "width": 2000,
         "height": 1331
@@ -2520,8 +2521,8 @@
       "categories": [],
       "tags": [],
       "featured": {
-        "id": "580",
-        "url": "https://ryanvanlil.wordpress.com/wp-content/uploads/2016/01/capture.png",
+        "id": "586",
+        "url": "https://ryanvanlil.wordpress.com/wp-content/uploads/2016/01/capture1.png",
         "alt": "",
         "caption": "",
         "width": 1366,
@@ -2988,7 +2989,8 @@
           "description": "",
           "width": 2592,
           "height": 1936,
-          "type": "image"
+          "type": "image",
+          "duplicate_of": 20
         },
         {
           "id": "480",
@@ -3085,7 +3087,7 @@
       "featured": {
         "id": "448",
         "url": "https://ryanvanlil.wordpress.com/wp-content/uploads/2015/11/image2.jpg",
-        "alt": "",
+        "alt": "image",
         "caption": "",
         "width": 960,
         "height": 704
@@ -3287,9 +3289,9 @@
         "wood"
       ],
       "featured": {
-        "id": "411",
-        "url": "https://ryanvanlil.wordpress.com/wp-content/uploads/2015/10/chair-exploded-view21.png",
-        "alt": "",
+        "id": "368",
+        "url": "https://ryanvanlil.wordpress.com/wp-content/uploads/2015/10/chair-exploded-view2.png",
+        "alt": "chair exploded view2",
         "caption": "",
         "width": 1366,
         "height": 768
@@ -3557,7 +3559,7 @@
       "featured": {
         "id": "400",
         "url": "https://ryanvanlil.wordpress.com/wp-content/uploads/2015/10/img_5264.jpg",
-        "alt": "",
+        "alt": "IMG_5264",
         "caption": "",
         "width": 2592,
         "height": 1936
@@ -4154,9 +4156,9 @@
       "categories": [],
       "tags": [],
       "featured": {
-        "id": "168",
-        "url": "https://ryanvanlil.wordpress.com/wp-content/uploads/2015/05/icrender2.jpg",
-        "alt": "",
+        "id": "169",
+        "url": "https://ryanvanlil.wordpress.com/wp-content/uploads/2015/05/icrender.png",
+        "alt": "ICRender",
         "caption": "",
         "width": 1280,
         "height": 920
@@ -4336,7 +4338,8 @@
           "description": "",
           "width": 1936,
           "height": 2592,
-          "type": "image"
+          "type": "image",
+          "duplicate_of": 9
         },
         {
           "id": "105",
@@ -4347,7 +4350,8 @@
           "description": "",
           "width": 1936,
           "height": 2592,
-          "type": "image"
+          "type": "image",
+          "duplicate_of": 14
         },
         {
           "id": "111",
@@ -4369,7 +4373,8 @@
           "description": "",
           "width": 1936,
           "height": 1936,
-          "type": "image"
+          "type": "image",
+          "duplicate_of": 6
         },
         {
           "id": "190",
@@ -5257,8 +5262,8 @@
         "jewlery"
       ],
       "featured": {
-        "id": "1366",
-        "url": "https://ryanvanlil.wordpress.com/wp-content/uploads/2016/04/img_2424-1.jpg",
+        "id": "1360",
+        "url": "https://ryanvanlil.wordpress.com/wp-content/uploads/2016/04/img_2424.jpg",
         "alt": "",
         "caption": "",
         "width": 704,

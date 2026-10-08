@@ -515,11 +515,6 @@ body {
   margin: 0 0 1.25rem;
 }
 
-.modal-gallery-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 1rem;
-}
 
 .gallery-thumb {
   padding: 0;
@@ -706,24 +701,36 @@ body {
   color: var(--gold);
 }
 
-/* Pictures where the post placed them: a grid for a gallery, full width for one */
+/*
+ * Pictures where the post placed them, in justified rows like WordPress's tiled
+ * galleries: a picture's width follows its aspect ratio (--r), so every picture
+ * in a row has the same height and none is cropped.
+ */
 .post-figure {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
   margin: 1.5rem 0 2rem;
 }
 
-.post-figure.single {
-  grid-template-columns: 1fr;
+.post-row {
+  display: flex;
+  gap: 0.75rem;
 }
 
-.post-figure.single .gallery-thumb {
-  aspect-ratio: auto;
+.post-row .gallery-item {
+  flex: var(--r, 1) 1 0;
+  min-width: 0;
 }
 
-.post-figure.single .gallery-thumb img {
-  height: auto;
+.post-figure .gallery-thumb {
+  aspect-ratio: var(--r, 1);
+}
+
+/* one picture alone: as wide as fits, never taller than most of the screen */
+.post-figure.single .gallery-item {
+  width: min(100%, calc(var(--r, 1) * 75vh));
+  margin: 0 auto;
 }
 
 .gallery-item figcaption,

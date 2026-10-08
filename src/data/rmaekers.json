@@ -26,7 +26,7 @@
       "featured": {
         "id": "2223",
         "url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2019/02/fullsizeoutput_34a4.jpeg",
-        "alt": "",
+        "alt": "fullsizeoutput_34a4",
         "caption": "",
         "width": 2048,
         "height": 1536
@@ -68,9 +68,9 @@
         "festival"
       ],
       "featured": {
-        "id": "2161",
-        "url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2018/11/20af1101-8636-4b14-a969-a98932f410f81.jpg",
-        "alt": "Our baywatch style beach house at zeezout festival.",
+        "id": "2155",
+        "url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2018/11/20af1101-8636-4b14-a969-a98932f410f8.jpg",
+        "alt": "20af1101-8636-4b14-a969-a98932f410f8",
         "caption": "",
         "width": 1600,
         "height": 1200
@@ -154,7 +154,7 @@
       "featured": {
         "id": "1727",
         "url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2018/05/freegifmaker-me_2casa.gif",
-        "alt": "",
+        "alt": "freegifmaker.me_2casA",
         "caption": "",
         "width": 444,
         "height": 250
@@ -239,10 +239,10 @@
         "reddymaekers; amsterdam; club"
       ],
       "featured": {
-        "id": "2186",
-        "url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2018/11/37361205_1804058373047016_1841647410628001792_o.jpg",
-        "alt": "",
-        "caption": "",
+        "id": "2180",
+        "url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2018/09/37361205_1804058373047016_1841647410628001792_o.jpg",
+        "alt": "The Tropical stage by night at Vunzige deuntjes festival",
+        "caption": "The Tropical stage by night at Vunzige Deuntjes festival",
         "width": 2048,
         "height": 1365
       },
@@ -555,10 +555,10 @@
         "reddymaekers; amsterdam; club"
       ],
       "featured": {
-        "id": "2174",
-        "url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2018/09/20638380_1775594185814359_3765159238971531740_n1.jpg",
-        "alt": "",
-        "caption": "",
+        "id": "2169",
+        "url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2018/09/20638380_1775594185814359_3765159238971531740_n.jpg",
+        "alt": "Tables and benches we made for the terrace of cafe Carter",
+        "caption": "Tables and benches we made for the terrace of cafe Carter",
         "width": 960,
         "height": 960
       },
@@ -1075,9 +1075,9 @@
         "reddymaekers; amsterdam; club"
       ],
       "featured": {
-        "id": "1900",
-        "url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2018/08/img_49231.jpg",
-        "alt": "ReddyMaekers mainstage Vunzige Deuntjes at By the Creek Festival 2018 decorated by us!",
+        "id": "1903",
+        "url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2018/08/img_49232.jpg",
+        "alt": "IMG_4923.jpg",
         "caption": "",
         "width": 4032,
         "height": 3024
@@ -1165,7 +1165,7 @@
       "featured": {
         "id": "1737",
         "url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2018/05/30076502_1988026691448876_2927627756822855680_n.jpg",
-        "alt": "",
+        "alt": "30076502_1988026691448876_2927627756822855680_n",
         "caption": "",
         "width": 1080,
         "height": 1080
@@ -1368,8 +1368,8 @@
       "categories": [],
       "tags": [],
       "featured": {
-        "id": "1651",
-        "url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2018/05/29132980_2035497993364977_2277704148721860608_o.jpg",
+        "id": "1659",
+        "url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2018/05/29132980_2035497993364977_2277704148721860608_o1.jpg",
         "alt": "",
         "caption": "",
         "width": 1440,
@@ -1550,7 +1550,8 @@
           "description": "",
           "width": 2048,
           "height": 1365,
-          "type": "image"
+          "type": "image",
+          "duplicate_of": 1
         },
         {
           "id": "1639",
@@ -2104,7 +2105,7 @@
       "featured": {
         "id": "1714",
         "url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2018/05/img_33531.jpg",
-        "alt": "",
+        "alt": "IMG_3353",
         "caption": "",
         "width": 2048,
         "height": 1365
@@ -2308,8 +2309,8 @@
         "amsterdam"
       ],
       "featured": {
-        "id": "1624",
-        "url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2017/11/24132041_1977482032499907_7702690605709516841_o1.jpg",
+        "id": "1605",
+        "url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2017/11/24132041_1977482032499907_7702690605709516841_o.jpg",
         "alt": "",
         "caption": "",
         "width": 2048,
@@ -3364,7 +3365,7 @@
       "featured": {
         "id": "1429",
         "url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2017/11/22196305_948443241963280_5072510056967875194_n.jpg",
-        "alt": "",
+        "alt": "22196305_948443241963280_5072510056967875194_n",
         "caption": "",
         "width": 960,
         "height": 706
@@ -3665,7 +3666,7 @@
       "featured": {
         "id": "1361",
         "url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2017/10/img_0926.jpg",
-        "alt": "",
+        "alt": "IMG_0926",
         "caption": "",
         "width": 3264,
         "height": 2448
@@ -3717,8 +3718,8 @@
         "cantina"
       ],
       "featured": {
-        "id": "1504",
-        "url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2017/10/22904859_1963253897256054_1921471867800636341_o.jpg",
+        "id": "1328",
+        "url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2017/10/21992852_1947125645535546_6233587974104320709_o.jpg",
         "alt": "",
         "caption": "",
         "width": 2048,
@@ -4041,7 +4042,7 @@
       "featured": {
         "id": "1248",
         "url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2017/08/img_9555-e1503572925786.jpg",
-        "alt": "",
+        "alt": "IMG_9555",
         "caption": "",
         "width": 640,
         "height": 741
@@ -4116,8 +4117,8 @@
         "signing REDDYMAEKERS"
       ],
       "featured": {
-        "id": "1096",
-        "url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2017/04/img_7205.jpg",
+        "id": "1106",
+        "url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2017/04/img_72051.jpg",
         "alt": "",
         "caption": "",
         "width": 2448,
@@ -4177,7 +4178,8 @@
           "description": "",
           "width": 2448,
           "height": 3264,
-          "type": "image"
+          "type": "image",
+          "duplicate_of": 1
         },
         {
           "id": "1104",
@@ -4542,7 +4544,8 @@
           "description": "",
           "width": 2592,
           "height": 1936,
-          "type": "image"
+          "type": "image",
+          "duplicate_of": 4
         },
         {
           "id": "641",
@@ -4641,7 +4644,8 @@
           "description": "",
           "width": 1936,
           "height": 2592,
-          "type": "image"
+          "type": "image",
+          "duplicate_of": 13
         },
         {
           "id": "650",
@@ -4663,7 +4667,8 @@
           "description": "",
           "width": 2592,
           "height": 1936,
-          "type": "image"
+          "type": "image",
+          "duplicate_of": 15
         },
         {
           "id": "652",
@@ -4795,7 +4800,8 @@
           "description": "",
           "width": 2592,
           "height": 1936,
-          "type": "image"
+          "type": "image",
+          "duplicate_of": 27
         },
         {
           "id": "664",
@@ -4850,7 +4856,8 @@
           "description": "",
           "width": 2592,
           "height": 1936,
-          "type": "image"
+          "type": "image",
+          "duplicate_of": 32
         },
         {
           "id": "669",
@@ -4995,7 +5002,7 @@
       "featured": {
         "id": "726",
         "url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2017/01/15078613_546338192237566_7706534174851817771_n.jpg",
-        "alt": "",
+        "alt": "15078613_546338192237566_7706534174851817771_n",
         "caption": "",
         "width": 960,
         "height": 960
@@ -5299,7 +5306,7 @@
       "featured": {
         "id": "562",
         "url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2016/09/13651909_1802481889963177_1253024062_n.jpg",
-        "alt": "",
+        "alt": "13651909_1802481889963177_1253024062_n",
         "caption": "",
         "width": 1080,
         "height": 810
@@ -5335,8 +5342,8 @@
       ],
       "tags": [],
       "featured": {
-        "id": "715",
-        "url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2017/01/13567083_846193032178815_798744470159918398_n.jpg",
+        "id": "714",
+        "url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2017/01/13567083_846193032178815_798744470159918398_n-1.jpg",
         "alt": "",
         "caption": "",
         "width": 960,
@@ -5363,7 +5370,8 @@
           "description": "",
           "width": 960,
           "height": 540,
-          "type": "image"
+          "type": "image",
+          "duplicate_of": 0
         },
         {
           "id": "716",
@@ -6557,7 +6565,8 @@
           "description": "",
           "width": 1440,
           "height": 960,
-          "type": "image"
+          "type": "image",
+          "duplicate_of": 0
         },
         {
           "id": "1014",
@@ -6668,7 +6677,7 @@
       "featured": {
         "id": "608",
         "url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2016/07/10527813_347901905362711_7545693963594211860_n2.jpg",
-        "alt": "",
+        "alt": "10527813_347901905362711_7545693963594211860_n",
         "caption": "",
         "width": 640,
         "height": 960
@@ -7539,7 +7548,7 @@
       "featured": {
         "id": "1003",
         "url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2017/03/15803271_279278762475172_2947220444144467968_n.jpg",
-        "alt": "",
+        "alt": "15803271_279278762475172_2947220444144467968_n.jpg",
         "caption": "",
         "width": 750,
         "height": 750
@@ -7662,8 +7671,8 @@
       ],
       "tags": [],
       "featured": {
-        "id": "533",
-        "url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2016/07/10527813_347901905362711_7545693963594211860_n1.jpg",
+        "id": "508",
+        "url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2016/07/10527813_347901905362711_7545693963594211860_n.jpg",
         "alt": "",
         "caption": "",
         "width": 640,

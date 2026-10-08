@@ -36,8 +36,9 @@ export function formatDate(dateStr) {
   return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
 }
 
+/** The pictures a page shows: repeats of one photo (marked by the importer) once */
 export function photos(post) {
-  return post.media.filter((m) => m.type === 'image');
+  return post.media.filter((m) => m.type === 'image' && m.duplicate_of === undefined);
 }
 
 /** Alt text: the original WordPress alt when written, else its caption, else the project title. */

@@ -8,16 +8,33 @@ list, which holds only placed pictures (uploads never placed in the post are
 mostly near-duplicate burst shots). A post without any placed picture keeps
 its uploads. Exports live in src/.zOld/ (git-ignored: they contain
 contact-form messages).
+
+The same photo was often uploaded twice under another file name, so pictures
+are also compared by a perceptual hash (needs Pillow and the network once;
+hashes are cached in src/.zOld/image-hashes.json). See mark_duplicates().
 """
+import io
 import os
 import re
 import json
 import html
+import urllib.request
 import xml.etree.ElementTree as ET
+from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import unquote, urlparse
+
+from PIL import Image
 
 ROOT = os.path.join(os.path.dirname(__file__), '..')
 OLD = os.path.join(ROOT, 'src', '.zOld')
+HASHES = os.path.join(OLD, 'image-hashes.json')
+
+# Hamming distance between two 64-bit difference hashes, measured on these
+# exports: 0-4 is one photo saved twice (re-upload, re-encode, png and jpg),
+# 6-10 is a burst shot a moment later, and different photos sit far above.
+SAME_PHOTO = 4      # the featured image counts as shown when the text shows this close a picture
+EXACT_REPEAT = 1    # a picture placed twice in the text is shown once
+BURST_SHOT = 10     # uploads the post never placed: keep one picture per burst
 
 SOURCES = {
     'rmaekers': {
@@ -237,6 +254,7 @@ def parse_wxr(key, src):
                 tags.append(val)
 
         content, media = place(raw)
+        placed = len(media)
         # videos and documents linked in the text; uploads only when the post placed no picture
         urls = [u for u in media_in_content(raw) if not base_url(u).lower().endswith(IMAGE_EXT)]
         if not media:
@@ -277,6 +295,7 @@ def parse_wxr(key, src):
             'tags': sorted(set(tags)),
             'featured': featured and {k: featured[k] for k in ('id', 'url', 'alt', 'caption', 'width', 'height')},
             'media': media,
+            '_placed': placed,
         })
 
     posts.sort(key=lambda p: p.get('date', ''), reverse=True)
@@ -301,19 +320,88 @@ def parse_wxr(key, src):
     }
 
 
+def dhash(url):
+    """64-bit difference hash of a picture, from WordPress.com's 72px-wide resize"""
+    req = urllib.request.Request(f'{url}?w=72', headers={'User-Agent': 'Mozilla/5.0'})
+    with urllib.request.urlopen(req, timeout=30) as r:
+        img = Image.open(io.BytesIO(r.read())).convert('RGBA').convert('L').resize((9, 8), Image.LANCZOS)
+    px = img.tobytes()
+    bits = 0
+    for y in range(8):
+        for x in range(8):
+            bits = (bits << 1) | (px[y * 9 + x] > px[y * 9 + x + 1])
+    return f'{bits:016x}'
+
+
+def load_hashes(urls):
+    """Cached hashes for these urls, fetching the missing ones; a picture that fails stays unhashed"""
+    try:
+        with open(HASHES, encoding='utf-8') as f:
+            cache = json.load(f)
+    except FileNotFoundError:
+        cache = {}
+    missing = sorted(set(urls) - set(cache))
+
+    def work(url):
+        try:
+            return url, dhash(url)
+        except Exception as e:  # a dead picture is no reason to stop the import
+            print(f"  no hash for {url}: {e}")
+            return url, None
+
+    if missing:
+        print(f"Hashing {len(missing)} pictures...")
+        with ThreadPoolExecutor(16) as ex:
+            cache.update({u: h for u, h in ex.map(work, missing) if h})
+        with open(HASHES, 'w', encoding='utf-8') as f:
+            json.dump(cache, f, indent=0, sort_keys=True)
+    return cache
+
+
+def distance(a, b):
+    return bin(int(a, 16) ^ int(b, 16)).count('1')
+
+
+def mark_duplicates(post, hashes):
+    """Mark repeats with duplicate_of (the index of the picture they repeat), so pages
+    skip them; and point the featured image at the in-text picture when it is that photo."""
+    placed = post.pop('_placed')
+    kept = []
+    for i, m in enumerate(post['media']):
+        h = hashes.get(m['url']) if m['type'] == 'image' else None
+        if h is None:
+            continue
+        limit = EXACT_REPEAT if i < placed else BURST_SHOT
+        match = next((k for k, kh in kept if distance(h, kh) <= limit), None)
+        if match is None:
+            kept.append((i, h))
+        else:
+            m['duplicate_of'] = match
+    f = post['featured']
+    fh = f and hashes.get(f['url'])
+    shown = fh and next((k for k, kh in kept if distance(fh, kh) <= SAME_PHOTO), None)
+    if shown is not None:
+        m = post['media'][shown]
+        post['featured'] = {k: m[k] for k in ('id', 'url', 'alt', 'caption', 'width', 'height')}
+
+
 def main():
     out_dir = os.path.join(ROOT, 'src', 'data')
     os.makedirs(out_dir, exist_ok=True)
-    for key, src in SOURCES.items():
-        data = parse_wxr(key, src)
-        if not data:
-            continue
-        with open(os.path.join(out_dir, f'{key}.json'), 'w', encoding='utf-8') as f:
+    portfolios = [d for d in (parse_wxr(key, src) for key, src in SOURCES.items()) if d]
+    posts = [p for d in portfolios for p in d['posts']]
+    hashes = load_hashes([m['url'] for p in posts for m in p['media'] if m['type'] == 'image']
+                         + [p['featured']['url'] for p in posts if p['featured']])
+    for post in posts:
+        mark_duplicates(post, hashes)
+    for data in portfolios:
+        with open(os.path.join(out_dir, f"{data['id']}.json"), 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
-        imgs = [m for p in data['posts'] for m in p['media'] if m['type'] == 'image']
+        imgs = [m for p in data['posts'] for m in p['media'] if m['type'] == 'image' and 'duplicate_of' not in m]
+        n_dup = sum(1 for p in data['posts'] for m in p['media'] if 'duplicate_of' in m)
         n_inline = sum(len(re.findall(r'data-media="([^"]*)"', p['content'])) for p in data['posts'])
-        print(f"  {key}.json: {data['post_count']} posts/pages, {len(imgs)} pictures"
-              f" ({n_inline} placements, {sum(1 for m in imgs if m['caption'])} captioned,"
+        print(f"  {data['id']}.json: {data['post_count']} posts/pages, {len(imgs)} pictures"
+              f" ({n_dup} repeats left out, {n_inline} placements, {sum(1 for m in imgs if m['caption'])} captioned,"
               f" {sum(1 for m in imgs if m['width'])} with size),"
               f" {sum(1 for p in data['posts'] if p['featured'])} with a featured image")
 

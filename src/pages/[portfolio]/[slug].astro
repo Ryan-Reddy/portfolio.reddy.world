@@ -29,8 +29,10 @@ function item(i, sizes) {
   const alt = altFor(post, m, i);
   const dims = pic.width ? ` width="${pic.width}" height="${pic.height}"` : '';
   const set = pic.srcset ? ` srcset="${pic.srcset}" sizes="${sizes}"` : '';
+  // the picture's aspect ratio sizes it in its row (see .post-figure in global.css)
+  const ratio = pic.width && pic.height ? ` style="--r: ${(pic.width / pic.height).toFixed(3)}"` : '';
   return (
-    `<figure class="gallery-item">` +
+    `<figure class="gallery-item"${ratio}>` +
     `<button type="button" class="gallery-thumb" data-index="${slide++}" data-full="${esc(m.url)}" aria-label="Enlarge: ${esc(alt)}">` +
     `<img src="${esc(pic.src)}"${set}${dims} alt="${esc(alt)}" loading="lazy" decoding="async"></button>` +
     (m.caption ? `<figcaption>${esc(m.caption)}</figcaption>` : '') +
@@ -38,16 +40,27 @@ function item(i, sizes) {
     `</figure>`
   );
 }
+// Rows of up to three, balanced (5 pictures: 3 + 2); each row fills the width at one height
+function rows(ids) {
+  const count = Math.ceil(ids.length / 3);
+  const out = [];
+  for (let r = 0, start = 0; r < count; r++) {
+    const size = Math.ceil((ids.length - start) / (count - r));
+    out.push(`<div class="post-row">${ids.slice(start, start + size).map((i) => item(i, '(max-width: 600px) 50vw, 420px')).join('')}</div>`);
+    start += size;
+  }
+  return out.join('');
+}
 function figure(indices) {
-  const ids = indices.filter((i) => post.media[i]?.type === 'image');
+  const ids = indices.filter((i) => post.media[i]?.type === 'image' && post.media[i].duplicate_of === undefined);
   if (ids.length === 1) return `<div class="post-figure single">${item(ids[0], '(max-width: 900px) 100vw, 852px')}</div>`;
-  return ids.length ? `<div class="post-figure">${ids.map((i) => item(i, '(max-width: 600px) 50vw, 280px')).join('')}</div>` : '';
+  return ids.length ? `<div class="post-figure">${rows(ids)}</div>` : '';
 }
 
 const body = renderContent(post.content, { title: name, figure });
 // Pictures the text did not place: only posts that never placed any keep their uploads here
 const rest = imgs.filter((m) => !shown.has(m.url));
-const restHtml = rest.map((m) => item(post.media.indexOf(m), '(max-width: 600px) 50vw, 280px')).join('');
+const restHtml = rows(rest.map((m) => post.media.indexOf(m)));
 
 // The chosen featured image heads the page, unless the post already shows it
 const featured = post.featured;
@@ -67,10 +80,15 @@ const imageObject = (m, i) => ({
   copyrightNotice: '© Ryan Reddy',
 });
 
+// WordPress posts are blog posts; its pages (about, contact, press kit) are plain web pages
+const isPost = post.type === 'post';
+// the featured image first: search engines take the first as the post's picture
+const images = [featured, ...imgs.filter((m) => m.url !== featured?.url)].filter(Boolean);
+
 const jsonLd = [
   {
     '@context': 'https://schema.org',
-    '@type': 'BlogPosting',
+    '@type': isPost ? 'BlogPosting' : 'WebPage',
     '@id': `${pageUrl}#post`,
     mainEntityOfPage: pageUrl,
     url: pageUrl,
@@ -84,10 +102,7 @@ const jsonLd = [
     keywords: [...post.categories, ...post.tags].join(', ') || undefined,
     wordCount: words,
     isPartOf: { '@type': 'Blog', name: `${p.name}: ${p.subtitle}`, url: `${SITE}/${p.id}/` },
-    image: [
-      ...(featured && !imgs.some((m) => m.url === featured.url) ? [imageObject(featured, 0)] : []),
-      ...imgs.map((m) => imageObject(m, post.media.indexOf(m))),
-    ],
+    image: images.length ? images.map((m) => imageObject(m, Math.max(0, post.media.indexOf(m)))) : undefined,
   },
   {
     '@context': 'https://schema.org',
@@ -99,9 +114,9 @@ const jsonLd = [
     ],
   },
 ];
-const article = { published: post.published, modified: post.modified, section: post.categories[0] || p.name, tags: post.tags };
+const article = isPost ? { published: post.published, modified: post.modified, section: post.categories[0] || p.name, tags: post.tags } : undefined;
 ---
-<Base title={`${name} — ${p.name} | Ryan Reddy`} description={description} image={shareImage} active={p.id} jsonLd={jsonLd} type="article" article={article}>
+<Base title={`${name} — ${p.name} | Ryan Reddy`} description={description} image={shareImage} active={p.id} jsonLd={jsonLd} type={isPost ? 'article' : 'website'} article={article}>
   <article class="project-page">
     <nav class="breadcrumb" aria-label="Breadcrumb">
       <a href={`${BASE}/`}>Portfolio</a> <span aria-hidden="true">/</span> <a href={`${BASE}/${p.id}/`}>{p.name}</a>
@@ -130,7 +145,7 @@ const article = { published: post.published, modified: post.modified, section: p
     {rest.length > 0 && (
       <section class="modal-gallery-section" aria-labelledby="gallery-title">
         <h2 class="modal-gallery-title" id="gallery-title">Photographs ({rest.length})</h2>
-        <div class="modal-gallery-grid" set:html={restHtml} />
+        <div class="post-figure" set:html={restHtml} />
       </section>
     )}
 

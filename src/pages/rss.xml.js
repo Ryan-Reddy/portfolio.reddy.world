@@ -1,11 +1,12 @@
 import { allPosts, portfolioById, SITE } from '../lib/portfolios.js';
 
-// RSS 2.0 feed of every project, newest first, with its featured image
+// RSS 2.0 feed of every project post (not the about or contact pages), newest first, with its featured image
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const rfc822 = (iso) => new Date(iso).toUTCString();
+const posts = allPosts.filter((post) => post.type === 'post');
 
 export function GET() {
-  const items = allPosts.map((post) => {
+  const items = posts.map((post) => {
     const url = `${SITE}${post.path}`;
     const image = post.featured
       ? `<media:content url="${esc(post.featured.url)}" medium="image"${post.featured.width ? ` width="${post.featured.width}" height="${post.featured.height}"` : ''}/>`
@@ -32,7 +33,7 @@ export function GET() {
     `<atom:link href="${SITE}/rss.xml" rel="self" type="application/rss+xml"/>`,
     '<description>Festival decors, stage builds, art, inventions and furniture by Ryan Reddy, Amsterdam.</description>',
     '<language>en</language>',
-    `<lastBuildDate>${rfc822(allPosts.reduce((a, p) => (p.modified > a ? p.modified : a), ''))}</lastBuildDate>`,
+    `<lastBuildDate>${rfc822(posts.reduce((a, p) => (p.modified > a ? p.modified : a), ''))}</lastBuildDate>`,
     ...items,
     '</channel>',
     '</rss>',
