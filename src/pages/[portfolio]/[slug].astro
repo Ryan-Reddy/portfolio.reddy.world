@@ -1,5 +1,6 @@
 ---
 import Base from '../../layouts/Base.astro';
+import { renderContent } from '../../lib/content.js';
 import { portfolios, formatDate, isoDate, photos, altFor, contactUrl, titleCase, PERSON_ID, SITE, BASE } from '../../lib/portfolios.js';
 
 export function getStaticPaths() {
@@ -13,6 +14,7 @@ const imgs = photos(post);
 const videos = post.media.filter((m) => m.type === 'video');
 const files = post.media.filter((m) => m.type === 'file');
 const name = titleCase(post.title);
+const body = renderContent(post.content, { title: name });
 const description = (post.excerpt || `${name}, a ${p.name} project by Ryan Reddy.`).slice(0, 300);
 const pageUrl = `${SITE}${post.path}`;
 
@@ -65,7 +67,7 @@ const jsonLd = [
       )}
     </header>
 
-    {post.content && <div class="modal-body-text" set:html={post.content} />}
+    {body && <div class="modal-body-text" set:html={body} />}
 
     <aside class="cta">
       <p>Want something like this for your event, venue or home?</p>
@@ -91,7 +93,12 @@ const jsonLd = [
     {videos.length > 0 && (
       <section class="modal-gallery-section" aria-label="Videos">
         <h2 class="modal-gallery-title">Video</h2>
-        {videos.map((v) => <video class="project-video" src={v.url} controls preload="none"></video>)}
+        {videos.map((v) => (
+          <figure class="video-embed">
+            <video class="project-video" src={v.url} controls playsinline preload="metadata"></video>
+            <figcaption>Does not play? <a href={v.url} download>Download the video</a></figcaption>
+          </figure>
+        ))}
       </section>
     )}
 
