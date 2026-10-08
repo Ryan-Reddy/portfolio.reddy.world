@@ -1,0 +1,12 @@
+{
+  "projects": {
+    "default": "getreddyworld"
+  },
+  "targets": {
+    "getreddyworld": {
+      "hosting": {
+        "portfolio": ["portfolio-reddy"]
+      }
+    }
+  }
+}

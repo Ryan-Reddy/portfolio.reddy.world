@@ -1,0 +1,55 @@
+# On every push to main:
+# - portfolio.reddy.world is redirect-only: every old URL 301s to reddy.world/portfolio.
+# - the pages themselves are published by the reddy.world deploy, which builds this repo;
+#   starting it here makes a merge go live. Secret REDDY_WORLD_DEPLOY_TOKEN: a fine-grained
+#   token for Ryan-Reddy/reddy.world with Actions: read and write.
+name: Deploy
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: redirects-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - run: npm ci
+
+      # Builds the pages, writes firebase.json, and fails if a redirect target is missing
+      - run: npm run build
+
+      - name: Deploy portfolio.reddy.world (redirects only)
+        if: github.event_name != 'pull_request'
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_GETREDDYWORLD }}'
+          channelId: live
+          projectId: getreddyworld
+          target: portfolio
+
+  publish_on_reddy_world:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Start the reddy.world deploy
+        env:
+          GH_TOKEN: ${{ secrets.REDDY_WORLD_DEPLOY_TOKEN }}
+        run: gh workflow run firebase-hosting-merge.yml -R Ryan-Reddy/reddy.world --ref master

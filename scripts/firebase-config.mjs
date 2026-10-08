@@ -6,7 +6,8 @@
 // - portfolio.reddy.world receives the WordPress.com "Site Redirect" traffic (#6),
 //   which keeps the old path, e.g. /2016/07/20/wicked-jazz-sounds-festival/.
 // - reddymaekers.com was the custom domain of the ReddyMaekers WordPress site
-//   until 2021; its old paths still have backlinks.
+//   until 2021; its old paths still have backlinks. It has no Hosting site or DNS
+//   record yet, so .firebaserc maps only the portfolio target and CI deploys only that.
 //
 // Run `npm run build` first: the check at the end confirms each target exists in dist/.
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
