@@ -1,12 +1,10 @@
 ---
-import { formatDate, photos, altFor, portfolioById } from '../lib/portfolios.js';
-
-import { BASE } from '../lib/portfolios.js';
+import { formatDate, photos, altFor, picture, portfolioById, BASE } from '../lib/portfolios.js';
 
 const { post, showPortfolio = false } = Astro.props;
 const imgs = photos(post);
-const cover = post.featured_image && imgs.find((m) => m.url === post.featured_image) ? post.featured_image : imgs[0]?.url;
-const coverAlt = imgs.length ? altFor(post, imgs.find((m) => m.url === cover) ?? imgs[0], 0) : '';
+// the post's chosen featured image, as on WordPress
+const cover = post.featured && { ...picture(post.featured), alt: altFor(post, post.featured, 0) };
 const search = [post.title, post.excerpt, ...post.categories, ...post.tags].join(' ').toLowerCase();
 ---
 <a
@@ -18,7 +16,7 @@ const search = [post.title, post.excerpt, ...post.categories, ...post.tags].join
 >
   <div class="card-media">
     {cover
-      ? <img class="card-img" src={cover} alt={coverAlt} loading="lazy" decoding="async">
+      ? <img class="card-img" src={cover.src} srcset={cover.srcset} sizes="(max-width: 700px) 100vw, 400px" width={cover.width} height={cover.height} alt={cover.alt} loading="lazy" decoding="async">
       : <div class="card-placeholder" aria-hidden="true">🎨</div>}
     {imgs.length > 0 && (
       <span class="card-photo-count" aria-label={`${imgs.length} photos`}>

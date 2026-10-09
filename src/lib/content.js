@@ -127,7 +127,11 @@ function tokenise(html) {
   return out;
 }
 
-export function renderContent(raw, { title = '' } = {}) {
+/**
+ * The importer swaps each picture the post placed for <figure data-media="i,j">,
+ * indexes into the post's media; `figure(indices)` renders them where they stood.
+ */
+export function renderContent(raw, { title = '', figure = () => '' } = {}) {
   if (!raw) return '';
   const html = raw
     .replace(/\r\n?/g, '\n')
@@ -147,5 +151,7 @@ export function renderContent(raw, { title = '' } = {}) {
       parts.push(p ? paragraph(p[1].trim(), ctx, false) : t.block);
     }
   }
-  return parts.join('\n');
+  return parts
+    .join('\n')
+    .replace(/<figure data-media="([\d,]+)"><\/figure>/g, (_, ids) => figure(ids.split(',').map(Number)));
 }

@@ -1,7 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
 import { renderContent } from '../../lib/content.js';
-import { portfolios, formatDate, isoDate, photos, altFor, contactUrl, titleCase, PERSON_ID, SITE, BASE } from '../../lib/portfolios.js';
+import { portfolios, formatDate, photos, altFor, picture, contactUrl, titleCase, PERSON_ID, ORIGIN, SITE, BASE } from '../../lib/portfolios.js';
 
 export function getStaticPaths() {
   return portfolios.flatMap((p) =>
@@ -14,30 +14,95 @@ const imgs = photos(post);
 const videos = post.media.filter((m) => m.type === 'video');
 const files = post.media.filter((m) => m.type === 'file');
 const name = titleCase(post.title);
-const body = renderContent(post.content, { title: name });
 const description = (post.excerpt || `${name}, a ${p.name} project by Ryan Reddy.`).slice(0, 300);
 const pageUrl = `${SITE}${post.path}`;
+
+const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+
+// Every picture is one lightbox slide, numbered in reading order: the ones placed in the text first
+let slide = 0;
+const shown = new Set();
+function item(i, sizes) {
+  const m = post.media[i];
+  shown.add(m.url);
+  const pic = picture(m);
+  const alt = altFor(post, m, i);
+  const dims = pic.width ? ` width="${pic.width}" height="${pic.height}"` : '';
+  const set = pic.srcset ? ` srcset="${pic.srcset}" sizes="${sizes}"` : '';
+  // the picture's aspect ratio sizes it in its row (see .post-figure in global.css)
+  const ratio = pic.width && pic.height ? ` style="--r: ${(pic.width / pic.height).toFixed(3)}"` : '';
+  return (
+    `<figure class="gallery-item"${ratio}>` +
+    `<button type="button" class="gallery-thumb" data-index="${slide++}" data-full="${esc(m.url)}" aria-label="Enlarge: ${esc(alt)}">` +
+    `<img src="${esc(pic.src)}"${set}${dims} alt="${esc(alt)}" loading="lazy" decoding="async"></button>` +
+    (m.caption ? `<figcaption>${esc(m.caption)}</figcaption>` : '') +
+    `<a class="ask-link" href="${esc(contactUrl({ project: post.slug, image: m.id || String(i + 1) }))}">Ask about this picture</a>` +
+    `</figure>`
+  );
+}
+// Rows of up to three, balanced (5 pictures: 3 + 2); each row fills the width at one height
+function rows(ids) {
+  const count = Math.ceil(ids.length / 3);
+  const out = [];
+  for (let r = 0, start = 0; r < count; r++) {
+    const size = Math.ceil((ids.length - start) / (count - r));
+    out.push(`<div class="post-row">${ids.slice(start, start + size).map((i) => item(i, '(max-width: 600px) 50vw, 420px')).join('')}</div>`);
+    start += size;
+  }
+  return out.join('');
+}
+function figure(indices) {
+  const ids = indices.filter((i) => post.media[i]?.type === 'image' && post.media[i].duplicate_of === undefined);
+  if (ids.length === 1) return `<div class="post-figure single">${item(ids[0], '(max-width: 900px) 100vw, 852px')}</div>`;
+  return ids.length ? `<div class="post-figure">${rows(ids)}</div>` : '';
+}
+
+const body = renderContent(post.content, { title: name, figure });
+// Pictures the text did not place: only posts that never placed any keep their uploads here
+const rest = imgs.filter((m) => !shown.has(m.url));
+const restHtml = rows(rest.map((m) => post.media.indexOf(m)));
+
+// The chosen featured image heads the page, unless the post already shows it
+const featured = post.featured;
+const hero = featured && !shown.has(featured.url) ? { ...picture(featured), alt: altFor(post, featured, 0) } : null;
+
+const shareImage = featured && { url: featured.url, width: featured.width, height: featured.height, alt: altFor(post, featured, 0) };
+const words = body.replace(/<[^>]+>/g, ' ').split(/\s+/).filter(Boolean).length;
+const imageObject = (m, i) => ({
+  '@type': 'ImageObject',
+  contentUrl: m.url,
+  url: m.url,
+  width: m.width || undefined,
+  height: m.height || undefined,
+  caption: altFor(post, m, i),
+  creator: { '@id': PERSON_ID },
+  creditText: 'Ryan Reddy',
+  copyrightNotice: '© Ryan Reddy',
+});
+
+// WordPress posts are blog posts; its pages (about, contact, press kit) are plain web pages
+const isPost = post.type === 'post';
+// the featured image first: search engines take the first as the post's picture
+const images = [featured, ...imgs.filter((m) => m.url !== featured?.url)].filter(Boolean);
 
 const jsonLd = [
   {
     '@context': 'https://schema.org',
-    '@type': 'CreativeWork',
-    '@id': `${pageUrl}#work`,
+    '@type': isPost ? 'BlogPosting' : 'WebPage',
+    '@id': `${pageUrl}#post`,
+    mainEntityOfPage: pageUrl,
     url: pageUrl,
-    name,
+    headline: name.slice(0, 110),
     description,
-    dateCreated: isoDate(post.date),
-    creator: { '@id': PERSON_ID },
+    datePublished: post.published,
+    dateModified: post.modified,
+    author: { '@type': 'Person', '@id': PERSON_ID, name: 'Ryan Reddy', url: `${ORIGIN}/` },
+    publisher: { '@type': 'Person', '@id': PERSON_ID, name: 'Ryan Reddy', url: `${ORIGIN}/` },
+    articleSection: post.categories[0] || p.name,
     keywords: [...post.categories, ...post.tags].join(', ') || undefined,
-    isPartOf: { '@type': 'CollectionPage', name: p.name, url: `${SITE}/${p.id}/` },
-    image: imgs.map((m, i) => ({
-      '@type': 'ImageObject',
-      contentUrl: m.url,
-      caption: altFor(post, m, i),
-      creator: { '@id': PERSON_ID },
-      creditText: 'Ryan Reddy',
-      copyrightNotice: '© Ryan Reddy',
-    })),
+    wordCount: words,
+    isPartOf: { '@type': 'Blog', name: `${p.name}: ${p.subtitle}`, url: `${SITE}/${p.id}/` },
+    image: images.length ? images.map((m) => imageObject(m, Math.max(0, post.media.indexOf(m)))) : undefined,
   },
   {
     '@context': 'https://schema.org',
@@ -49,8 +114,9 @@ const jsonLd = [
     ],
   },
 ];
+const article = isPost ? { published: post.published, modified: post.modified, section: post.categories[0] || p.name, tags: post.tags } : undefined;
 ---
-<Base title={`${name} — ${p.name} | Ryan Reddy`} description={description} image={imgs[0]?.url} active={p.id} jsonLd={jsonLd} type="article">
+<Base title={`${name} — ${p.name} | Ryan Reddy`} description={description} image={shareImage} active={p.id} jsonLd={jsonLd} type={isPost ? 'article' : 'website'} article={article}>
   <article class="project-page">
     <nav class="breadcrumb" aria-label="Breadcrumb">
       <a href={`${BASE}/`}>Portfolio</a> <span aria-hidden="true">/</span> <a href={`${BASE}/${p.id}/`}>{p.name}</a>
@@ -58,7 +124,7 @@ const jsonLd = [
 
     <header class="modal-header">
       <div class="modal-meta">
-        <time datetime={isoDate(post.date)}>{formatDate(post.date)}</time>
+        <time datetime={post.published}>{formatDate(post.date)}</time>
         {post.categories.length > 0 && <span>&bull; {post.categories.join(', ')}</span>}
       </div>
       <h1 class="modal-title">{post.title.trim()}</h1>
@@ -67,28 +133,26 @@ const jsonLd = [
       )}
     </header>
 
+    {hero && (
+      <figure class="post-hero">
+        <img src={hero.src} srcset={hero.srcset} sizes="(max-width: 900px) 100vw, 852px" width={hero.width} height={hero.height} alt={hero.alt} fetchpriority="high" decoding="async">
+        {featured.caption && <figcaption>{featured.caption}</figcaption>}
+      </figure>
+    )}
+
     {body && <div class="modal-body-text" set:html={body} />}
+
+    {rest.length > 0 && (
+      <section class="modal-gallery-section" aria-labelledby="gallery-title">
+        <h2 class="modal-gallery-title" id="gallery-title">Photographs ({rest.length})</h2>
+        <div class="post-figure" set:html={restHtml} />
+      </section>
+    )}
 
     <aside class="cta">
       <p>Want something like this for your event, venue or home?</p>
       <a class="btn-cta" href={contactUrl({ project: post.slug })}>Plan a free 30-minute talk</a>
     </aside>
-
-    {imgs.length > 0 && (
-      <section class="modal-gallery-section" aria-labelledby="gallery-title">
-        <h2 class="modal-gallery-title" id="gallery-title">Gallery ({imgs.length} photographs)</h2>
-        <div class="modal-gallery-grid">
-          {imgs.map((m, i) => (
-            <figure class="gallery-item">
-              <button type="button" class="gallery-thumb" data-index={i} data-image={m.id} aria-label={`Enlarge: ${altFor(post, m, i)}`}>
-                <img src={m.url} alt={altFor(post, m, i)} loading={i < 4 ? 'eager' : 'lazy'} decoding="async">
-              </button>
-              <a class="ask-link" href={contactUrl({ project: post.slug, image: m.id || String(i + 1) })}>Ask about this picture</a>
-            </figure>
-          ))}
-        </div>
-      </section>
-    )}
 
     {videos.length > 0 && (
       <section class="modal-gallery-section" aria-label="Videos">
@@ -135,9 +199,9 @@ const jsonLd = [
 
   function show(i: number) {
     index = (i + items.length) % items.length;
-    const thumb = items[index].querySelector('img')!;
-    img.src = thumb.src;
-    img.alt = thumb.alt;
+    const thumb = items[index].querySelector<HTMLButtonElement>('.gallery-thumb')!;
+    img.src = thumb.dataset.full!;
+    img.alt = thumb.querySelector('img')!.alt;
     count.textContent = `${index + 1} / ${items.length}`;
     ask.href = items[index].querySelector<HTMLAnchorElement>('.ask-link')!.href;
   }

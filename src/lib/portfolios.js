@@ -36,18 +36,32 @@ export function formatDate(dateStr) {
   return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
 }
 
-export function isoDate(dateStr) {
-  return dateStr ? dateStr.replace(' ', 'T') : undefined;
-}
-
+/** The pictures a page shows: repeats of one photo (marked by the importer) once */
 export function photos(post) {
-  return post.media.filter((m) => m.type === 'image');
+  return post.media.filter((m) => m.type === 'image' && m.duplicate_of === undefined);
 }
 
-/** Alt text: the original WordPress alt when written, else the project title. */
+/** Alt text: the original WordPress alt when written, else its caption, else the project title. */
 export function altFor(post, media, index) {
   if (media.alt) return media.alt;
+  if (media.caption) return media.caption;
   return `${post.title.trim()} — photo ${index + 1}`;
+}
+
+const WIDTHS = [480, 800, 1200, 1600];
+
+/**
+ * src, srcset and size of a picture. Every upload is on WordPress.com, whose
+ * ?w= resizer serves the smaller versions; it never upscales, so no width
+ * above the upload's own is listed. GIFs stay whole to keep their animation.
+ */
+export function picture(media) {
+  const { url, width, height } = media;
+  if (/\.gif$/i.test(url)) return { src: url, width, height };
+  const widths = WIDTHS.filter((w) => !width || w < width);
+  const srcset = widths.map((w) => `${url}?w=${w} ${w}w`);
+  if (width) srcset.push(`${url} ${width}w`);
+  return { src: `${url}?w=${Math.min(width || 1200, 1200)}`, srcset: srcset.join(', '), width, height };
 }
 
 export function contactUrl({ project, image } = {}) {
