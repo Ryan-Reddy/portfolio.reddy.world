@@ -1,3 +1,4 @@
+import { absUrl } from '../lib/media-url.js';
 import { allPosts, portfolioById, SITE } from '../lib/portfolios.js';
 
 // RSS 2.0 feed of every project post (not the about or contact pages), newest first, with its featured image
@@ -9,7 +10,7 @@ export function GET() {
   const items = posts.map((post) => {
     const url = `${SITE}${post.path}`;
     const image = post.featured
-      ? `<media:content url="${esc(post.featured.url)}" medium="image"${post.featured.width ? ` width="${post.featured.width}" height="${post.featured.height}"` : ''}/>`
+      ? `<media:content url="${esc(absUrl(post.featured.url))}" medium="image"${post.featured.width ? ` width="${post.featured.width}" height="${post.featured.height}"` : ''}/>`
       : '';
     return [
       '<item>',
