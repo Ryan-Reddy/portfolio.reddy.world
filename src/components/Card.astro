@@ -11,6 +11,7 @@ const search = [post.title, post.excerpt, ...post.categories, ...post.tags].join
   class="card"
   href={`${BASE}${post.path}`}
   data-categories={post.categories.join('|')}
+  data-tags={post.tags.join('|')}
   data-portfolio={post.portfolio}
   data-search={search}
 >

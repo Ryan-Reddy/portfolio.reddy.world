@@ -345,7 +345,8 @@
         "ReddyMaekers",
         "amsterdam",
         "club",
-        "reddymaekers; amsterdam; club"
+        "reddymaekers; amsterdam; club",
+        "signage"
       ],
       "featured": null,
       "media": []
@@ -367,7 +368,8 @@
         "SIGNING"
       ],
       "tags": [
-        "signing; ade; reddymaekers"
+        "signing; ade; reddymaekers",
+        "signage"
       ],
       "featured": {
         "id": "2137",
@@ -960,7 +962,8 @@
         "jungle",
         "lights",
         "reddymaekers; amsterdam; club",
-        "scenography"
+        "scenography",
+        "signage"
       ],
       "featured": {
         "id": "1938",
@@ -1160,7 +1163,8 @@
         "amsterdam",
         "club",
         "reddymaekers; amsterdam; club",
-        "signing KOUPE CALORIE NEUTRALE IJSBAR REDDYMAEKERS"
+        "signing KOUPE CALORIE NEUTRALE IJSBAR REDDYMAEKERS",
+        "signage"
       ],
       "featured": {
         "id": "1737",
@@ -3523,7 +3527,8 @@
       "tags": [
         "LIGHTBOX: PEAK MYSTIQUE REDDYMAEKERS SIGNING",
         "ReddyMaekers",
-        "amsterdam"
+        "amsterdam",
+        "signage"
       ],
       "featured": {
         "id": "1462",
@@ -3576,7 +3581,8 @@
       "tags": [
         "ReddyMaekers",
         "SIGNING CANTINA: YUNG INTERNET SPECIAL REDDYMAEKERS",
-        "amsterdam"
+        "amsterdam",
+        "signage"
       ],
       "featured": {
         "id": "1376",
@@ -3919,7 +3925,8 @@
       "tags": [
         "ReddyMaekers",
         "SIGN: DEKMANTEL OPENING NIGHT REDDYMAEKERS",
-        "amsterdam"
+        "amsterdam",
+        "signage"
       ],
       "featured": {
         "id": "1276",
@@ -4114,7 +4121,8 @@
         "amsterdam",
         "brand",
         "branding",
-        "signing REDDYMAEKERS"
+        "signing REDDYMAEKERS",
+        "signage"
       ],
       "featured": {
         "id": "1106",
@@ -4427,7 +4435,8 @@
       "tags": [
         "Licht Box: Social Swingers Club REDDYMAEKERS",
         "ReddyMaekers",
-        "amsterdam"
+        "amsterdam",
+        "signage"
       ],
       "featured": {
         "id": "1011",
@@ -5236,7 +5245,9 @@
       "categories": [
         "SIGNING"
       ],
-      "tags": [],
+      "tags": [
+        "signage"
+      ],
       "featured": {
         "id": "685",
         "url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2016/12/15305931_359681744393715_7202556912968138752_n.jpg",
@@ -5302,7 +5313,9 @@
       "categories": [
         "Geen categorie"
       ],
-      "tags": [],
+      "tags": [
+        "signage"
+      ],
       "featured": {
         "id": "562",
         "url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2016/09/13651909_1802481889963177_1253024062_n.jpg",
@@ -5604,7 +5617,9 @@
       "categories": [
         "PROJECTS"
       ],
-      "tags": [],
+      "tags": [
+        "signage"
+      ],
       "featured": {
         "id": "490",
         "url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2016/07/13438896_1124897464218384_2931851263082902355_n.jpg",
@@ -6673,7 +6688,9 @@
       "categories": [
         "Geen categorie"
       ],
-      "tags": [],
+      "tags": [
+        "signage"
+      ],
       "featured": {
         "id": "608",
         "url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2016/07/10527813_347901905362711_7545693963594211860_n2.jpg",

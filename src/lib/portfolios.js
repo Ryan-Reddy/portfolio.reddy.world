@@ -30,6 +30,16 @@ export const allPosts = portfolios
   .flatMap((p) => p.posts)
   .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
 
+// Themes that cut across portfolios. Each one is a post tag and shows as a filter chip
+// wherever posts carry it; /portfolio/?tag=signage links straight to it.
+const THEME_TAGS = [{ tag: 'signage', label: 'Signage & lettering' }];
+
+export function tagChips(posts) {
+  return THEME_TAGS
+    .filter(({ tag }) => posts.some((post) => post.tags.includes(tag)))
+    .map(({ tag, label }) => ({ label, value: `tag:${tag}` }));
+}
+
 export function formatDate(dateStr) {
   if (!dateStr) return '';
   const d = new Date(dateStr.replace(' ', 'T'));
