@@ -2,7 +2,7 @@
 import Base from '../../layouts/Base.astro';
 import { renderContent } from '../../lib/content.js';
 import { absUrl } from '../../lib/media-url.js';
-import { portfolios, formatDate, photos, altFor, picture, contactUrl, titleCase, PERSON_ID, ORIGIN, SITE, BASE } from '../../lib/portfolios.js';
+import { portfolios, formatDate, photos, altFor, picture, contactUrl, titleCase, PERSON_ID, ORIGIN, SITE, BASE, themeByTag } from '../../lib/portfolios.js';
 
 export function getStaticPaths() {
   return portfolios.flatMap((p) =>
@@ -130,7 +130,9 @@ const article = isPost ? { published: post.published, modified: post.modified, s
       </div>
       <h1 class="modal-title">{post.title.trim()}</h1>
       {post.tags.length > 0 && (
-        <div class="card-tags">{post.tags.map((t) => <span class="card-tag">#{t}</span>)}</div>
+        <div class="card-tags">{post.tags.map((t) => themeByTag[t]
+          ? <a class="card-tag" href={`${BASE}/theme/${t}/`}>#{themeByTag[t].label}</a>
+          : <span class="card-tag">#{t}</span>)}</div>
       )}
     </header>
 

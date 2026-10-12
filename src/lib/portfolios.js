@@ -30,9 +30,26 @@ export const allPosts = portfolios
   .flatMap((p) => p.posts)
   .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
 
-// Themes that cut across portfolios. Each one is a post tag and shows as a filter chip
-// wherever posts carry it; /portfolio/?tag=signage links straight to it.
-const THEME_TAGS = [{ tag: 'signage', label: 'Signage & lettering' }];
+// Series and themes that cut across portfolios. Each one is a post tag: a filter chip
+// wherever posts carry it (?tag=<tag> links straight to it), and its own page at
+// /portfolio/theme/<tag>/ that lists every project across the portfolios.
+export const THEME_TAGS = [
+  { tag: 'signage', label: 'Signage & lettering',
+    description: 'Signs, lightboxes, giant letters, banners and logos: lettering work by Ryan Reddy and ReddyMaekers, from club signage to a typewriter puzzle.' },
+  { tag: 'cantina', label: 'Cantina',
+    description: 'Cantina, the weekly Friday night at the Marktkantine in Amsterdam: giant hanging disco letters, light mapping on origami faces and a new decor every week.' },
+  { tag: 'marktkantine', label: 'Marktkantine',
+    description: "Decors, light installations and signage for the Marktkantine, Amsterdam's largest underground club, grown from the Markanti club of the 80s." },
+  { tag: 'georgies', label: 'Georgies Wundergarten',
+    description: 'Georgies Wundergarten, year after year: the stage builds, the giant letters and the ball pit by Ryan Reddy and ReddyMaekers.' },
+  { tag: 'festivals', label: 'Festivals',
+    description: 'Festival decors and stage builds by ReddyMaekers: Dekmantel, Wicked Jazz Sounds, Oranjebloesem, By the Creek and more.' },
+  { tag: 'light', label: 'Light & lightboxes',
+    description: 'Light installations, lamps and lightboxes by Ryan Reddy, ReddyMaekers and Maup de Kleermaeker.' },
+  { tag: 'furniture', label: 'Furniture',
+    description: 'Furniture by Ryan Reddy: chairs, benches, swings and adaptive furniture across ReddyMaekers, RRproductions and Maup de Kleermaeker.' },
+];
+export const themeByTag = Object.fromEntries(THEME_TAGS.map((t) => [t.tag, t]));
 
 export function tagChips(posts) {
   return THEME_TAGS
