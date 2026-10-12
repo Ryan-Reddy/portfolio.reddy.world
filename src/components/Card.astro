@@ -1,5 +1,5 @@
 ---
-import { formatDate, photos, altFor, picture, portfolioById, BASE } from '../lib/portfolios.js';
+import { formatDate, photos, altFor, picture, portfolioById, BASE, KIND_LABEL } from '../lib/portfolios.js';
 
 const { post, showPortfolio = false } = Astro.props;
 const imgs = photos(post);
@@ -11,7 +11,7 @@ const search = [post.title, post.excerpt, ...post.categories, ...post.tags].join
   class="card"
   href={`${BASE}${post.path}`}
   data-categories={post.categories.join('|')}
-  data-tags={post.tags.join('|')}
+  data-kinds={post.kinds.join('|')}
   data-portfolio={post.portfolio}
   data-search={search}
 >
@@ -30,13 +30,12 @@ const search = [post.title, post.excerpt, ...post.categories, ...post.tags].join
     <div class="card-meta">
       <span>{formatDate(post.date)}</span>
       {showPortfolio && <span>&bull; {portfolioById[post.portfolio].name}</span>}
-      {!showPortfolio && post.categories[0] && <span>&bull; {post.categories[0]}</span>}
+      {!showPortfolio && post.kinds[0] && <span>&bull; {KIND_LABEL[post.kinds[0]]}</span>}
     </div>
     <h2 class="card-title">{post.title.trim()}</h2>
     <p class="card-excerpt">{post.excerpt}</p>
     <div class="card-tags">
-      {post.categories.map((c) => <span class="card-tag">{c}</span>)}
-      {post.tags.slice(0, 3).map((t) => <span class="card-tag">#{t}</span>)}
+      {post.kinds.slice(0, 3).map((k) => <span class="card-tag">{KIND_LABEL[k]}</span>)}
     </div>
   </div>
 </a>

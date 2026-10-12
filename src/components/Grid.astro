@@ -1,10 +1,14 @@
 ---
 import Card from './Card.astro';
 
-// chips: [{ label, value }]; filterBy: 'categories' | 'portfolio'.
-// A chip whose value starts with 'tag:' filters on a post tag instead (e.g. tag:signage),
-// and ?tag=<name> in the URL opens the page with that chip selected, so it can be linked.
-const { posts, chips = [], filterBy = 'categories', showPortfolio = false } = Astro.props;
+// rows: [{ name, key, label, chips: [{ label, value }] }]. Each row is one question
+// ("What", "Where", "Portfolio"); one chip per row can be on, and the rows combine.
+// key 'kinds' matches a card's kinds (a card can have several); key 'portfolio'
+// matches its portfolio. ?what=signage&where=clubs (one parameter per row name)
+// opens the page with those chips on, so a filtered view can be linked.
+// series: [{ label, href }] links to client and series pages, folded away under one line.
+const { posts, rows = [], series = [], showPortfolio = false } = Astro.props;
+const shown = rows.filter((r) => r.chips.length > 1);
 ---
 <div class="toolbar-wrapper">
   <div class="toolbar-inner">
@@ -15,11 +19,20 @@ const { posts, chips = [], filterBy = 'categories', showPortfolio = false } = As
       </svg>
       <input type="search" id="search-input" placeholder="Search projects, festivals, materials..." aria-label="Search projects">
     </div>
-    {chips.length > 1 && (
-      <div class="categories-scroll" role="toolbar" aria-label="Filters" data-filter-by={filterBy}>
-        <button type="button" class="chip-btn active" data-value="" aria-pressed="true">All</button>
-        {chips.map((c) => <button type="button" class="chip-btn" data-value={c.value} aria-pressed="false">{c.label}</button>)}
+    {shown.map((row) => (
+      <div class="filter-row">
+        <span class="filter-label" id={`filter-${row.name}`}>{row.label}</span>
+        <div class="categories-scroll" role="toolbar" aria-labelledby={`filter-${row.name}`} data-row={row.name} data-key={row.key}>
+          <button type="button" class="chip-btn active" data-value="" aria-pressed="true">All</button>
+          {row.chips.map((c) => <button type="button" class="chip-btn" data-value={c.value} aria-pressed="false">{c.label}</button>)}
+        </div>
       </div>
+    ))}
+    {series.length > 0 && (
+      <details class="series-links">
+        <summary>Clients &amp; series</summary>
+        <ul>{series.map((s) => <li><a href={s.href}>{s.label}</a></li>)}</ul>
+      </details>
     )}
   </div>
 </div>
@@ -36,55 +49,62 @@ const { posts, chips = [], filterBy = 'categories', showPortfolio = false } = As
 
 <script>
   const input = document.getElementById('search-input') as HTMLInputElement;
-  const bar = document.querySelector('.categories-scroll') as HTMLElement | null;
+  const bars = [...document.querySelectorAll<HTMLElement>('.categories-scroll')];
   const cards = [...document.querySelectorAll<HTMLElement>('#projects-grid .card')];
   const empty = document.getElementById('empty-state')!;
-  let chip = '';
+  const chosen = new Map<HTMLElement, string>();
+
+  function matches(card: HTMLElement, key: string, value: string) {
+    return key === 'portfolio'
+      ? card.dataset.portfolio === value
+      : (card.dataset.kinds ?? '').split('|').includes(value);
+  }
 
   function apply() {
     const q = input.value.trim().toLowerCase();
-    const by = bar?.dataset.filterBy;
     let shown = 0;
     for (const card of cards) {
-      const inChip = !chip || (chip.startsWith('tag:')
-        ? (card.dataset.tags ?? '').split('|').includes(chip.slice(4))
-        : by === 'portfolio'
-          ? card.dataset.portfolio === chip
-          : (card.dataset.categories ?? '').split('|').includes(chip));
-      const ok = inChip && (!q || (card.dataset.search ?? '').includes(q));
+      const ok = bars.every((bar) => !chosen.get(bar) || matches(card, bar.dataset.key!, chosen.get(bar)!))
+        && (!q || (card.dataset.search ?? '').includes(q));
       card.hidden = !ok;
       if (ok) shown++;
     }
     empty.hidden = shown > 0;
   }
 
-  bar?.addEventListener('click', (e) => {
-    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('.chip-btn');
-    if (!btn) return;
-    select(btn);
-  });
-
-  function select(btn: HTMLButtonElement) {
-    chip = btn.dataset.value ?? '';
-    bar!.querySelectorAll('.chip-btn').forEach((b) => {
+  function select(bar: HTMLElement, btn: HTMLButtonElement) {
+    chosen.set(bar, btn.dataset.value ?? '');
+    bar.querySelectorAll('.chip-btn').forEach((b) => {
       b.classList.toggle('active', b === btn);
       b.setAttribute('aria-pressed', String(b === btn));
     });
-    // keep a tag filter in the address, so the filtered view can be shared
+    // keep the choice in the address, so the filtered view can be shared
     const url = new URL(location.href);
-    if (chip.startsWith('tag:')) url.searchParams.set('tag', chip.slice(4));
-    else url.searchParams.delete('tag');
+    url.searchParams.delete('tag');
+    if (btn.dataset.value) url.searchParams.set(bar.dataset.row!, btn.dataset.value);
+    else url.searchParams.delete(bar.dataset.row!);
     history.replaceState(null, '', url);
     apply();
   }
 
-  const fromUrl = new URLSearchParams(location.search).get('tag');
-  const preset = fromUrl && bar?.querySelector<HTMLButtonElement>(`.chip-btn[data-value="tag:${CSS.escape(fromUrl)}"]`);
-  if (preset) select(preset);
+  for (const bar of bars) {
+    bar.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('.chip-btn');
+      if (btn) select(bar, btn);
+    });
+  }
   input.addEventListener('input', apply);
   document.getElementById('btn-reset-filters')!.addEventListener('click', () => {
     input.value = '';
-    (bar?.querySelector('.chip-btn') as HTMLButtonElement | null)?.click();
-    apply();
+    for (const bar of bars) select(bar, bar.querySelector<HTMLButtonElement>('.chip-btn')!);
   });
+
+  // ?what=signage&where=clubs; the older ?tag=signage still works
+  const params = new URLSearchParams(location.search);
+  if (params.has('tag') && !params.has('what')) params.set('what', params.get('tag')!);
+  for (const bar of bars) {
+    const value = params.get(bar.dataset.row!);
+    const btn = value && bar.querySelector<HTMLButtonElement>(`.chip-btn[data-value="${CSS.escape(value)}"]`);
+    if (btn) select(bar, btn);
+  }
 </script>

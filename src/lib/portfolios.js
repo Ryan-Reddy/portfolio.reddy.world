@@ -18,11 +18,52 @@ const EXTRA = {
   vaguelyvulgar: { icon: '📸', badge: 'Personal Photo & Modelling Portfolio' },
 };
 
+// Two plain questions for every project. What kind of work (one project can be several),
+// and where it was (club or festival). Built from the archive's own categories and tags,
+// the same sorting the contact page uses (reddy.world src/data/projectTypes.ts).
+const lower = (xs) => xs.map((x) => x.trim().toLowerCase());
+const hasCat = (post, ...names) => lower(post.categories).some((c) => names.includes(c));
+const hasTag = (post, ...names) => post.tags.some((t) => names.includes(t));
+export const WHAT = [
+  { id: 'signage', label: 'Signage & lettering', test: (p) => hasTag(p, 'signage') || hasCat(p, 'signing') },
+  { id: 'light', label: 'Light', test: (p) => hasTag(p, 'light') },
+  { id: 'furniture', label: 'Furniture', test: (p) => hasTag(p, 'furniture') || hasCat(p, 'furniture') },
+  { id: 'decor', label: 'Decor & stages', test: (p) => p.portfolio === 'rmaekers' && (hasCat(p, 'clubs', 'festivals', 'projects', 'film/foto set') || hasTag(p, 'festivals')) },
+  { id: 'rentals', label: 'Rentals', test: (p) => hasCat(p, 'rentals') },
+  { id: 'artists', label: 'With other artists', test: (p) => hasCat(p, 'collaborating artists') },
+  { id: 'design', label: '3D design & fashion', test: (p) => hasCat(p, '3d design', 'architecture', 'fashion', 'jewelry') },
+];
+export const WHERE = [
+  { id: 'clubs', label: 'Clubs', test: (p) => hasCat(p, 'clubs') },
+  { id: 'festivals', label: 'Festivals', test: (p) => hasTag(p, 'festivals') || hasCat(p, 'festivals') },
+];
+export const KIND_LABEL = Object.fromEntries([...WHAT, ...WHERE].map((k) => [k.id, k.label]));
+const kindsOf = (post) => [...WHAT, ...WHERE].filter((k) => k.test(post)).map((k) => k.id);
+
 export const portfolios = [rmaekers, rrproductions, maup, vaguelyvulgar].map((p) => ({
   ...p,
   ...EXTRA[p.id],
-  posts: p.posts.map((post) => ({ ...post, portfolio: p.id, path: `/${p.id}/${post.slug}/` })),
+  posts: p.posts.map((post) => {
+    const full = { ...post, portfolio: p.id, path: `/${p.id}/${post.slug}/` };
+    return { ...full, kinds: kindsOf(full) };
+  }),
 }));
+
+// The filter rows for a set of posts: only the chips that have projects behind them.
+export function filterRows(posts, { portfolioRow = false } = {}) {
+  const present = (list) => list.filter((k) => posts.some((post) => post.kinds.includes(k.id)))
+    .map((k) => ({ label: k.label, value: k.id }));
+  const rows = [
+    { name: 'what', key: 'kinds', label: 'What', chips: present(WHAT) },
+    { name: 'where', key: 'kinds', label: 'Where', chips: present(WHERE) },
+  ];
+  if (portfolioRow) {
+    const ids = [...new Set(posts.map((post) => post.portfolio))];
+    rows.push({ name: 'portfolio', key: 'portfolio', label: 'Portfolio',
+      chips: ids.map((id) => ({ label: portfolios.find((p) => p.id === id).name, value: id })) });
+  }
+  return rows;
+}
 
 export const portfolioById = Object.fromEntries(portfolios.map((p) => [p.id, p]));
 
@@ -30,9 +71,8 @@ export const allPosts = portfolios
   .flatMap((p) => p.posts)
   .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
 
-// Series and themes that cut across portfolios. Each one is a post tag: a filter chip
-// wherever posts carry it (?tag=<tag> links straight to it), and its own page at
-// /portfolio/theme/<tag>/ that lists every project across the portfolios.
+// Series and themes that cut across portfolios. Each one is a post tag with its own page
+// at /portfolio/theme/<tag>/ that lists every project across the portfolios.
 export const THEME_TAGS = [
   { tag: 'signage', label: 'Signage & lettering',
     description: 'Signs, lightboxes, giant letters, banners and logos: lettering work by Ryan Reddy and ReddyMaekers, from club signage to a typewriter puzzle.' },
@@ -51,10 +91,11 @@ export const THEME_TAGS = [
 ];
 export const themeByTag = Object.fromEntries(THEME_TAGS.map((t) => [t.tag, t]));
 
-export function tagChips(posts) {
-  return THEME_TAGS
-    .filter(({ tag }) => posts.some((post) => post.tags.includes(tag)))
-    .map(({ tag, label }) => ({ label, value: `tag:${tag}` }));
+// Clients and series (not kinds of work): links under "Clients & series" on a portfolio page.
+const SERIES_TAGS = ['marktkantine', 'cantina', 'georgies'];
+export function seriesLinks(posts) {
+  return THEME_TAGS.filter((t) => SERIES_TAGS.includes(t.tag) && posts.some((post) => post.tags.includes(t.tag)))
+    .map((t) => ({ label: t.label, href: `${BASE}/theme/${t.tag}/` }));
 }
 
 export function formatDate(dateStr) {

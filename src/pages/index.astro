@@ -1,7 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
 import Grid from '../components/Grid.astro';
-import { portfolios, allPosts, PERSON_ID, SITE, tagChips } from '../lib/portfolios.js';
+import { portfolios, allPosts, PERSON_ID, SITE, filterRows, seriesLinks } from '../lib/portfolios.js';
 
 const photoCount = allPosts.reduce((n, p) => n + p.media.filter((m) => m.type === 'image').length, 0);
 const description = 'Visual archive of Ryan Reddy: festival decors and stage builds (ReddyMaekers), fine art and inventions (RRproductions), adaptive furniture (Maup de Kleermaeker) and personal photography.';
@@ -32,8 +32,8 @@ const jsonLd = {
 
   <Grid
     posts={allPosts}
-    chips={[...portfolios.map((p) => ({ label: p.name, value: p.id })), ...tagChips(allPosts)]}
-    filterBy="portfolio"
+    rows={filterRows(allPosts, { portfolioRow: true })}
+    series={seriesLinks(allPosts)}
     showPortfolio
   />
 

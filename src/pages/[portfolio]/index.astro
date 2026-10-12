@@ -1,7 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
 import Grid from '../../components/Grid.astro';
-import { portfolios, PERSON_ID, SITE, tagChips } from '../../lib/portfolios.js';
+import { portfolios, PERSON_ID, SITE, filterRows, seriesLinks } from '../../lib/portfolios.js';
 
 export function getStaticPaths() {
   return portfolios.map((p) => ({ params: { portfolio: p.id }, props: { p } }));
@@ -9,7 +9,6 @@ export function getStaticPaths() {
 
 const { p } = Astro.props;
 const photoCount = p.posts.reduce((n, post) => n + post.media.filter((m) => m.type === 'image').length, 0);
-const categories = [...new Set(p.posts.flatMap((post) => post.categories))].sort();
 const description = `${p.name}: ${p.subtitle}. ${p.posts.length} projects and ${photoCount} photographs by Ryan Reddy.`;
 const jsonLd = {
   '@context': 'https://schema.org',
@@ -37,5 +36,5 @@ const jsonLd = {
     </div>
   </section>
 
-  <Grid posts={p.posts} chips={[...categories.map((c) => ({ label: c, value: c })), ...tagChips(p.posts)]} />
+  <Grid posts={p.posts} rows={filterRows(p.posts)} series={seriesLinks(p.posts)} />
 </Base>

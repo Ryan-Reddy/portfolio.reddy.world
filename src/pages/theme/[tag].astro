@@ -1,7 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
 import Grid from '../../components/Grid.astro';
-import { allPosts, portfolios, THEME_TAGS, PERSON_ID, SITE, BASE } from '../../lib/portfolios.js';
+import { allPosts, THEME_TAGS, PERSON_ID, SITE, BASE, filterRows } from '../../lib/portfolios.js';
 
 // One page per series or theme (signage, Cantina, festivals...), listing every project
 // that carries its tag across all portfolios. Indexable, so each theme has its own landing page.
@@ -12,7 +12,6 @@ export function getStaticPaths() {
 const { theme } = Astro.props;
 const posts = allPosts.filter((post) => post.tags.includes(theme.tag));
 const photoCount = posts.reduce((n, post) => n + post.media.filter((m) => m.type === 'image').length, 0);
-const inPortfolios = portfolios.filter((p) => posts.some((post) => post.portfolio === p.id));
 const others = THEME_TAGS.filter((t) => t.tag !== theme.tag);
 const jsonLd = {
   '@context': 'https://schema.org',
@@ -43,7 +42,7 @@ const jsonLd = {
     </div>
   </section>
 
-  <Grid posts={posts} chips={inPortfolios.map((p) => ({ label: p.name, value: p.id }))} filterBy="portfolio" showPortfolio />
+  <Grid posts={posts} rows={filterRows(posts, { portfolioRow: true })} showPortfolio />
 
   <nav class="theme-links" aria-label="Other series and themes">
     <h2>More series &amp; themes</h2>
