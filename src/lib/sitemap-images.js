@@ -1,5 +1,6 @@
 // Used by astro.config.mjs at build time, so it reads the JSON directly.
 import { readFileSync } from 'node:fs';
+import { absUrl } from './media-url.js';
 
 const KEYS = ['rmaekers', 'rrproductions', 'maup', 'vaguelyvulgar'];
 const SITE = 'https://reddy.world/portfolio';
@@ -11,7 +12,7 @@ for (const key of KEYS) {
     // the pictures the page shows, and its featured image
     const shown = post.media.filter((m) => m.type === 'image' && m.duplicate_of === undefined);
     if (post.featured && !shown.some((m) => m.url === post.featured.url)) shown.unshift(post.featured);
-    const img = shown.map((m, i) => ({ url: m.url, caption: m.alt || m.caption || `${post.title.trim()} — photo ${i + 1}` }));
+    const img = shown.map((m, i) => ({ url: absUrl(m.url), caption: m.alt || m.caption || `${post.title.trim()} — photo ${i + 1}` }));
     byPath.set(`${SITE}/${key}/${post.slug}/`, { img, lastmod: post.modified });
   }
 }

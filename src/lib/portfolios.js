@@ -2,6 +2,7 @@ import rmaekers from '../data/rmaekers.json';
 import rrproductions from '../data/rrproductions.json';
 import maup from '../data/maup.json';
 import vaguelyvulgar from '../data/vaguelyvulgar.json';
+import { hasResizer } from './media-url.js';
 
 export const ORIGIN = 'https://reddy.world';
 export const BASE = '/portfolio';
@@ -51,13 +52,14 @@ export function altFor(post, media, index) {
 const WIDTHS = [480, 800, 1200, 1600];
 
 /**
- * src, srcset and size of a picture. Every upload is on WordPress.com, whose
- * ?w= resizer serves the smaller versions; it never upscales, so no width
- * above the upload's own is listed. GIFs stay whole to keep their animation.
+ * src, srcset and size of a picture. WordPress.com uploads have a ?w= resizer
+ * for the smaller versions; it never upscales, so no width above the upload's
+ * own is listed. Self-hosted pictures (public/images) have no resizer: they are
+ * served whole. GIFs stay whole to keep their animation.
  */
 export function picture(media) {
   const { url, width, height } = media;
-  if (/\.gif$/i.test(url)) return { src: url, width, height };
+  if (/\.gif$/i.test(url) || !hasResizer(url)) return { src: url, width, height };
   const widths = WIDTHS.filter((w) => !width || w < width);
   const srcset = widths.map((w) => `${url}?w=${w} ${w}w`);
   if (width) srcset.push(`${url} ${width}w`);

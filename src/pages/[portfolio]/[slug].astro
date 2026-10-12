@@ -1,6 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
 import { renderContent } from '../../lib/content.js';
+import { absUrl } from '../../lib/media-url.js';
 import { portfolios, formatDate, photos, altFor, picture, contactUrl, titleCase, PERSON_ID, ORIGIN, SITE, BASE } from '../../lib/portfolios.js';
 
 export function getStaticPaths() {
@@ -66,12 +67,12 @@ const restHtml = rows(rest.map((m) => post.media.indexOf(m)));
 const featured = post.featured;
 const hero = featured && !shown.has(featured.url) ? { ...picture(featured), alt: altFor(post, featured, 0) } : null;
 
-const shareImage = featured && { url: featured.url, width: featured.width, height: featured.height, alt: altFor(post, featured, 0) };
+const shareImage = featured && { url: absUrl(featured.url), width: featured.width, height: featured.height, alt: altFor(post, featured, 0) };
 const words = body.replace(/<[^>]+>/g, ' ').split(/\s+/).filter(Boolean).length;
 const imageObject = (m, i) => ({
   '@type': 'ImageObject',
-  contentUrl: m.url,
-  url: m.url,
+  contentUrl: absUrl(m.url),
+  url: absUrl(m.url),
   width: m.width || undefined,
   height: m.height || undefined,
   caption: altFor(post, m, i),
