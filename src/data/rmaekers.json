@@ -22,7 +22,9 @@
       "categories": [
         "PROJECTS"
       ],
-      "tags": [],
+      "tags": [
+        "light"
+      ],
       "featured": {
         "id": "2223",
         "url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2019/02/fullsizeoutput_34a4.jpeg",
@@ -61,11 +63,11 @@
         "FESTIVALS"
       ],
       "tags": [
-        "Beach",
-        "ReddyMaekers",
+        "beach",
         "amsterdam",
         "decoration",
-        "festival"
+        "festival",
+        "festivals"
       ],
       "featured": {
         "id": "2155",
@@ -233,10 +235,9 @@
         "Geen categorie"
       ],
       "tags": [
-        "ReddyMaekers",
         "amsterdam",
         "club",
-        "reddymaekers; amsterdam; club"
+        "festivals"
       ],
       "featured": {
         "id": "2180",
@@ -342,11 +343,10 @@
         "Geen categorie"
       ],
       "tags": [
-        "ReddyMaekers",
         "amsterdam",
         "club",
-        "reddymaekers; amsterdam; club",
-        "signage"
+        "signage",
+        "light"
       ],
       "featured": null,
       "media": []
@@ -368,7 +368,8 @@
         "SIGNING"
       ],
       "tags": [
-        "signing; ade; reddymaekers",
+        "signing",
+        "ade",
         "signage"
       ],
       "featured": {
@@ -497,10 +498,9 @@
         "CLUBS"
       ],
       "tags": [
-        "ReddyMaekers",
         "amsterdam",
         "club",
-        "reddymaekers; amsterdam; club"
+        "light"
       ],
       "featured": {
         "id": "2126",
@@ -551,10 +551,9 @@
         "FURNITURE"
       ],
       "tags": [
-        "ReddyMaekers",
         "amsterdam",
         "club",
-        "reddymaekers; amsterdam; club"
+        "furniture"
       ],
       "featured": {
         "id": "2169",
@@ -836,8 +835,7 @@
         "RENTALS"
       ],
       "tags": [
-        "Decor",
-        "ReddyMaekers",
+        "decor",
         "amsterdam",
         "chillout",
         "club",
@@ -846,8 +844,8 @@
         "lounge",
         "outdoor",
         "party",
-        "reddymaekers; amsterdam; club",
-        "swings"
+        "swings",
+        "furniture"
       ],
       "featured": {
         "id": "2063",
@@ -954,18 +952,17 @@
         "PROJECTS"
       ],
       "tags": [
-        "Deco",
-        "Decor",
-        "ReddyMaekers",
-        "SIGNING",
+        "deco",
+        "decor",
+        "signing",
         "amsterdam",
         "brand",
         "club",
         "jungle",
         "lights",
-        "reddymaekers; amsterdam; club",
         "scenography",
-        "signage"
+        "signage",
+        "marktkantine"
       ],
       "featured": {
         "id": "1938",
@@ -1061,23 +1058,22 @@
         "PROJECTS"
       ],
       "tags": [
-        "Beach",
-        "By the creek",
-        "Cyan",
-        "Deco",
-        "Decor",
-        "Featured",
-        "Layher",
-        "Main",
-        "Mainstage",
-        "Miami",
-        "Pink",
-        "ReddyMaekers",
-        "Venice",
-        "Vunzige deuntjes",
+        "beach",
+        "by the creek",
+        "cyan",
+        "deco",
+        "decor",
+        "featured",
+        "layher",
+        "main",
+        "mainstage",
+        "miami",
+        "pink",
+        "venice",
+        "vunzige deuntjes",
         "amsterdam",
         "club",
-        "reddymaekers; amsterdam; club"
+        "festivals"
       ],
       "featured": {
         "id": "1903",
@@ -1161,11 +1157,8 @@
         "SIGNING"
       ],
       "tags": [
-        "ReddyMaekers",
         "amsterdam",
         "club",
-        "reddymaekers; amsterdam; club",
-        "signing KOUPE CALORIE NEUTRALE IJSBAR REDDYMAEKERS",
         "signage"
       ],
       "featured": {
@@ -1217,15 +1210,15 @@
         "CLUBS"
       ],
       "tags": [
-        "Decor",
-        "ReddyMaekers",
+        "decor",
         "amsterdam",
         "club",
         "lightinstallation",
         "lights",
         "nachtburgemeester",
-        "reddymaekers; amsterdam; club",
-        "techno"
+        "techno",
+        "marktkantine",
+        "light"
       ],
       "featured": {
         "id": "2066",
@@ -1266,15 +1259,13 @@
         "Geen categorie"
       ],
       "tags": [
-        "Bret",
-        "Deco",
-        "Decor",
-        "ReddyMaekers",
+        "bret",
+        "deco",
+        "decor",
         "amsterdam",
         "club",
         "flags",
         "kingsday",
-        "reddymaekers; amsterdam; club",
         "signage"
       ],
       "featured": {
@@ -1327,16 +1318,15 @@
         "PROJECTS"
       ],
       "tags": [
-        "ReddyMaekers",
-        "VBX",
+        "vbx",
         "amsterdam",
         "club",
         "custom",
         "event",
         "kingsday",
         "lightinstallation",
-        "reddymaekers; amsterdam; club",
-        "shelter"
+        "shelter",
+        "light"
       ],
       "featured": {
         "id": "2069",
@@ -1373,7 +1363,10 @@
       "excerpt": "VR 16 FEB CANTINA: EDU IMBERNON, TAPESH, MAN WITH NO SHADOW, AEDEN VR 02 MRT CANTINA: HENRIK SCHWARZ (LIVE), WILLIAM DJOKO, MAKOSSA VR 09 MRT CANTINA: JOEY DANIEL, LUUK VAN DIJK, PRUNK VR 20 APR CANTINA: DJ HELL,…",
       "content": "<h3 class=\"pre-header pink\">VR 16 FEB</h3>\n<h3 class=\"main-header page-title\">CANTINA: EDU IMBERNON, TAPESH, MAN WITH NO SHADOW, AEDEN</h3>\n\n<figure data-media=\"0,1,2,3,4,5,6\"></figure>\n\n<h3 class=\"pre-header pink\">VR 02 MRT</h3>\n<h3 class=\"main-header page-title\">CANTINA: HENRIK SCHWARZ (LIVE), WILLIAM DJOKO, MAKOSSA</h3>\n\n<figure data-media=\"7,8,9,10,11,12,13,14,15,16,17\"></figure>\n\n<figure data-media=\"18,19,20,21,22,23,24\"></figure>\n\n<h3 class=\"pre-header pink\">VR 09 MRT</h3>\n<h3 class=\"main-header page-title\">CANTINA: JOEY DANIEL, LUUK VAN DIJK, PRUNK</h3>\n\n<figure data-media=\"25,26,27,28,29,30,31,32\"></figure>\n\n<h3 class=\"pre-header pink\">VR 20 APR</h3>\n<h3 class=\"main-header page-title\">CANTINA: DJ HELL, B.TRAITS, AFRA AMBA</h3>\n\n<figure data-media=\"33,34,35,36,37,38,39\"></figure>",
       "categories": [],
-      "tags": [],
+      "tags": [
+        "cantina",
+        "marktkantine"
+      ],
       "featured": {
         "id": "1659",
         "url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2018/05/29132980_2035497993364977_2277704148721860608_o1.jpg",
@@ -1842,16 +1835,14 @@
         "CLUBS"
       ],
       "tags": [
-        "Deco",
-        "Decor",
-        "ReddyMaekers",
+        "deco",
+        "decor",
         "amsterdam",
         "branding",
         "club",
         "event",
         "party",
-        "radion",
-        "reddymaekers; amsterdam; club"
+        "radion"
       ],
       "featured": {
         "id": "1689",
@@ -2012,7 +2003,6 @@
         "FURNITURE"
       ],
       "tags": [
-        "ReddyMaekers",
         "amsterdam",
         "club",
         "desk",
@@ -2021,8 +2011,8 @@
         "interior",
         "organization",
         "paperwork",
-        "reddymaekers; amsterdam; club",
-        "wood"
+        "wood",
+        "furniture"
       ],
       "featured": {
         "id": "1700",
@@ -2095,10 +2085,9 @@
         "FESTIVALS"
       ],
       "tags": [
-        "Deco",
-        "Decor",
-        "Oranjebloesem",
-        "ReddyMaekers",
+        "deco",
+        "decor",
+        "oranjebloesem",
         "amsterdam",
         "curve",
         "light",
@@ -2107,7 +2096,8 @@
         "stage",
         "techno",
         "wave",
-        "wood"
+        "wood",
+        "festivals"
       ],
       "featured": {
         "id": "1714",
@@ -2180,11 +2170,11 @@
         "CLUBS"
       ],
       "tags": [
-        "ReddyMaekers",
         "amsterdam",
         "branding",
         "chinchinclub",
-        "lights"
+        "lights",
+        "light"
       ],
       "featured": {
         "id": "1617",
@@ -2312,8 +2302,9 @@
         "CLUBS"
       ],
       "tags": [
-        "ReddyMaekers",
-        "amsterdam"
+        "amsterdam",
+        "cantina",
+        "marktkantine"
       ],
       "featured": {
         "id": "1605",
@@ -2708,8 +2699,9 @@
         "CLUBS"
       ],
       "tags": [
-        "ReddyMaekers",
-        "amsterdam"
+        "amsterdam",
+        "cantina",
+        "marktkantine"
       ],
       "featured": {
         "id": "1510",
@@ -2937,9 +2929,8 @@
         "PROJECTS"
       ],
       "tags": [
-        "Decor",
-        "Mainstage",
-        "ReddyMaekers",
+        "decor",
+        "mainstage",
         "amsterdam",
         "damsko",
         "halloween",
@@ -3182,8 +3173,9 @@
         "PROJECTS"
       ],
       "tags": [
-        "ReddyMaekers",
-        "amsterdam"
+        "amsterdam",
+        "cantina",
+        "marktkantine"
       ],
       "featured": {
         "id": "1440",
@@ -3366,7 +3358,6 @@
         "PROJECTS"
       ],
       "tags": [
-        "ReddyMaekers",
         "amsterdam"
       ],
       "featured": {
@@ -3528,10 +3519,9 @@
         "SIGNING"
       ],
       "tags": [
-        "LIGHTBOX: PEAK MYSTIQUE REDDYMAEKERS SIGNING",
-        "ReddyMaekers",
         "amsterdam",
-        "signage"
+        "signage",
+        "light"
       ],
       "featured": {
         "id": "1462",
@@ -3582,10 +3572,10 @@
         "SIGNING"
       ],
       "tags": [
-        "ReddyMaekers",
-        "SIGNING CANTINA: YUNG INTERNET SPECIAL REDDYMAEKERS",
         "amsterdam",
-        "signage"
+        "signage",
+        "cantina",
+        "marktkantine"
       ],
       "featured": {
         "id": "1376",
@@ -3669,7 +3659,6 @@
         "PROJECTS"
       ],
       "tags": [
-        "ReddyMaekers",
         "amsterdam"
       ],
       "featured": {
@@ -3716,16 +3705,16 @@
       "status": "publish",
       "old_url": "https://reddymaekersproductions.wordpress.com/2017/10/30/cantina/",
       "excerpt": "The weekly Friday night at the Marktkantine: giant hanging CANTINA disco letters, light mapping on origami faces, and a new decor every week.",
-      "content": "Cantina was the weekly Friday night at the Marktkantine, and every week we built a new decor for it. Three things ran side by side:\n\nThe letters: CANTINA in giant disco letters, hanging above the dancefloor.\n\nLight mapping on origami faces.\n\nA decor that changed every week.\n\nCheck out the slideshow below for a little overview of the last months:\n\n<figure data-media=\"0,1,2,3,4,5,6,7,8,9\"></figure>\n\nOpening night:\n\nhttps://www.facebook.com/cantina.amsterdam/videos/1944838622430915/\n\n&nbsp;\n\nYung internet special:\n\nhttps://www.facebook.com/cantina.amsterdam/videos/1956547037926740/\n\n&nbsp;\n\n&nbsp;",
+      "content": "Cantina was the weekly Friday night at the Marktkantine, Amsterdam's largest underground club, grown from the Markanti club of the 80s. Every week we built a new decor for it. Three things ran side by side:\n\nThe letters: CANTINA in giant disco letters, hanging above the dancefloor.\n\nLight mapping on origami faces.\n\nA decor that changed every week.\n\nCheck out the slideshow below for a little overview of the last months:\n\n<figure data-media=\"0,1,2,3,4,5,6,7,8,9\"></figure>\n\nOpening night:\n\nhttps://www.facebook.com/cantina.amsterdam/videos/1944838622430915/\n\n&nbsp;\n\nYung internet special:\n\nhttps://www.facebook.com/cantina.amsterdam/videos/1956547037926740/\n\n&nbsp;\n\n&nbsp;",
       "categories": [
         "CLUBS",
         "PROJECTS"
       ],
       "tags": [
-        "ReddyMaekers",
         "amsterdam",
         "cantina",
-        "signage"
+        "signage",
+        "marktkantine"
       ],
       "featured": {
         "id": "1328",
@@ -3864,8 +3853,8 @@
         "PROJECTS"
       ],
       "tags": [
-        "ReddyMaekers",
-        "amsterdam"
+        "amsterdam",
+        "festivals"
       ],
       "featured": {
         "id": "1305",
@@ -3927,10 +3916,9 @@
         "SIGNING"
       ],
       "tags": [
-        "ReddyMaekers",
-        "SIGN: DEKMANTEL OPENING NIGHT REDDYMAEKERS",
         "amsterdam",
-        "signage"
+        "signage",
+        "festivals"
       ],
       "featured": {
         "id": "1276",
@@ -4047,7 +4035,6 @@
         "PROJECTS"
       ],
       "tags": [
-        "ReddyMaekers",
         "amsterdam"
       ],
       "featured": {
@@ -4121,11 +4108,9 @@
         "SIGNING"
       ],
       "tags": [
-        "ReddyMaekers",
         "amsterdam",
         "brand",
         "branding",
-        "signing REDDYMAEKERS",
         "signage"
       ],
       "featured": {
@@ -4244,7 +4229,6 @@
         "PROJECTS"
       ],
       "tags": [
-        "ReddyMaekers",
         "amsterdam"
       ],
       "featured": {
@@ -4341,8 +4325,8 @@
         "RENTALS"
       ],
       "tags": [
-        "ReddyMaekers",
-        "amsterdam"
+        "amsterdam",
+        "light"
       ],
       "featured": {
         "id": "1130",
@@ -4437,10 +4421,9 @@
         "SIGNING"
       ],
       "tags": [
-        "Licht Box: Social Swingers Club REDDYMAEKERS",
-        "ReddyMaekers",
         "amsterdam",
-        "signage"
+        "signage",
+        "light"
       ],
       "featured": {
         "id": "1011",
@@ -4481,7 +4464,6 @@
         "Geen categorie"
       ],
       "tags": [
-        "ReddyMaekers",
         "amsterdam"
       ],
       "featured": {
@@ -5210,7 +5192,8 @@
         "RENTALS"
       ],
       "tags": [
-        "lights"
+        "lights",
+        "light"
       ],
       "featured": {
         "id": "1142",
@@ -5290,7 +5273,8 @@
         "RENTALS"
       ],
       "tags": [
-        "lights"
+        "lights",
+        "light"
       ],
       "featured": {
         "id": "1144",
@@ -5318,7 +5302,8 @@
         "Geen categorie"
       ],
       "tags": [
-        "signage"
+        "signage",
+        "festivals"
       ],
       "featured": {
         "id": "562",
@@ -5357,7 +5342,9 @@
       "categories": [
         "PROJECTS"
       ],
-      "tags": [],
+      "tags": [
+        "festivals"
+      ],
       "featured": {
         "id": "714",
         "url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2017/01/13567083_846193032178815_798744470159918398_n-1.jpg",
@@ -5495,7 +5482,9 @@
       "categories": [
         "PROJECTS"
       ],
-      "tags": [],
+      "tags": [
+        "festivals"
+      ],
       "featured": {
         "id": "592",
         "url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2016/08/13391289_139012743169632_1357542087_n.jpg",
@@ -5622,7 +5611,8 @@
         "PROJECTS"
       ],
       "tags": [
-        "signage"
+        "signage",
+        "festivals"
       ],
       "featured": {
         "id": "490",
@@ -5883,7 +5873,9 @@
       ],
       "tags": [
         "ballen bak",
-        "signage"
+        "signage",
+        "georgies",
+        "festivals"
       ],
       "featured": {
         "id": "350",
@@ -6555,7 +6547,9 @@
       "categories": [
         "PROJECTS"
       ],
-      "tags": [],
+      "tags": [
+        "festivals"
+      ],
       "featured": {
         "id": "1092",
         "url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2017/01/10607928_1545810955634252_2118635186_n.jpg",
@@ -6694,7 +6688,9 @@
         "Geen categorie"
       ],
       "tags": [
-        "signage"
+        "signage",
+        "georgies",
+        "festivals"
       ],
       "featured": {
         "id": "608",
@@ -6810,7 +6806,9 @@
       "categories": [
         "PROJECTS"
       ],
-      "tags": [],
+      "tags": [
+        "festivals"
+      ],
       "featured": {
         "id": "744",
         "url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2017/01/1504312_241736826031039_676687488701928809_o.jpg",
@@ -7691,7 +7689,10 @@
       "categories": [
         "FESTIVALS"
       ],
-      "tags": [],
+      "tags": [
+        "georgies",
+        "festivals"
+      ],
       "featured": {
         "id": "508",
         "url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2016/07/10527813_347901905362711_7545693963594211860_n.jpg",
@@ -7828,7 +7829,9 @@
       "categories": [
         "RENTALS"
       ],
-      "tags": [],
+      "tags": [
+        "furniture"
+      ],
       "featured": {
         "id": "1028",
         "url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2017/04/16473573_1414912838542318_469730403529187128_n.jpg",
