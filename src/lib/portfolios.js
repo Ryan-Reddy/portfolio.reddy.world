@@ -118,15 +118,26 @@ export function altFor(post, media, index) {
 }
 
 const WIDTHS = [480, 800, 1200, 1600];
+// Self-hosted copies of the old WordPress uploads live at images/<portfolio>/<YYYY>/<MM>/ and
+// come with -480w, -800w and -1200w copies below their own width (scripts/image-variants.mjs).
+const OWN_VARIANTS = [480, 800, 1200];
+const OWN_WITH_VARIANTS = /^\/portfolio\/images\/[a-z]+\/\d{4}\/\d{2}\/.+\.(jpe?g|png)$/i;
 
 /**
  * src, srcset and size of a picture. WordPress.com uploads have a ?w= resizer
  * for the smaller versions; it never upscales, so no width above the upload's
- * own is listed. Self-hosted pictures (public/images) have no resizer: they are
- * served whole. GIFs stay whole to keep their animation.
+ * own is listed. Self-hosted pictures under images/<portfolio>/<YYYY>/<MM>/ use
+ * their -480w/-800w/-1200w copies; other self-hosted pictures (public/images)
+ * are served whole. GIFs and animated WebP stay whole to keep their animation.
  */
 export function picture(media) {
   const { url, width, height } = media;
+  if (OWN_WITH_VARIANTS.test(url) && width) {
+    const widths = OWN_VARIANTS.filter((w) => w < width);
+    const at = (w) => url.replace(/\.(jpe?g|png)$/i, `-${w}w.$1`);
+    const srcset = [...widths.map((w) => `${at(w)} ${w}w`), `${url} ${width}w`];
+    return { src: widths.includes(1200) ? at(1200) : url, srcset: srcset.join(', '), width, height };
+  }
   if (/\.gif$/i.test(url) || !hasResizer(url)) return { src: url, width, height };
   const widths = WIDTHS.filter((w) => !width || w < width);
   const srcset = widths.map((w) => `${url}?w=${w} ${w}w`);

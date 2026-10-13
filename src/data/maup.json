@@ -68,58 +68,63 @@
       "media": [
         {
           "id": "",
-          "url": "https://reddymaekersproductions.files.wordpress.com/2015/10/fullsizerender.jpg",
+          "url": "/portfolio/images/rmaekers/2015/10/fullsizerender.jpg",
           "title": "",
           "alt": "FullSizeRender",
           "caption": "",
           "description": "",
-          "width": null,
-          "height": null,
-          "type": "image"
+          "width": 640,
+          "height": 1136,
+          "type": "image",
+          "wp_url": "https://reddymaekersproductions.files.wordpress.com/2015/10/fullsizerender.jpg"
         },
         {
           "id": "",
-          "url": "https://reddymaekersproductions.files.wordpress.com/2016/07/img_0955.jpg",
+          "url": "/portfolio/images/rmaekers/2016/07/img_0955.jpg",
           "title": "",
           "alt": "IMG_0955",
           "caption": "",
           "description": "",
-          "width": null,
-          "height": null,
-          "type": "image"
+          "width": 996,
+          "height": 1334,
+          "type": "image",
+          "wp_url": "https://reddymaekersproductions.files.wordpress.com/2016/07/img_0955.jpg"
         },
         {
           "id": "",
-          "url": "https://reddymaekersproductions.files.wordpress.com/2016/07/img_0956.jpg",
+          "url": "/portfolio/images/rmaekers/2016/07/img_0956.jpg",
           "title": "",
           "alt": "IMG_0956",
           "caption": "",
           "description": "",
-          "width": null,
-          "height": null,
-          "type": "image"
+          "width": 996,
+          "height": 1334,
+          "type": "image",
+          "wp_url": "https://reddymaekersproductions.files.wordpress.com/2016/07/img_0956.jpg"
         },
         {
           "id": "",
-          "url": "https://reddymaekersproductions.files.wordpress.com/2016/07/fullsizerender.jpg",
+          "url": "/portfolio/images/rmaekers/2016/07/fullsizerender.jpg",
           "title": "",
           "alt": "FullSizeRender",
           "caption": "",
           "description": "",
-          "width": null,
-          "height": null,
-          "type": "image"
+          "width": 1500,
+          "height": 2000,
+          "type": "image",
+          "wp_url": "https://reddymaekersproductions.files.wordpress.com/2016/07/fullsizerender.jpg"
         },
         {
           "id": "",
-          "url": "https://reddymaekersproductions.files.wordpress.com/2016/07/img_0786.jpg",
+          "url": "/portfolio/images/rmaekers/2016/07/img_0786.jpg",
           "title": "",
           "alt": "IMG_0786",
           "caption": "",
           "description": "",
-          "width": null,
-          "height": null,
-          "type": "image"
+          "width": 1500,
+          "height": 2000,
+          "type": "image",
+          "wp_url": "https://reddymaekersproductions.files.wordpress.com/2016/07/img_0786.jpg"
         }
       ]
     },
@@ -141,89 +146,97 @@
       ],
       "featured": {
         "id": "",
-        "url": "https://reddymaekersproductions.files.wordpress.com/2015/11/sjon.jpg",
+        "url": "/portfolio/images/rmaekers/2015/11/sjon.jpg",
         "alt": "sjon",
         "caption": "",
-        "width": null,
-        "height": null
+        "width": 640,
+        "height": 480,
+        "wp_url": "https://reddymaekersproductions.files.wordpress.com/2015/11/sjon.jpg"
       },
       "media": [
         {
           "id": "",
-          "url": "https://reddymaekersproductions.files.wordpress.com/2015/11/11850613_1119454474739158_4739647701954630905_o.jpg",
+          "url": "/portfolio/images/rmaekers/2015/11/11850613_1119454474739158_4739647701954630905_o.jpg",
           "title": "",
           "alt": "De baarstoel",
           "caption": "De baarstoel",
           "description": "",
-          "width": null,
-          "height": null,
-          "type": "image"
+          "width": 1536,
+          "height": 2048,
+          "type": "image",
+          "wp_url": "https://reddymaekersproductions.files.wordpress.com/2015/11/11850613_1119454474739158_4739647701954630905_o.jpg"
         },
         {
           "id": "",
-          "url": "https://reddymaekersproductions.files.wordpress.com/2015/11/image.jpeg",
+          "url": "/portfolio/images/rmaekers/2015/11/image.jpeg",
           "title": "",
           "alt": "image",
           "caption": "",
           "description": "",
-          "width": null,
-          "height": null,
-          "type": "image"
+          "width": 1494,
+          "height": 2000,
+          "type": "image",
+          "wp_url": "https://reddymaekersproductions.files.wordpress.com/2015/11/image.jpeg"
         },
         {
           "id": "",
-          "url": "https://reddymaekersproductions.files.wordpress.com/2015/11/image4-e1446400187992.jpeg",
+          "url": "/portfolio/images/rmaekers/2015/11/image4-e1446400187992.jpeg",
           "title": "",
           "alt": "image",
           "caption": "",
           "description": "",
-          "width": null,
-          "height": null,
-          "type": "image"
+          "width": 1494,
+          "height": 2000,
+          "type": "image",
+          "wp_url": "https://reddymaekersproductions.files.wordpress.com/2015/11/image4-e1446400187992.jpeg"
         },
         {
           "id": "",
-          "url": "https://reddymaekersproductions.files.wordpress.com/2015/11/image1-e1446400289803.jpeg",
+          "url": "/portfolio/images/rmaekers/2015/11/image1-e1446400289803.jpeg",
           "title": "",
           "alt": "image",
           "caption": "",
           "description": "",
-          "width": null,
-          "height": null,
-          "type": "image"
+          "width": 2000,
+          "height": 1494,
+          "type": "image",
+          "wp_url": "https://reddymaekersproductions.files.wordpress.com/2015/11/image1-e1446400289803.jpeg"
         },
         {
           "id": "",
-          "url": "https://reddymaekersproductions.files.wordpress.com/2015/11/sjon-2.jpg",
+          "url": "/portfolio/images/rmaekers/2015/11/sjon-2.jpg",
           "title": "",
           "alt": "sjon 2",
           "caption": "",
           "description": "",
-          "width": null,
-          "height": null,
-          "type": "image"
+          "width": 640,
+          "height": 480,
+          "type": "image",
+          "wp_url": "https://reddymaekersproductions.files.wordpress.com/2015/11/sjon-2.jpg"
         },
         {
           "id": "",
-          "url": "https://reddymaekersproductions.files.wordpress.com/2015/11/sjon-3.jpg",
+          "url": "/portfolio/images/rmaekers/2015/11/sjon-3.jpg",
           "title": "",
           "alt": "sjon 3",
           "caption": "",
           "description": "",
-          "width": null,
-          "height": null,
-          "type": "image"
+          "width": 640,
+          "height": 480,
+          "type": "image",
+          "wp_url": "https://reddymaekersproductions.files.wordpress.com/2015/11/sjon-3.jpg"
         },
         {
           "id": "",
-          "url": "https://reddymaekersproductions.files.wordpress.com/2015/11/sjon.jpg",
+          "url": "/portfolio/images/rmaekers/2015/11/sjon.jpg",
           "title": "",
           "alt": "sjon",
           "caption": "",
           "description": "",
-          "width": null,
-          "height": null,
-          "type": "image"
+          "width": 640,
+          "height": 480,
+          "type": "image",
+          "wp_url": "https://reddymaekersproductions.files.wordpress.com/2015/11/sjon.jpg"
         }
       ]
     },
@@ -255,113 +268,123 @@
       "media": [
         {
           "id": "",
-          "url": "https://reddymaekersproductions.files.wordpress.com/2015/10/img_06791.jpg",
+          "url": "/portfolio/images/rmaekers/2015/10/img_06791.jpg",
           "title": "",
           "alt": "IMG_0679",
           "caption": "Schetsen van getordeerde lamp",
           "description": "",
-          "width": null,
-          "height": null,
-          "type": "image"
+          "width": 2000,
+          "height": 1493,
+          "type": "image",
+          "wp_url": "https://reddymaekersproductions.files.wordpress.com/2015/10/img_06791.jpg"
         },
         {
           "id": "",
-          "url": "https://reddymaekersproductions.files.wordpress.com/2015/11/image6.jpg",
+          "url": "/portfolio/images/rmaekers/2015/11/image6.jpg",
           "title": "",
           "alt": "image",
           "caption": "proef",
           "description": "",
-          "width": null,
-          "height": null,
-          "type": "image"
+          "width": 1493,
+          "height": 2000,
+          "type": "image",
+          "wp_url": "https://reddymaekersproductions.files.wordpress.com/2015/11/image6.jpg"
         },
         {
           "id": "",
-          "url": "https://reddymaekersproductions.files.wordpress.com/2015/10/img_0112.jpg",
+          "url": "/portfolio/images/rmaekers/2015/10/img_0112.jpg",
           "title": "",
           "alt": "IMG_0112",
           "caption": "Stoomkist",
           "description": "",
-          "width": null,
-          "height": null,
-          "type": "image"
+          "width": 640,
+          "height": 852,
+          "type": "image",
+          "wp_url": "https://reddymaekersproductions.files.wordpress.com/2015/10/img_0112.jpg"
         },
         {
           "id": "",
-          "url": "https://reddymaekersproductions.files.wordpress.com/2015/10/img_0198.jpg",
+          "url": "/portfolio/images/rmaekers/2015/10/img_0198.jpg",
           "title": "",
           "alt": "IMG_0198",
           "caption": "Eindresultaat van de getordeerd techniek. Helaas nog te onregelmatig.",
           "description": "",
-          "width": null,
-          "height": null,
-          "type": "image"
+          "width": 1500,
+          "height": 2000,
+          "type": "image",
+          "wp_url": "https://reddymaekersproductions.files.wordpress.com/2015/10/img_0198.jpg"
         },
         {
           "id": "",
-          "url": "https://reddymaekersproductions.files.wordpress.com/2015/10/img_0169.jpg",
+          "url": "/portfolio/images/rmaekers/2015/10/img_0169.jpg",
           "title": "",
           "alt": "IMG_0169",
           "caption": "",
           "description": "",
-          "width": null,
-          "height": null,
-          "type": "image"
+          "width": 1500,
+          "height": 2000,
+          "type": "image",
+          "wp_url": "https://reddymaekersproductions.files.wordpress.com/2015/10/img_0169.jpg"
         },
         {
           "id": "",
-          "url": "https://reddymaekersproductions.files.wordpress.com/2015/10/img_0680-e1445990058845.jpg",
+          "url": "/portfolio/images/rmaekers/2015/10/img_0680-e1445990058845.jpg",
           "title": "",
           "alt": "IMG_0680",
           "caption": "",
           "description": "",
-          "width": null,
-          "height": null,
-          "type": "image"
+          "width": 1493,
+          "height": 2000,
+          "type": "image",
+          "wp_url": "https://reddymaekersproductions.files.wordpress.com/2015/10/img_0680-e1445990058845.jpg"
         },
         {
           "id": "",
-          "url": "https://reddymaekersproductions.files.wordpress.com/2015/11/image.jpg",
+          "url": "/portfolio/images/rmaekers/2015/11/image.jpg",
           "title": "",
           "alt": "image",
           "caption": "",
           "description": "",
-          "width": null,
-          "height": null,
-          "type": "image"
+          "width": 2000,
+          "height": 1493,
+          "type": "image",
+          "wp_url": "https://reddymaekersproductions.files.wordpress.com/2015/11/image.jpg"
         },
         {
           "id": "",
-          "url": "https://reddymaekersproductions.files.wordpress.com/2015/10/img_0192.jpg",
+          "url": "/portfolio/images/rmaekers/2015/10/img_0192.jpg",
           "title": "",
           "alt": "IMG_0192",
           "caption": "",
           "description": "",
-          "width": null,
-          "height": null,
-          "type": "image"
+          "width": 2000,
+          "height": 1500,
+          "type": "image",
+          "wp_url": "https://reddymaekersproductions.files.wordpress.com/2015/10/img_0192.jpg"
         },
         {
           "id": "",
-          "url": "https://reddymaekersproductions.files.wordpress.com/2015/10/img_0193.jpg",
+          "url": "/portfolio/images/rmaekers/2015/10/img_0193.jpg",
           "title": "",
           "alt": "IMG_0193",
           "caption": "",
           "description": "",
-          "width": null,
-          "height": null,
-          "type": "image"
+          "width": 1500,
+          "height": 2000,
+          "type": "image",
+          "wp_url": "https://reddymaekersproductions.files.wordpress.com/2015/10/img_0193.jpg"
         },
         {
           "id": "",
-          "url": "https://reddymaekersproductions.files.wordpress.com/2015/10/img_0217.jpg",
+          "url": "/portfolio/images/rmaekers/2015/10/img_0217.jpg",
           "title": "",
           "alt": "IMG_0217",
           "caption": "",
           "description": "",
-          "width": null,
-          "height": null,
-          "type": "image"
+          "width": 1500,
+          "height": 2000,
+          "type": "image",
+          "wp_url": "https://reddymaekersproductions.files.wordpress.com/2015/10/img_0217.jpg"
         }
       ]
     },
