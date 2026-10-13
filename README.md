@@ -49,5 +49,6 @@ New posts can use pictures that are not on WordPress.com.
 
 - Put the file in `public/images/<portfolio>/photo.jpg` (create the folder with the first picture). Astro serves `public/` under the base, so it is live at `https://reddy.world/portfolio/images/<portfolio>/photo.jpg`, and reddy.world's `add-portfolio.mjs` copies it along with the rest of `dist/`.
 - In the post's `media[]` and `featured`, set `url` to `/portfolio/images/<portfolio>/photo.jpg` (root-absolute) and the real `width` and `height`.
-- Only WordPress.com URLs get a resized `srcset` (its `?w=` resizer). A self-hosted picture is served whole, so upload it at web size.
+- Pictures filed as `public/images/<portfolio>/<YYYY>/<MM>/photo.jpg` get a resized `srcset` from their `-480w`, `-800w` and `-1200w` copies: make them with `node scripts/image-variants.mjs <file or folder>`. All RMaekers pictures live here since 2026-10-13 (web copies of the WordPress export: at most 2000 px, metadata stripped, animated GIFs as animated WebP); each media item keeps its old address as `wp_url`.
+- Other self-hosted pictures are served whole, so upload them at web size. WordPress.com URLs still get their `?w=` srcset.
 - The RSS feed, the image sitemap and the share/JSON-LD tags turn the root-absolute URL into `https://reddy.world/...` ([media-url.js](src/lib/media-url.js)).
