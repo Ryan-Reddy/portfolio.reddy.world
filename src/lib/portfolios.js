@@ -3,6 +3,7 @@ import rrproductions from '../data/rrproductions.json';
 import maup from '../data/maup.json';
 import vaguelyvulgar from '../data/vaguelyvulgar.json';
 import { hasResizer } from './media-url.js';
+import { BRAND } from './brands.js';
 
 export const ORIGIN = 'https://reddy.world';
 export const BASE = '/portfolio';
@@ -43,6 +44,7 @@ const kindsOf = (post) => [...WHAT, ...WHERE].filter((k) => k.test(post)).map((k
 export const portfolios = [rmaekers, rrproductions, maup, vaguelyvulgar].map((p) => ({
   ...p,
   ...EXTRA[p.id],
+  brand: BRAND[p.id],
   posts: p.posts.map((post) => {
     const full = { ...post, portfolio: p.id, path: `/${p.id}/${post.slug}/` };
     return { ...full, kinds: kindsOf(full) };
@@ -114,7 +116,18 @@ export function photos(post) {
 export function altFor(post, media, index) {
   if (media.alt) return media.alt;
   if (media.caption) return media.caption;
-  return `${post.title.trim()} — photo ${index + 1}`;
+  return `${post.title.trim()}, photo ${index + 1}`;
+}
+
+/**
+ * A few words of context for search engines: what kind of work, under which name, and when
+ * ("Decor & stages by ReddyMaekers, 2017"). Every word comes from the archive's own data
+ * (Ryan, 2026-10-16: "add more keywords to these sentences").
+ */
+export function contextOf(post) {
+  const kind = post.kinds.map((k) => KIND_LABEL[k])[0];
+  const year = String(post.date || '').slice(0, 4);
+  return `${kind ? `${kind} by ` : ''}${BRAND[post.portfolio]}${year ? `, ${year}` : ''}`;
 }
 
 const WIDTHS = [480, 800, 1200, 1600];
