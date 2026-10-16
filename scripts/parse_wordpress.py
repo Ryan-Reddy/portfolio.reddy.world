@@ -62,7 +62,7 @@ SOURCES = {
 NS = {
     'wp': 'http://wordpress.org/export/1.2/',
     'content': 'http://purl.org/rss/1.0/modules/content/',
-    'excerpt': 'http://purl.org/rss/1.0/modules/excerpt/',
+    'excerpt': 'http://wordpress.org/export/1.2/excerpt/',
     'dc': 'http://purl.org/dc/elements/1.1/'
 }
 
