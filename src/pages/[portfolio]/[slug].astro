@@ -2,7 +2,7 @@
 import Base from '../../layouts/Base.astro';
 import { renderContent } from '../../lib/content.js';
 import { absUrl } from '../../lib/media-url.js';
-import { portfolios, formatDate, photos, altFor, picture, contactUrl, titleCase, PERSON_ID, ORIGIN, SITE, BASE, themeByTag, KIND_LABEL } from '../../lib/portfolios.js';
+import { portfolios, formatDate, photos, altFor, contextOf, picture, contactUrl, titleCase, PERSON_ID, ORIGIN, SITE, BASE, themeByTag, KIND_LABEL } from '../../lib/portfolios.js';
 
 export function getStaticPaths() {
   return portfolios.flatMap((p) =>
@@ -15,7 +15,9 @@ const imgs = photos(post);
 const videos = post.media.filter((m) => m.type === 'video');
 const files = post.media.filter((m) => m.type === 'file');
 const name = titleCase(post.title);
-const description = (post.excerpt || `${name}, a ${p.name} project by Ryan Reddy.`).slice(0, 300);
+// the summary in Ryan's words, then what kind of work it was, under which name, and when
+const context = contextOf(post);
+const description = `${(post.excerpt || name).replace(/[.!?…]?$/, (end) => end || '.')} ${context}.`.slice(0, 300);
 const pageUrl = `${SITE}${post.path}`;
 
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
@@ -75,7 +77,7 @@ const imageObject = (m, i) => ({
   url: absUrl(m.url),
   width: m.width || undefined,
   height: m.height || undefined,
-  caption: altFor(post, m, i),
+  caption: m.alt || m.caption ? `${m.alt || m.caption} — ${name}, ${context}` : `${name}, photo ${i + 1} — ${context}`,
   creator: { '@id': PERSON_ID },
   creditText: 'Ryan Reddy',
   copyrightNotice: '© Ryan Reddy',
@@ -117,7 +119,7 @@ const jsonLd = [
 ];
 const article = isPost ? { published: post.published, modified: post.modified, section: post.categories[0] || p.name, tags: post.tags } : undefined;
 ---
-<Base title={`${name} — ${p.name} | Ryan Reddy`} description={description} image={shareImage} active={p.id} jsonLd={jsonLd} type={isPost ? 'article' : 'website'} article={article}>
+<Base title={`${name} — ${p.brand} | Ryan Reddy`} description={description} image={shareImage} active={p.id} jsonLd={jsonLd} type={isPost ? 'article' : 'website'} article={article}>
   <article class="project-page">
     <nav class="breadcrumb" aria-label="Breadcrumb">
       <a href={`${BASE}/`}>Portfolio</a> <span aria-hidden="true">/</span> <a href={`${BASE}/${p.id}/`}>{p.name}</a>
