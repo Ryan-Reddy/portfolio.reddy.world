@@ -337,21 +337,6 @@
           "type": 301
         },
         {
-          "source": "/our-team",
-          "destination": "https://reddy.world/portfolio/rmaekers/our-team/",
-          "type": 301
-        },
-        {
-          "source": "/our-team/",
-          "destination": "https://reddy.world/portfolio/rmaekers/our-team/",
-          "type": 301
-        },
-        {
-          "source": "/our-team/**",
-          "destination": "https://reddy.world/portfolio/rmaekers/our-team/",
-          "type": 301
-        },
-        {
           "source": "/2017/11/23/cantina-halloween-thriller",
           "destination": "https://reddy.world/portfolio/rmaekers/cantina-halloween-thriller/",
           "type": 301
@@ -1912,21 +1897,6 @@
         {
           "source": "/2017/11/30/cantina-charlotte-de-witte/**",
           "destination": "https://reddy.world/portfolio/rmaekers/cantina-charlotte-de-witte/",
-          "type": 301
-        },
-        {
-          "source": "/our-team",
-          "destination": "https://reddy.world/portfolio/rmaekers/our-team/",
-          "type": 301
-        },
-        {
-          "source": "/our-team/",
-          "destination": "https://reddy.world/portfolio/rmaekers/our-team/",
-          "type": 301
-        },
-        {
-          "source": "/our-team/**",
-          "destination": "https://reddy.world/portfolio/rmaekers/our-team/",
           "type": 301
         },
         {
