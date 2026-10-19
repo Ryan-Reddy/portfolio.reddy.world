@@ -53,7 +53,8 @@ jobs:
 
       - name: The case study's date
         if: steps.changed.outputs.yes == 'true'
-        run: sed -i "s/^updated: .*/updated: $(date -u +%F)/" "src/content/software/${{ inputs.slug }}.md"
+        run: |
+          sed -i "s/^updated: .*/updated: $(date -u +%F)/" "src/content/software/${{ inputs.slug }}.md"
 
       # Builds the pages, writes firebase.json, and fails if a redirect target is missing
       - run: npm run build
