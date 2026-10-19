@@ -189,6 +189,10 @@ const browser = await chromium.launch();
 try {
   for (const [file, shoot] of Object.entries(recipe)) {
     const png = await shoot(browser);
+    // a blank or nearly blank capture (a page that didn't load, a blocked request) never replaces a picture
+    const { channels } = await sharp(png).stats();
+    const spread = Math.max(...channels.slice(0, 3).map((c) => c.stdev));
+    if (spread < 12) throw new Error(`${file}: the capture is nearly blank (spread ${spread.toFixed(1)}); the old picture stays`);
     fs.writeFileSync(path.join(tmp, file.replace(/\.webp$/, '.png')), png);
     const to = path.join(dir, file);
     // the old srcset copies go, so image-variants.mjs makes new ones
