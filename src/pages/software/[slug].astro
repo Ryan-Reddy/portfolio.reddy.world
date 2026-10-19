@@ -103,7 +103,7 @@ const facts = [
         {facts.map(([k, v]) => <div><dt>{k}</dt><dd>{v}</dd></div>)}
         {d.repo && <div><dt>Code</dt><dd><a href={d.repo}>{host(d.repo)}{new URL(d.repo).pathname}</a></dd></div>}
       </dl>
-      {d.live && <a class="live" href={d.live}>Open {d.title} →</a>}
+      {d.live && <a class="live" href={d.live}>{d.cta ?? `Open ${d.title}`} →</a>}
     </aside>
 
     {figs.length > 0 && (

@@ -1,52 +1,58 @@
 ---
 title: Reddy.Neuro
-summary: "A free web app that makes busy pages easier to read: a clear typeface, a soft dark palette, a shorter line and fewer distractions."
-dek: Calmer reading for loud web pages.
-eyebrow: Web app · neuro.reddy.world
+summary: "NeuroOverlay, a browser extension for Chrome and Brave: a clearer font, softer colours, shorter lines and a reading ruler on any website."
+dek: Websites are loud. Turn them down.
+eyebrow: Browser extension · Chrome and Brave
 kind: app
-category: UtilitiesApplication
-platform: Web browser
+category: BrowserApplication
+platform: Chrome, Brave
 year: 2026
-status: Live, free to use
-live: https://neuro.reddy.world
-stack: [React 19, TypeScript, Vite, Tailwind CSS, Firebase Hosting]
+status: Early version, free
+live: https://chromewebstore.google.com/detail/neurooverlay-adhd-coga-vi/bdghhcffdfnpjlejhjcfnllofaidmija
+cta: Add to Chrome
+stack: [JavaScript, Manifest V3, Chrome scripting and side panel APIs]
 audience: Readers who tire on busy, glaring pages
 maker: Reddy.World Enterprises
 role: "Concept, design and code: Ryan Reddy"
 order: 1
 updated: 2026-10-19
 screenshots:
-  - file: neuro-baseline-vs-velvet-olive.webp
-    alt: "Reddy.Neuro's side-by-side comparison. On the left, a task card in pure white text on pure black, labelled 'Harsh OLED dark, pure black (high glare)'. On the right, the same card in Velvet Olive: off-white text on a dark olive background, labelled 'Calibrated: Velvet Olive'."
-    caption: "The Baseline Matrix: the same card in pure white on pure black, and in Velvet Olive, with the glare simulation on."
-  - file: neuro-reader-mode-wikipedia.webp
-    alt: "The Wikipedia article on Atkinson Hyperlegible, opened in Reddy.Neuro's Reader Mode: off-white text on dark olive with gold section headings, a 68-character line and 1.75 line spacing. The settings panel on the right shows Reader Mode, the Velvet Olive palette and the Atkinson Hyperlegible Next typeface."
-    caption: "Reader Mode on a real page: the Wikipedia article on Atkinson Hyperlegible, at 68 characters per line."
-  - file: neuro-room-color-sets.webp
-    alt: "Reddy.Neuro's Room Color Sets: a note explaining why soft dark mode glares less than pure black, then palette cards for Velvet Olive (selected), Twilight Slate, Amber Hearth, Smoked Plum and Abyssal Teal, each with its colour swatches."
-    caption: "Room Color Sets. Choosing one re-themes the whole app."
-  - file: neuro-landing-phone.webp
-    alt: "Reddy.Neuro's home page on a phone: the heading 'Websites are loud. Turn them down.', a short line about a readable font, soft dark mode and reading ruler, and a link to open the app."
-    caption: "The home page on a phone."
+  - file: neuro-overlay-before-after.webp
+    alt: "The Wikipedia article on Atkinson Hyperlegible twice. On the left, as Wikipedia shows it: black text on white with blue links. On the right, with NeuroOverlay on: off-white text in Atkinson Hyperlegible on a soft dark olive background, with more space between the lines and underlined green links."
+    caption: "The same Wikipedia article without and with NeuroOverlay, on its standard settings."
+  - file: neuro-overlay-work-mode.webp
+    alt: "NeuroOverlay's Work mode on the same article: the title, a dial with Gist, Key points, Structured (selected) and Full, the sections as short folded blocks, and a side column with next steps, the outline, tools (reading ruler, wait timers, read aloud) and the page score."
+    caption: "Work mode, an early version: a quiet view of the page, with a dial for how much you see."
+  - file: neuro-overlay-popup.webp
+    alt: "NeuroOverlay's popup on Wikipedia: on for en.wikipedia.org, a page score of 90 out of 100, sliders for Text (Comfortable), Colour (Dark), Clutter (fade 95%) and Focus, buttons for Work mode, Ruler and a wait timer, and the quick looks Calm, Night, Daylight and Dyslexia."
+    caption: "The popup: how much help you want, in four sliders."
+  - file: neuro-overlay-page-check.webp
+    alt: "The side panel's page check for the article: 90 out of 100 from its own checks, then five findings, from one long text block to lines of about 201 characters, each with a suggestion."
+    caption: "The page check in the side panel: a quick look at how a page is built, not an official accessibility test."
 ---
 
-Reddy.Neuro makes a busy web page easier to read: a clear typeface, a soft dark palette, a shorter line length and fewer distractions. Paste the address of an article, choose how it should look, and read it right there. It is free to use at [neuro.reddy.world](https://neuro.reddy.world).
+NeuroOverlay is a browser extension that makes any website calmer to read. It sets a clear typeface, soft colours and comfortable spacing, adds a reading ruler, and fades sidebars and ads. Add it to Chrome or Brave from the [Chrome Web Store](https://chromewebstore.google.com/detail/neurooverlay-adhd-coga-vi/bdghhcffdfnpjlejhjcfnllofaidmija).
 
-I made it for people who tire quickly on glaring, cluttered pages, with ADHD in mind. The typefaces include Atkinson Hyperlegible Next, Lexend and OpenDyslexic.
+I made it for people who tire quickly on glaring, cluttered pages, with ADHD in mind. It runs on your device: no page content, history or settings leave it.
 
 ## What you can do
 
-- Open a public article in the Studio and read it in your own palette and typeface, either in the site's layout or as a clean reader view.
-- Set the line width in characters, the line spacing, how far ads are dimmed, and whether the text is split into cards. Add a reading ruler, or bold the start of each word.
-- Compare pure white on pure black with a softer palette side by side, with a glare simulation.
-- Choose a room palette, from soft dark to light, and export it as CSS, Tailwind, JSON or a VS Code theme.
+- Set how much help you want with four sliders: Text, Colour, Clutter and Focus. Or pick a quick look: Calm, Night, Daylight or Dyslexia.
+- Choose the font (Atkinson Hyperlegible, Lexend Deca or OpenDyslexic), the line length, and the space between lines, letters and words.
+- Read in a soft dark theme such as Velvet Olive, or in a calm, paper-like light one.
+- Turn on a reading ruler, or set a wait timer of 30 seconds, 1 minute or 2 minutes.
+- Open Work mode for a quiet view of the page. A dial shows the gist, the key points, the structure or everything, and it can read the text aloud.
+- Keep your settings for every site or for one site only, or switch a site off.
+- Run a page check: a score out of 100 from its own checks, with what to improve.
 
 ## The hard parts
 
-**One choice restyles everything.** Each palette is a small set of named colours: a background, surfaces, three levels of text and an accent. The app applies them as CSS variables, so the interface and the article preview change together.
+**Invisible to the page.** The styles go in through the browser rather than as a style element in the page, and every name the extension adds is random for each install. A website's own scripts can't recognise it.
 
-**Reading real pages.** The Studio pulls the readable text out of a live page. Some pages build their text with JavaScript and return nothing readable. The Studio then says so plainly, rather than showing an empty frame.
+**Off means off.** A site you switch off gets nothing at all: no script and no styles. The extension tells the browser where to run, rather than running everywhere and staying quiet.
 
-**Contrast without the glare.** Velvet Olive keeps body text at 14.5 : 1 against its background. That's far above the 4.5 : 1 that WCAG AA asks for, and well short of the 21 : 1 extreme of pure white on black.
+**Fading without hiding what matters.** Sidebars and ads fade, but alerts, warnings and pop-up choices never do, and a faded block comes back when you hover over it.
 
-The same settings also come as a browser extension, [NeuroOverlay, in the Chrome Web Store](https://chromewebstore.google.com/detail/neurooverlay-adhd-coga-vi/bdghhcffdfnpjlejhjcfnllofaidmija), so any page you visit can look this way.
+**Everything on your device.** Work mode and the page check read the page in your tab and send nothing anywhere. Atkinson Hyperlegible and Lexend Deca come with the extension, so no font is downloaded.
+
+You can also try the settings without installing anything, in the [Web Studio at neuro.reddy.world](https://neuro.reddy.world).

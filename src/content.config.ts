@@ -22,6 +22,8 @@ const software = defineCollection({
     year: z.number().int(),
     status: z.string(),
     live: z.url().optional(),
+    // the button's words, before the arrow; default "Open <title>"
+    cta: z.string().optional(),
     // only a public repo
     repo: z.url().optional(),
     stack: z.array(z.string()).default([]),

@@ -1,4 +1,4 @@
-// Re-shoots a software case study's screenshots from its live app, so they keep up when the
+// Re-shoots a software case study's screenshots from its live app or extension, so they keep up when the
 // app changes (reddy.world#125). Writes the WebP files the case study's .md names into
 // public/images/software/<slug>/ (at most 1600 px wide, no metadata), then their srcset copies.
 //
@@ -9,6 +9,7 @@
 // Example data typed into a live app is fine (agreed with Ryan, 2026-10-17); nothing is saved
 // to an account.
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -30,54 +31,99 @@ async function page(browser, viewport, { storage = {}, clock = false } = {}) {
 const done = (p) => p.context().close();
 
 // ---------------------------------------------------------------------------- Reddy.Neuro
+// The case study is about NeuroOverlay, the browser extension (Ryan, 2026-10-19). It is the
+// zip neuro.reddy.world offers (checked against its SHA-256), loaded into Chromium, on a real
+// article. Nothing is stored: each capture gets a fresh browser profile.
 const NEURO = 'https://neuro.reddy.world';
-const VELVET = { adhd_palette_id: 'velvet_olive', adhd_font_id: 'atkinson_next' };
+const ARTICLE = 'https://en.wikipedia.org/wiki/Atkinson_Hyperlegible';
+let unpacked;
 
-async function neuroTab(browser, tab) {
-  const p = await page(browser, DESKTOP, { storage: VELVET });
-  await p.goto(`${NEURO}/app?tab=${tab}`, { waitUntil: 'networkidle', timeout: 60000 });
-  await p.waitForTimeout(2000);
-  const png = await p.screenshot();
-  await done(p);
-  return png;
+async function extension() {
+  if (unpacked) return unpacked;
+  const zip = Buffer.from(await (await fetch(`${NEURO}/neuro-overlay-extension.zip`)).arrayBuffer());
+  const want = (await (await fetch(`${NEURO}/neuro-overlay-extension.zip.sha256`)).text()).trim().split(/\s+/)[0];
+  const got = createHash('sha256').update(zip).digest('hex');
+  if (got !== want) throw new Error(`neuro-overlay-extension.zip: SHA-256 ${got}, the site says ${want}`);
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'neuro-overlay-'));
+  fs.writeFileSync(path.join(dir, 'ext.zip'), zip);
+  fs.mkdirSync(path.join(dir, 'ext'));
+  // Windows' own tar reads zip files; elsewhere unzip
+  if (process.platform === 'win32') execFileSync(path.join(process.env.SystemRoot, 'System32', 'tar.exe'), ['-xf', path.join(dir, 'ext.zip'), '-C', path.join(dir, 'ext')]);
+  else execFileSync('unzip', ['-q', path.join(dir, 'ext.zip'), '-d', path.join(dir, 'ext')]);
+  unpacked = path.join(dir, 'ext');
+  return unpacked;
+}
+
+/** Runs shoot(ctx, worker, id, tabId) in a fresh Chromium with the extension, the article open */
+async function withExtension(shoot) {
+  const ext = await extension();
+  const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'neuro-profile-'));
+  const ctx = await chromium.launchPersistentContext(profile, {
+    channel: 'chromium', viewport: DESKTOP, deviceScaleFactor: 2,
+    args: [`--disable-extensions-except=${ext}`, `--load-extension=${ext}`],
+  });
+  try {
+    const worker = ctx.serviceWorkers()[0] ?? await ctx.waitForEvent('serviceworker');
+    const id = new URL(worker.url()).host;
+    // the extension registers its content script on install; give it a moment
+    await worker.evaluate(() => new Promise((r) => setTimeout(r, 2000)));
+    const tab = ctx.pages()[0] ?? await ctx.newPage();
+    await tab.goto(ARTICLE, { waitUntil: 'networkidle', timeout: 60000 });
+    await tab.waitForTimeout(2000);
+    const tabId = await worker.evaluate(async (u) => (await chrome.tabs.query({})).find((t) => t.url === u).id, ARTICLE);
+    return await shoot({ ctx, worker, id, tab, tabId });
+  } finally {
+    await ctx.close();
+    fs.rmSync(profile, { recursive: true, force: true });
+  }
+}
+
+/** An extension page (popup or side panel) as it shows for the article's tab */
+async function extensionPage(ctx, id, file, viewport) {
+  const p = await ctx.newPage();
+  await p.setViewportSize(viewport);
+  // opened as a tab it would look at itself; point "the current tab" at the article
+  await p.addInitScript((u) => {
+    const query = chrome.tabs.query.bind(chrome.tabs);
+    chrome.tabs.query = async () => (await query({})).filter((t) => t.url === u);
+  }, ARTICLE);
+  await p.goto(`chrome-extension://${id}/${file}`);
+  await p.waitForTimeout(2500);
+  return p;
 }
 
 const RECIPES = {
   'reddy-neuro': {
-    'neuro-baseline-vs-velvet-olive.webp': (b) => neuroTab(b, 'matrix'),
-    'neuro-room-color-sets.webp': (b) => neuroTab(b, 'palettes'),
-    // Reader Mode on a real article, scrolled to its first paragraph, ruler on
-    'neuro-reader-mode-wikipedia.webp': async (b) => {
-      const p = await page(b, DESKTOP, { storage: VELVET });
-      await p.goto(`${NEURO}/app?tab=inspector`, { waitUntil: 'networkidle', timeout: 60000 });
-      const address = await p.evaluateHandle(() => [...document.querySelectorAll('input')].find((i) => /^https?:/.test(i.value)));
-      await address.asElement().fill('https://en.wikipedia.org/wiki/Atkinson_Hyperlegible');
-      await p.getByRole('button', { name: /Load URL/ }).click();
-      await p.waitForFunction(() => /Atkinson Hyperlegible is a/.test(document.body.innerText), null, { timeout: 45000 });
-      await p.waitForTimeout(1000);
-      await p.getByRole('button', { name: 'Reader Mode' }).first().click();
-      // the buttons name their current state: bold word starts off, the reading ruler on
-      if (await p.getByRole('button', { name: /Bionic ON/ }).count()) await p.getByRole('button', { name: /Bionic ON/ }).first().click();
-      if (await p.getByRole('button', { name: /Ruler OFF/ }).count()) await p.getByRole('button', { name: /Ruler OFF/ }).first().click();
-      await p.waitForTimeout(500);
+    // the article without and with NeuroOverlay, the reading column of each, side by side
+    'neuro-overlay-before-after.webp': async (b) => {
+      const crop = (png) => sharp(png).extract({ left: 500, top: 190, width: 1860, height: 1150 }).resize({ width: 800 }).png().toBuffer();
+      const p = await page(b, DESKTOP);
+      await p.goto(ARTICLE, { waitUntil: 'networkidle', timeout: 60000 });
+      const before = await crop(await p.screenshot());
+      await done(p);
+      const after = await crop(await withExtension(({ tab }) => tab.screenshot()));
+      const { height } = await sharp(before).metadata();
+      return sharp({ create: { width: 1604, height, channels: 3, background: '#ffffff' } })
+        .composite([{ input: before, left: 0, top: 0 }, { input: after, left: 804, top: 0 }]).png().toBuffer();
+    },
+    'neuro-overlay-popup.webp': () => withExtension(async ({ ctx, id }) => (await extensionPage(ctx, id, 'popup.html', { width: 340, height: 600 })).screenshot({ fullPage: true })),
+    'neuro-overlay-work-mode.webp': () => withExtension(async ({ tab, worker, tabId }) => {
+      await tab.bringToFront();
+      await worker.evaluate((t) => globalThis.neuroOpenWorkMode(t), tabId);
+      await tab.waitForTimeout(2000);
+      return tab.screenshot();
+    }),
+    // the side panel at its page check
+    'neuro-overlay-page-check.webp': () => withExtension(async ({ ctx, id }) => {
+      const p = await extensionPage(ctx, id, 'sidepanel.html', { width: 400, height: 900 });
+      await p.getByText('Page check', { exact: false }).first().scrollIntoViewIfNeeded();
       await p.evaluate(() => {
-        const el = [...document.querySelectorAll('p,div')].find((e) => e.children.length < 3 && /^Atkinson Hyperlegible is a/.test(e.innerText.trim()));
-        if (el) scrollTo(0, el.getBoundingClientRect().top + scrollY - 330);
+        const h = [...document.querySelectorAll('h2')].find((e) => /page check/i.test(e.textContent));
+        scrollTo(0, h.getBoundingClientRect().top + scrollY - 260);
       });
-      await p.mouse.move(DESKTOP.width * 0.35, 470);
-      await p.waitForTimeout(800);
-      const png = await p.screenshot();
-      await done(p);
-      return png;
-    },
-    'neuro-landing-phone.webp': async (b) => {
-      const p = await page(b, PHONE);
-      await p.goto(NEURO, { waitUntil: 'networkidle', timeout: 60000 });
-      await p.waitForTimeout(1500);
-      const png = await p.screenshot();
-      await done(p);
-      return png;
-    },
+      await p.waitForTimeout(500);
+      return p.screenshot();
+    }),
   },
   'focus-desk': (() => {
     const FOCUS = 'https://focus.reddy.world/';
