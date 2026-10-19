@@ -842,6 +842,20 @@ body {
   background: var(--gold-hover);
 }
 
+/* The door back to the whole site: reddy.world's wall of work */
+.cta-links {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+  flex-wrap: wrap;
+}
+
+.door {
+  color: var(--fg);
+  font-weight: 600;
+  text-underline-offset: 3px;
+}
+
 .gallery-item {
   margin: 0;
   display: flex;

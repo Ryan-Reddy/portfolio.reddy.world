@@ -54,6 +54,20 @@ const canonical = new URL(Astro.url.pathname, ORIGIN).href;
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
+  <!-- Google Analytics, the same property as the reddy.world app, so archive visits count as reddy.world's
+       (Ryan, 2026-10-19). Only on reddy.world itself: previews and local builds are not counted. No ads. -->
+  <script is:inline>
+    if (location.hostname === 'reddy.world') {
+      const s = document.createElement('script');
+      s.async = true;
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=G-12SFENLZLH';
+      document.head.appendChild(s);
+      window.dataLayer = window.dataLayer || [];
+      window.gtag = function () { dataLayer.push(arguments); };
+      gtag('js', new Date());
+      gtag('config', 'G-12SFENLZLH');
+    }
+  </script>
 </head>
 <body>
   <header class="site-header">

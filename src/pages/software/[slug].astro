@@ -2,7 +2,7 @@
 import Base from '../../layouts/Base.astro';
 import { getCollection, render } from 'astro:content';
 import { shot } from '../../lib/software.js';
-import { PERSON_ID, ORIGIN, SITE, BASE } from '../../lib/portfolios.js';
+import { PERSON_ID, ORIGIN, SITE, BASE, contactUrl } from '../../lib/portfolios.js';
 import '../../styles/software.css';
 
 export async function getStaticPaths() {
@@ -116,5 +116,11 @@ const facts = [
         ))}
       </div>
     )}
+
+    <aside class="doors" aria-label="More">
+      <a href="/">See all my work →</a>
+      <a href={`${BASE}/software/`}>All software and websites</a>
+      <a href={contactUrl({ project: entry.id })}>Plan a free 30-minute talk</a>
+    </aside>
   </article>
 </Base>

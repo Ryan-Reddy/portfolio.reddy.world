@@ -101,6 +101,7 @@ html.paper .breadcrumb a { color: var(--rust); }
 
 .figs { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; align-items: start; }
 .figs .tall img { max-width: 260px; }
+.doors { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 12px 28px; border-top: 1px solid var(--line); padding-top: 24px; font-weight: 600; }
 
 /* --------------------------------------------------------------------------
    The overview
