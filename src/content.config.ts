@@ -47,6 +47,10 @@ const software = defineCollection({
       caption: z.string().min(1),
       // capture: a real screenshot; display: an image made around the app (Ryan's displays, #156)
       kind: z.enum(['capture', 'display']).default('capture'),
+      // two matching pictures marked before and after head the page as a before/after slider;
+      // label names each side on it
+      pair: z.enum(['before', 'after']).optional(),
+      label: z.string().optional(),
     })).default([]),
   }),
 });

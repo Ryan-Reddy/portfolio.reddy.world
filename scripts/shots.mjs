@@ -94,17 +94,14 @@ async function extensionPage(ctx, id, file, viewport) {
 
 const RECIPES = {
   'reddy-neuro': {
-    // the article without and with NeuroOverlay, the reading column of each, side by side
-    'neuro-overlay-before-after.webp': async (b) => {
-      const crop = (png) => sharp(png).extract({ left: 500, top: 190, width: 1860, height: 1150 }).resize({ width: 800 }).png().toBuffer();
+    // the article with and without NeuroOverlay, the same window, for the before/after slider
+    'neuro-overlay-after.webp': () => withExtension(({ tab }) => tab.screenshot()),
+    'neuro-overlay-before.webp': async (b) => {
       const p = await page(b, DESKTOP);
       await p.goto(ARTICLE, { waitUntil: 'networkidle', timeout: 60000 });
-      const before = await crop(await p.screenshot());
+      const png = await p.screenshot();
       await done(p);
-      const after = await crop(await withExtension(({ tab }) => tab.screenshot()));
-      const { height } = await sharp(before).metadata();
-      return sharp({ create: { width: 1604, height, channels: 3, background: '#ffffff' } })
-        .composite([{ input: before, left: 0, top: 0 }, { input: after, left: 804, top: 0 }]).png().toBuffer();
+      return png;
     },
     'neuro-overlay-popup.webp': () => withExtension(async ({ ctx, id }) => (await extensionPage(ctx, id, 'popup.html', { width: 340, height: 600 })).screenshot({ fullPage: true })),
     'neuro-overlay-work-mode.webp': () => withExtension(async ({ tab, worker, tabId }) => {

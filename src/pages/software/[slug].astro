@@ -1,6 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
 import { getCollection, render } from 'astro:content';
+import Compare from '../../components/Compare.astro';
 import { shot } from '../../lib/software.js';
 import { appFacts } from '../../lib/app-json.js';
 import { PERSON_ID, ORIGIN, SITE, BASE, contactUrl } from '../../lib/portfolios.js';
@@ -16,7 +17,18 @@ const d = entry.data;
 const { Content } = await render(entry);
 const pageUrl = `${SITE}/software/${entry.id}/`;
 const shots = await Promise.all(d.screenshots.map((s) => shot(entry.id, s)));
-const [hero, ...figs] = shots;
+// a before and an after picture head the page as a slider; otherwise the first picture does
+const pairOf = (side) => shots.find((s, i) => d.screenshots[i].pair === side);
+const before = pairOf('before');
+const after = pairOf('after');
+const compare = before && after && {
+  before, after,
+  beforeLabel: d.screenshots[shots.indexOf(before)].label ?? 'Before',
+  afterLabel: d.screenshots[shots.indexOf(after)].label ?? 'After',
+};
+const rest = compare ? shots.filter((s) => s !== before && s !== after) : shots;
+const hero = compare ? after : rest[0];
+const figs = compare ? rest : rest.slice(1);
 // version and date come from the app's own /app.json, read now (never typed by hand); the button is its store listing
 const { stores, button, release } = await appFacts(d);
 const day = (iso) => new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
@@ -96,7 +108,12 @@ const facts = [
       <p class="dek">{d.dek}</p>
     </header>
 
-    {hero && (
+    {compare && (
+      <div class="case-hero">
+        <Compare before={compare.before} after={compare.after} beforeLabel={compare.beforeLabel} afterLabel={compare.afterLabel} caption={compare.after.caption} />
+      </div>
+    )}
+    {!compare && hero && (
       <figure class="case-hero">
         <img src={hero.src} srcset={hero.srcset} sizes="(max-width: 1152px) 100vw, 1120px" width={hero.width} height={hero.height} alt={hero.alt} fetchpriority="high" decoding="async">
         <figcaption>{hero.caption}</figcaption>

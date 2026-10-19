@@ -20,9 +20,16 @@ role: "Concept, design and code: Ryan Reddy"
 order: 1
 updated: 2026-10-19
 screenshots:
-  - file: neuro-overlay-before-after.webp
-    alt: "The Wikipedia article on Atkinson Hyperlegible twice. On the left, as Wikipedia shows it: black text on white with blue links. On the right, with NeuroOverlay on: off-white text in Atkinson Hyperlegible on a soft dark olive background, with more space between the lines and underlined green links."
-    caption: "The same Wikipedia article without and with NeuroOverlay, on its standard settings."
+  - file: neuro-overlay-after.webp
+    pair: after
+    label: With NeuroOverlay
+    alt: "The Wikipedia article on Atkinson Hyperlegible with NeuroOverlay on: off-white text in Atkinson Hyperlegible on a soft dark olive background, more space between the lines, and underlined green links."
+    caption: "The same Wikipedia article without and with NeuroOverlay, on its standard settings. Drag the line, or use the arrow keys, to compare."
+  - file: neuro-overlay-before.webp
+    pair: before
+    label: Without
+    alt: "The Wikipedia article on Atkinson Hyperlegible as Wikipedia shows it: black text on a white page with blue links, the contents on the left and the appearance settings on the right."
+    caption: "The article as Wikipedia shows it, without NeuroOverlay."
   - file: neuro-overlay-work-mode.webp
     alt: "NeuroOverlay's Work mode on the same article: the title, a dial with Gist, Key points, Structured (selected) and Full, the sections as short folded blocks, and a side column with next steps, the outline, tools (reading ruler, wait timers, read aloud) and the page score."
     caption: "Work mode, an early version: a quiet view of the page, with a dial for how much you see."
