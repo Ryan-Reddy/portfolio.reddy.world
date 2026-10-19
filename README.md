@@ -48,10 +48,10 @@ npm run import
 
 One page per software project at `https://reddy.world/portfolio/software/<slug>/`, and the overview at `/portfolio/software/`.
 
-- **Words:** `src/content/software/<slug>.md`. The frontmatter fields are described in [content.config.ts](src/content.config.ts); the build fails on a missing `summary` (120–160 characters) or a screenshot without `alt`. The body is the case study in Markdown.
+- **Words:** `src/content/software/<slug>.md`. Keep them short; the store listing (`store`, the main button) has the full, current description. The frontmatter fields are described in [content.config.ts](src/content.config.ts); the build fails on a missing `summary` (120–160 characters) or a screenshot without `alt`. The body is the case study in Markdown.
 - **Pictures:** `public/images/software/<slug>/*.webp`, at most 1600 px wide, listed under `screenshots` in reading order (the first heads the page). Make the srcset copies with `node scripts/image-variants.mjs public/images/software/<slug>`.
 - **New captures from the live app:** `npm run shots -- <slug>` re-shoots the pictures that [shots.mjs](scripts/shots.mjs) has a recipe for (Reddy.Neuro and Focus Desk so far) and makes their copies. Needs `npx playwright install chromium` once.
-- **For reddy.world's wall:** `/portfolio/software.json` ([software.json.js](src/pages/software.json.js)) lists every case study with its line, status, version, live link, page and pictures. The archive is the one source for software (Ryan, 2026-10-19); the wall reads this file at runtime.
+- **For reddy.world's wall:** `/portfolio/software.json` ([software.json.js](src/pages/software.json.js)) lists every case study with its line, status, store listings, main button, page and pictures. Version, release date and description come from each app's own `/app.json` at build time ([app-json.js](src/lib/app-json.js)) and are left out when it isn't there, never typed by hand. The apps publish it and start the reddy.world deploy after each release. The archive is the one source for software (Ryan, 2026-10-19); the wall reads this file at runtime.
 - **CI:** [check-software.mjs](scripts/check-software.mjs) reads the built pages as a crawler would: unique title, description, one `<h1>`, every picture with alt, width, height and srcset, JSON-LD with the author, and the page in the sitemap and `llms.txt`.
 
 ## Self-hosted pictures

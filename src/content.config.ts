@@ -21,10 +21,12 @@ const software = defineCollection({
     platform: z.string().optional(),
     year: z.number().int(),
     status: z.string(),
-    // the released version, when the app has one (npm run shots keeps Reddy.Neuro's current)
-    version: z.string().optional(),
+    // the app's own site
     live: z.url().optional(),
-    // the button's words, before the arrow; default "Open <title>"
+    // its store listings, the first is the main button; only listings Ryan or a source gave.
+    // The app's own /app.json (version, date, description, listings) wins at build time.
+    store: z.array(z.object({ name: z.string(), url: z.url() })).default([]),
+    // the main button's words, before the arrow
     cta: z.string().optional(),
     // only a public repo
     repo: z.url().optional(),
@@ -43,6 +45,8 @@ const software = defineCollection({
       file: z.string(),
       alt: z.string().min(1),
       caption: z.string().min(1),
+      // capture: a real screenshot; display: an image made around the app (Ryan's displays, #156)
+      kind: z.enum(['capture', 'display']).default('capture'),
     })).default([]),
   }),
 });

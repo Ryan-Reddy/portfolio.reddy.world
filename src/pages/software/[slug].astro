@@ -2,6 +2,7 @@
 import Base from '../../layouts/Base.astro';
 import { getCollection, render } from 'astro:content';
 import { shot } from '../../lib/software.js';
+import { appFacts } from '../../lib/app-json.js';
 import { PERSON_ID, ORIGIN, SITE, BASE, contactUrl } from '../../lib/portfolios.js';
 import '../../styles/software.css';
 
@@ -16,6 +17,9 @@ const { Content } = await render(entry);
 const pageUrl = `${SITE}/software/${entry.id}/`;
 const shots = await Promise.all(d.screenshots.map((s) => shot(entry.id, s)));
 const [hero, ...figs] = shots;
+// version and date come from the app's own /app.json, read now (never typed by hand); the button is its store listing
+const { stores, button, release } = await appFacts(d);
+const day = (iso) => new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
 const host = (url) => new URL(url).host;
 
 const author = { '@type': 'Person', '@id': PERSON_ID, name: 'Ryan Reddy', url: `${ORIGIN}/` };
@@ -33,7 +37,9 @@ const work = d.kind === 'app'
     '@type': 'SoftwareApplication',
     applicationCategory: d.category,
     operatingSystem: d.platform,
-    url: d.live ?? pageUrl,
+    url: d.live ?? stores[0]?.url ?? pageUrl,
+    downloadUrl: stores[0]?.url,
+    softwareVersion: release?.version,
     screenshot: shots.length ? shots.map(imageObject) : undefined,
   }
   : { '@type': 'CreativeWork', url: pageUrl, image: shots.length ? shots.map(imageObject) : undefined };
@@ -67,6 +73,7 @@ const facts = [
   ['When', d.when],
   ['Built with', d.stack.join(', ')],
   ['Status', d.status],
+  ['Version', release && `${release.version}${release.updated ? `, updated ${day(release.updated)}` : ''}`],
 ].filter(([, v]) => v);
 ---
 <Base
@@ -101,9 +108,11 @@ const facts = [
     <aside class="facts" aria-label={`${d.title} at a glance`}>
       <dl>
         {facts.map(([k, v]) => <div><dt>{k}</dt><dd>{v}</dd></div>)}
+        {stores.length > 0 && <div><dt>Get it</dt><dd>{stores.map((st, i) => <>{i > 0 && ', '}<a href={st.url}>{st.name}</a></>)}</dd></div>}
+        {d.live && stores.length > 0 && <div><dt>Website</dt><dd><a href={d.live}>{host(d.live)}</a></dd></div>}
         {d.repo && <div><dt>Code</dt><dd><a href={d.repo}>{host(d.repo)}{new URL(d.repo).pathname}</a></dd></div>}
       </dl>
-      {d.live && <a class="live" href={d.live}>{d.cta ?? `Open ${d.title}`} →</a>}
+      {button && <a class="live" href={button.url}>{button.label} →</a>}
     </aside>
 
     {figs.length > 0 && (

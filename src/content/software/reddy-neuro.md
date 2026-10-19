@@ -8,8 +8,10 @@ category: BrowserApplication
 platform: Chrome, Brave
 year: 2026
 status: Early version, free
-version: 1.0.8
-live: https://chromewebstore.google.com/detail/neurooverlay-adhd-coga-vi/bdghhcffdfnpjlejhjcfnllofaidmija
+live: https://neuro.reddy.world
+store:
+  - name: Chrome Web Store
+    url: https://chromewebstore.google.com/detail/neurooverlay-adhd-coga-vi/bdghhcffdfnpjlejhjcfnllofaidmija
 cta: Add to Chrome
 stack: [JavaScript, Manifest V3, Chrome scripting and side panel APIs]
 audience: Readers who tire on busy, glaring pages
