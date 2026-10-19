@@ -51,6 +51,11 @@ async function extension() {
   if (process.platform === 'win32') execFileSync(path.join(process.env.SystemRoot, 'System32', 'tar.exe'), ['-xf', path.join(dir, 'ext.zip'), '-C', path.join(dir, 'ext')]);
   else execFileSync('unzip', ['-q', path.join(dir, 'ext.zip'), '-d', path.join(dir, 'ext')]);
   unpacked = path.join(dir, 'ext');
+  // the case study names the version these pictures show
+  const { version } = JSON.parse(fs.readFileSync(path.join(unpacked, 'manifest.json'), 'utf-8'));
+  const md = path.join(import.meta.dirname, '..', 'src', 'content', 'software', 'reddy-neuro.md');
+  fs.writeFileSync(md, fs.readFileSync(md, 'utf-8').replace(/^version: .*$/m, `version: ${version}`));
+  console.log(`NeuroOverlay ${version}`);
   return unpacked;
 }
 

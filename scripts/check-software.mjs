@@ -56,6 +56,18 @@ for (const page of ['', ...slugs.map((s) => `${s}/`)]) {
   if (page && !llms.includes(`(${SITE}/${where})`)) say('not in llms.txt');
 }
 
+// software.json, which reddy.world's wall reads: every case study, each with its hero picture
+try {
+  const { apps } = JSON.parse(read('software.json'));
+  for (const slug of slugs) {
+    const app = apps.find((a) => a.slug === slug);
+    if (!app) problems.push(`software.json: no entry for ${slug}`);
+    else if (!app.hero?.alt || !app.hero?.width) problems.push(`software.json: ${slug} has no hero picture with alt and width`);
+  }
+} catch (e) {
+  problems.push(`software.json: ${e.message}`);
+}
+
 if (problems.length) {
   console.error(`check-software: ${problems.length} problems\n- ${problems.join('\n- ')}`);
   process.exit(1);

@@ -21,6 +21,8 @@ const software = defineCollection({
     platform: z.string().optional(),
     year: z.number().int(),
     status: z.string(),
+    // the released version, when the app has one (npm run shots keeps Reddy.Neuro's current)
+    version: z.string().optional(),
     live: z.url().optional(),
     // the button's words, before the arrow; default "Open <title>"
     cta: z.string().optional(),
