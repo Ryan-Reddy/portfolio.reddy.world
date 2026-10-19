@@ -1,0 +1,77 @@
+# When an app releases, its case study is refreshed from the real, current app (Ryan, 2026-10-19:
+# "ensure the deployments in the future also have to update their page here too"):
+# - the pictures are taken again from the live app (npm run shots -- <slug>)
+# - the build is checked, and changed pictures are committed to main
+# - the reddy.world deploy is started, which builds the archive and also reads the app's /app.json
+#
+# Started by an app's release (repo.template.reddy.world#37):
+#   gh workflow run refresh-captures.yml -R Ryan-Reddy/portfolio.reddy.world -f slug=reddy-neuro
+# or by hand from the Actions tab. publish=false only shows what would change.
+name: Refresh captures
+
+on:
+  workflow_dispatch:
+    inputs:
+      slug:
+        description: 'Case study to refresh (reddy-neuro, focus-desk)'
+        required: true
+      publish:
+        description: 'Commit changed pictures and start the reddy.world deploy'
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-captures
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - run: npx playwright install --with-deps chromium
+
+      - name: Take the pictures again from the live app
+        run: npm run shots -- "${{ inputs.slug }}"
+
+      - name: What changed
+        id: changed
+        run: |
+          git status --short public/images/software
+          if [ -n "$(git status --porcelain public/images/software)" ]; then echo "yes=true" >> "$GITHUB_OUTPUT"; fi
+
+      - name: The case study's date
+        if: steps.changed.outputs.yes == 'true'
+        run: sed -i "s/^updated: .*/updated: $(date -u +%F)/" "src/content/software/${{ inputs.slug }}.md"
+
+      # Builds the pages, writes firebase.json, and fails if a redirect target is missing
+      - run: npm run build
+
+      - run: node scripts/check-software.mjs
+
+      - name: Commit the new pictures
+        if: steps.changed.outputs.yes == 'true' && inputs.publish
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898341+github-actions[bot]@users.noreply.github.com'
+          git add public/images/software "src/content/software/${{ inputs.slug }}.md"
+          git commit -m "chore: ${{ inputs.slug }}'s pictures taken again from the live app"
+          git push
+
+      # A push with this workflow's token starts no other workflow, so start the deploy here
+      - name: Start the reddy.world deploy
+        if: steps.changed.outputs.yes == 'true' && inputs.publish
+        env:
+          GH_TOKEN: ${{ secrets.REDDY_WORLD_DEPLOY_TOKEN }}
+        run: gh workflow run firebase-hosting-merge.yml -R Ryan-Reddy/reddy.world --ref master

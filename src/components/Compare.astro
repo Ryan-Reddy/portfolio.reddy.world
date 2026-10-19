@@ -1,0 +1,164 @@
+---
+/**
+ * Before/after: two matching pictures on top of each other, and a slanted divider the visitor
+ * drags (or moves with the arrow keys) to show more of one or the other. The side that shrinks
+ * darkens gradually (Ryan, 2026-10-19). Both pictures and their alt text are in the raw HTML;
+ * without JavaScript the divider stays in the middle.
+ *
+ * before, after: { src, srcset, width, height, alt } from shot(); the after picture sets the size.
+ */
+interface Pic { src: string; srcset: string; width: number; height: number; alt: string }
+interface Props {
+  before: Pic;
+  after: Pic;
+  beforeLabel: string;
+  afterLabel: string;
+  caption: string;
+  sizes?: string;
+}
+const { before, after, beforeLabel, afterLabel, caption, sizes = '(max-width: 1152px) 100vw, 1120px' } = Astro.props;
+// The divider leans by SLANT % of the width each way from its middle; its angle follows the picture's shape
+const SLANT = 4;
+const lean = (Math.atan((2 * SLANT / 100) * (after.width / after.height)) * 180) / Math.PI;
+---
+<figure class="compare" data-compare>
+  <div class="compare-stage" style={`--p: 50; --slant: ${SLANT}%; --lean: -${lean.toFixed(2)}deg; aspect-ratio: ${after.width} / ${after.height}`}>
+    <img class="compare-after" src={after.src} srcset={after.srcset} sizes={sizes} width={after.width} height={after.height} alt={after.alt} fetchpriority="high" decoding="async">
+    <div class="compare-shade compare-shade-after" aria-hidden="true"></div>
+    <div class="compare-before">
+      <img src={before.src} srcset={before.srcset} sizes={sizes} width={before.width} height={before.height} alt={before.alt} decoding="async">
+      <div class="compare-shade compare-shade-before" aria-hidden="true"></div>
+    </div>
+    <span class="compare-label compare-label-before" aria-hidden="true">{beforeLabel}</span>
+    <span class="compare-label compare-label-after" aria-hidden="true">{afterLabel}</span>
+    <div class="compare-line" aria-hidden="true"></div>
+    <div class="compare-handle" role="slider" tabindex="0" aria-label={`${beforeLabel} or ${afterLabel}: how much of each to show`}
+      aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" aria-valuetext={`Half ${beforeLabel.toLowerCase()}, half ${afterLabel.toLowerCase()}`}></div>
+  </div>
+  <figcaption>{caption}</figcaption>
+</figure>
+
+<style>
+  .compare-stage {
+    position: relative;
+    overflow: hidden;
+    border-radius: 6px;
+    border: 1px solid var(--line);
+    touch-action: pan-y;
+    user-select: none;
+    cursor: ew-resize;
+  }
+  .compare .compare-stage img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    border: 0;
+    border-radius: 0;
+    pointer-events: none;
+  }
+  .compare-before {
+    position: absolute;
+    inset: 0;
+    /* the left part, up to a divider leaning by --slant each way */
+    clip-path: polygon(0 0, calc(var(--p) * 1% + var(--slant)) 0, calc(var(--p) * 1% - var(--slant)) 100%, 0 100%);
+  }
+  /* the shrinking side darkens: up to 60 % as the divider nears the edge */
+  .compare-shade {
+    position: absolute;
+    inset: 0;
+    background: #000;
+    pointer-events: none;
+  }
+  .compare-shade-before { opacity: clamp(0, (50 - var(--p)) / 50 * 0.6, 0.6); }
+  .compare-shade-after { opacity: clamp(0, (var(--p) - 50) / 50 * 0.6, 0.6); }
+  .compare-line {
+    position: absolute;
+    top: -2%;
+    bottom: -2%;
+    left: calc(var(--p) * 1%);
+    width: 3px;
+    margin-left: -1.5px;
+    background: var(--paper);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+    transform: skewX(var(--lean));
+    pointer-events: none;
+  }
+  .compare-handle {
+    position: absolute;
+    top: 50%;
+    left: calc(var(--p) * 1%);
+    width: 44px;
+    height: 44px;
+    margin: -22px 0 0 -22px;
+    border-radius: 50%;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+    cursor: ew-resize;
+  }
+  .compare-handle::before {
+    content: '‹ ›';
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    color: var(--ink);
+  }
+  .compare-handle:focus-visible { outline: 3px solid var(--rust); outline-offset: 3px; }
+  .compare-label {
+    position: absolute;
+    top: 12px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    background: color-mix(in srgb, var(--paper) 88%, transparent);
+    color: var(--ink);
+    pointer-events: none;
+  }
+  .compare-label-before { left: 12px; }
+  .compare-label-after { right: 12px; }
+  @media (prefers-reduced-motion: no-preference) {
+    .compare-stage.stepping .compare-before { transition: clip-path 0.15s ease-out; }
+    .compare-stage.stepping .compare-line,
+    .compare-stage.stepping .compare-handle { transition: left 0.15s ease-out; }
+  }
+</style>
+
+<script>
+  for (const figure of document.querySelectorAll<HTMLElement>('[data-compare]')) {
+    const stage = figure.querySelector<HTMLElement>('.compare-stage')!;
+    const handle = figure.querySelector<HTMLElement>('.compare-handle')!;
+    const [beforeName, afterName] = [...figure.querySelectorAll('.compare-label')].map((l) => l.textContent!.toLowerCase());
+    const set = (p: number) => {
+      const v = Math.round(Math.min(100, Math.max(0, p)));
+      stage.style.setProperty('--p', String(v));
+      handle.setAttribute('aria-valuenow', String(v));
+      handle.setAttribute('aria-valuetext', `${v} % ${beforeName}, ${100 - v} % ${afterName}`);
+    };
+    const at = (x: number) => {
+      const r = stage.getBoundingClientRect();
+      set(((x - r.left) / r.width) * 100);
+    };
+    stage.addEventListener('pointerdown', (e) => {
+      stage.classList.remove('stepping');
+      stage.setPointerCapture(e.pointerId);
+      at(e.clientX);
+      handle.focus({ preventScroll: true });
+    });
+    stage.addEventListener('pointermove', (e) => { if (stage.hasPointerCapture(e.pointerId)) at(e.clientX); });
+    handle.addEventListener('keydown', (e) => {
+      const now = Number(handle.getAttribute('aria-valuenow'));
+      const step = { ArrowLeft: -5, ArrowDown: -5, ArrowRight: 5, ArrowUp: 5, PageDown: -20, PageUp: 20 }[e.key];
+      const to = e.key === 'Home' ? 0 : e.key === 'End' ? 100 : step !== undefined ? now + step : null;
+      if (to === null) return;
+      e.preventDefault();
+      stage.classList.add('stepping');
+      set(to);
+    });
+  }
+</script>

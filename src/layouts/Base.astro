@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import { getCollection } from 'astro:content';
 import { portfolios, contactUrl, ORIGIN, BASE, SITE } from '../lib/portfolios.js';
 
 interface Props {
@@ -10,14 +11,19 @@ interface Props {
   jsonLd?: object | object[];
   type?: string;
   article?: { published?: string; modified?: string; section?: string; tags?: string[] };
+  // 'paper': reddy.world's light paper colours (the software pages); default the archive's dark
+  theme?: 'paper';
+  footnote?: string;
 }
 
-const { title, description, image, active, jsonLd, type = 'website', article } = Astro.props;
+const { title, description, image, active, jsonLd, type = 'website', article, theme,
+  footnote = 'Decor, art and stage builds, documented from the original productions.' } = Astro.props;
+const softwareCount = (await getCollection('software')).length;
 // Astro.url includes the base, so this is the page's reddy.world/portfolio URL
 const canonical = new URL(Astro.url.pathname, ORIGIN).href;
 ---
 <!doctype html>
-<html lang="en">
+<html lang="en" class={theme}>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -48,6 +54,20 @@ const canonical = new URL(Astro.url.pathname, ORIGIN).href;
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
+  <!-- Google Analytics, the same property as the reddy.world app, so archive visits count as reddy.world's
+       (Ryan, 2026-10-19). Only on reddy.world itself: previews and local builds are not counted. No ads. -->
+  <script is:inline>
+    if (location.hostname === 'reddy.world') {
+      const s = document.createElement('script');
+      s.async = true;
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=G-12SFENLZLH';
+      document.head.appendChild(s);
+      window.dataLayer = window.dataLayer || [];
+      window.gtag = function () { dataLayer.push(arguments); };
+      gtag('js', new Date());
+      gtag('config', 'G-12SFENLZLH');
+    }
+  </script>
 </head>
 <body>
   <header class="site-header">
@@ -67,6 +87,11 @@ const canonical = new URL(Astro.url.pathname, ORIGIN).href;
             <span class="tab-count">{p.posts.length}</span>
           </a>
         ))}
+        <a href={`${BASE}/software/`} class:list={['tab-btn', { active: active === 'software' }]} aria-current={active === 'software' ? 'page' : undefined}>
+          <span class="tab-icon" aria-hidden="true">💻</span>
+          <span class="tab-title">Software</span>
+          <span class="tab-count">{softwareCount}</span>
+        </a>
       </nav>
 
       <div class="header-actions">
@@ -81,7 +106,7 @@ const canonical = new URL(Astro.url.pathname, ORIGIN).href;
 
   <footer class="site-footer">
     <div class="footer-inner">
-      <p class="footer-copy">&copy; Ryan Reddy &middot; Decor, art and stage builds, documented from the original productions.</p>
+      <p class="footer-copy">&copy; Ryan Reddy &middot; {footnote}</p>
       <div class="footer-links">
         <a href="https://reddy.world">reddy.world</a>
         <a href={contactUrl()}>Contact</a>

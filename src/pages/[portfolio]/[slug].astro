@@ -156,7 +156,10 @@ const article = isPost ? { published: post.published, modified: post.modified, s
 
     <aside class="cta">
       <p>Want something like this for your event, venue or home?</p>
-      <a class="btn-cta" href={contactUrl({ project: post.slug })}>Plan a free 30-minute talk</a>
+      <div class="cta-links">
+        <a class="btn-cta" href={contactUrl({ project: post.slug })}>Plan a free 30-minute talk</a>
+        <a class="door" href="/">See all my work →</a>
+      </div>
     </aside>
 
     {videos.length > 0 && (
