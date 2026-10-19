@@ -8,7 +8,8 @@
     "dev": "astro dev",
     "build": "astro build && node scripts/firebase-config.mjs",
     "preview": "astro preview",
-    "import": "python scripts/parse_wordpress.py"
+    "import": "python scripts/parse_wordpress.py",
+    "shots": "node scripts/shots.mjs"
   },
   "devDependencies": {
     "@astrojs/sitemap": "^3.7.4",

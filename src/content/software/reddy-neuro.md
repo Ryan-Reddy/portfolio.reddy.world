@@ -14,7 +14,7 @@ audience: Readers who tire on busy, glaring pages
 maker: Reddy.World Enterprises
 role: "Concept, design and code: Ryan Reddy"
 order: 1
-updated: 2026-10-17
+updated: 2026-10-19
 screenshots:
   - file: neuro-baseline-vs-velvet-olive.webp
     alt: "Reddy.Neuro's side-by-side comparison. On the left, a task card in pure white text on pure black, labelled 'Harsh OLED dark, pure black (high glare)'. On the right, the same card in Velvet Olive: off-white text on a dark olive background, labelled 'Calibrated: Velvet Olive'."
