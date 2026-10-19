@@ -53,6 +53,6 @@ I made it for people who tire quickly on glaring, cluttered pages, with ADHD in 
 
 **Fading without hiding what matters.** Sidebars and ads fade, but alerts, warnings and pop-up choices never do, and a faded block comes back when you hover over it.
 
-**Everything on your device.** Work mode and the page check read the page in your tab and send nothing anywhere. Atkinson Hyperlegible and Lexend Deca come with the extension, so no font is downloaded.
+**Everything on your device.** Work mode and the page check read the page in your tab and send nothing anywhere. The fonts come with the extension, so none is downloaded.
 
 You can also try the settings without installing anything, in the [Web Studio at neuro.reddy.world](https://neuro.reddy.world).
