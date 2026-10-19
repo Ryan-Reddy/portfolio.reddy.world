@@ -1,0 +1,87 @@
+# A preview for every PR, so Ryan sees the pages before they go live.
+# - The archive build only (reddy.world's app is a private repo this one can't check out),
+#   under /portfolio/ as on reddy.world, on a channel of the portfolio-reddy Hosting site.
+#   Links to app pages are absolute and go to the live reddy.world.
+# - One PR comment with the link, updated for every push; the channel expires after 7 days
+#   and is deleted when the PR closes or merges. Static Hosting only, so nothing runs up costs.
+name: Preview
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
+concurrency:
+  group: preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  CHANNEL: pr${{ github.event.pull_request.number }}
+
+jobs:
+  preview:
+    # not for dependabot or forks: their runs get no secrets
+    if: github.event.action != 'closed' && github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - run: npm ci
+
+      # Builds the pages, writes firebase.json, and fails if a redirect target is missing
+      - run: npm run build
+
+      - name: Lay out the preview (the build under /portfolio/, / opens the software overview)
+        run: |
+          mkdir -p preview/public
+          cp -r dist preview/public/portfolio
+          cp .firebaserc preview/
+          cat > preview/firebase.json <<'EOF'
+          {
+            "hosting": {
+              "target": "portfolio",
+              "public": "public",
+              "cleanUrls": true,
+              "trailingSlash": true,
+              "redirects": [{ "source": "/", "destination": "/portfolio/software/", "type": 302 }]
+            }
+          }
+          EOF
+
+      - name: Deploy the preview
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_GETREDDYWORLD }}'
+          projectId: getreddyworld
+          target: portfolio
+          channelId: ${{ env.CHANNEL }}
+          expires: 7d
+          entryPoint: preview
+
+  delete_preview:
+    if: github.event.action == 'closed' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete the preview channel
+        env:
+          SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GETREDDYWORLD }}
+        run: |
+          printf '%s' "$SERVICE_ACCOUNT" > "$RUNNER_TEMP/sa.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
+          fb() { npx -y firebase-tools@14 "$@" --project getreddyworld; }
+          if fb hosting:channel:list --site portfolio-reddy --json | grep -q "/channels/$CHANNEL\""; then
+            fb hosting:channel:delete "$CHANNEL" --site portfolio-reddy --force
+          else
+            echo "No channel $CHANNEL on portfolio-reddy (never deployed, or expired)"
+          fi
+          rm -f "$RUNNER_TEMP/sa.json"

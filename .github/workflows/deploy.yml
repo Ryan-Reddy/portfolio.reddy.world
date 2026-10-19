@@ -3,6 +3,7 @@
 # - the pages themselves are published by the reddy.world deploy, which builds this repo;
 #   starting it here makes a merge go live. Secret REDDY_WORLD_DEPLOY_TOKEN: a fine-grained
 #   token for Ryan-Reddy/reddy.world with Actions: read and write.
+# PRs get their build and a preview from preview.yml.
 name: Deploy
 
 on:
@@ -10,14 +11,13 @@ on:
   push:
     branches:
       - main
-  pull_request:
 
 permissions:
   contents: read
 
 concurrency:
   group: redirects-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: false
 
 jobs:
   build_and_deploy:
@@ -36,7 +36,6 @@ jobs:
       - run: npm run build
 
       - name: Deploy portfolio.reddy.world (redirects only)
-        if: github.event_name != 'pull_request'
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
@@ -46,7 +45,6 @@ jobs:
           target: portfolio
 
   publish_on_reddy_world:
-    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - name: Start the reddy.world deploy
