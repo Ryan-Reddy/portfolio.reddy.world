@@ -1,5 +1,6 @@
 // Used by astro.config.mjs at build time, so it reads the JSON directly.
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
+import yaml from 'js-yaml';
 import { absUrl } from './media-url.js';
 import { BRAND } from './brands.js';
 
@@ -19,6 +20,24 @@ for (const key of KEYS) {
     byPath.set(`${SITE}/${key}/${post.slug}/`, { img, lastmod: post.modified });
   }
 }
+
+// The software case studies (src/content/software/<slug>.md): their screenshots, and the
+// overview's last edit is the newest case study's
+const day = (d) => (d instanceof Date ? d.toISOString().slice(0, 10) : String(d));
+const SOFTWARE_DIR = new URL('../content/software/', import.meta.url);
+let newest = '';
+for (const name of readdirSync(SOFTWARE_DIR).filter((f) => f.endsWith('.md'))) {
+  const slug = name.replace(/\.md$/, '');
+  const data = yaml.load(readFileSync(new URL(name, SOFTWARE_DIR), 'utf-8').split(/^---\s*$/m)[1]);
+  const img = (data.screenshots ?? []).map((s) => ({
+    url: absUrl(`/portfolio/images/software/${slug}/${s.file}`),
+    caption: `${s.caption} — ${data.title}, by Ryan Reddy`,
+  }));
+  const lastmod = day(data.updated);
+  if (lastmod > newest) newest = lastmod;
+  byPath.set(`${SITE}/software/${slug}/`, { img, lastmod });
+}
+byPath.set(`${SITE}/software/`, { img: [], lastmod: newest || undefined });
 
 /** Image entries and last edit of a project page, by its URL */
 export function pageInfo(url) {

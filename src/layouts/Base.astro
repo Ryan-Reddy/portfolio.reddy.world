@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import { getCollection } from 'astro:content';
 import { portfolios, contactUrl, ORIGIN, BASE, SITE } from '../lib/portfolios.js';
 
 interface Props {
@@ -10,14 +11,19 @@ interface Props {
   jsonLd?: object | object[];
   type?: string;
   article?: { published?: string; modified?: string; section?: string; tags?: string[] };
+  // 'paper': reddy.world's light paper colours (the software pages); default the archive's dark
+  theme?: 'paper';
+  footnote?: string;
 }
 
-const { title, description, image, active, jsonLd, type = 'website', article } = Astro.props;
+const { title, description, image, active, jsonLd, type = 'website', article, theme,
+  footnote = 'Decor, art and stage builds, documented from the original productions.' } = Astro.props;
+const softwareCount = (await getCollection('software')).length;
 // Astro.url includes the base, so this is the page's reddy.world/portfolio URL
 const canonical = new URL(Astro.url.pathname, ORIGIN).href;
 ---
 <!doctype html>
-<html lang="en">
+<html lang="en" class={theme}>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -67,6 +73,11 @@ const canonical = new URL(Astro.url.pathname, ORIGIN).href;
             <span class="tab-count">{p.posts.length}</span>
           </a>
         ))}
+        <a href={`${BASE}/software/`} class:list={['tab-btn', { active: active === 'software' }]} aria-current={active === 'software' ? 'page' : undefined}>
+          <span class="tab-icon" aria-hidden="true">💻</span>
+          <span class="tab-title">Software</span>
+          <span class="tab-count">{softwareCount}</span>
+        </a>
       </nav>
 
       <div class="header-actions">
@@ -81,7 +92,7 @@ const canonical = new URL(Astro.url.pathname, ORIGIN).href;
 
   <footer class="site-footer">
     <div class="footer-inner">
-      <p class="footer-copy">&copy; Ryan Reddy &middot; Decor, art and stage builds, documented from the original productions.</p>
+      <p class="footer-copy">&copy; Ryan Reddy &middot; {footnote}</p>
       <div class="footer-links">
         <a href="https://reddy.world">reddy.world</a>
         <a href={contactUrl()}>Contact</a>

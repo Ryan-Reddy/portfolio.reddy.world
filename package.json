@@ -12,7 +12,8 @@
   },
   "devDependencies": {
     "@astrojs/sitemap": "^3.7.4",
-    "astro": "^7.3.5"
+    "astro": "^7.3.5",
+    "playwright": "1.61.0"
   },
   "allowScripts": {
     "esbuild@0.28.2": true

@@ -1,0 +1,123 @@
+/* ==========================================================================
+   Software case studies (/portfolio/software/): reddy.world's paper colours,
+   Cormorant Garamond headings and Inter text, as on the pilot Ryan approved
+   (2026-10-17). The apps' own colours appear only in their screenshots.
+   Gold only for the name (the brand in the header) and the call to action:
+   reddy.world's rule since 2026-10-18. Gold is reddy.world's: #c7a86d on dark,
+   #7a5f28 on light.
+   ========================================================================== */
+
+html.paper {
+  color-scheme: light;
+  --paper: #fbf7ea;
+  --paper-2: #f2ecdb;
+  --ink: #23201c;
+  --ink-2: #3a332b;
+  --rust: #7a2f1c;
+  --line: #ddd3bd;
+  --gold: #7a5f28;
+  --gold-hover: #63501f;
+  /* the archive's own tokens, so its header and footer follow */
+  --bg: var(--paper);
+  --bg-gradient: none;
+  --surface: var(--paper-2);
+  --fg: var(--ink);
+  --fg-muted: var(--ink-2);
+  --gold-border: var(--line);
+  --gold-dim: transparent;
+}
+
+@media (prefers-color-scheme: dark) {
+  html.paper {
+    color-scheme: dark;
+    --paper: #1d1a16;
+    --paper-2: #26221c;
+    --ink: #f1ead9;
+    --ink-2: #d6ccb6;
+    --rust: #e0977a;
+    --line: #3d362c;
+    --gold: #c7a86d;
+    --gold-hover: #e4c27f;
+  }
+}
+
+/* The archive header and footer in paper; gold stays on the brand and "Plan a free talk" */
+html.paper .site-header { background: color-mix(in srgb, var(--paper) 90%, transparent); }
+html.paper .portfolio-nav { background: var(--paper-2); border-color: var(--line); }
+html.paper .tab-btn:hover { background: color-mix(in srgb, var(--ink) 8%, transparent); }
+html.paper .tab-btn.active { background: var(--ink); color: var(--paper); box-shadow: none; }
+html.paper .tab-count,
+html.paper .tab-btn.active .tab-count { background: color-mix(in srgb, var(--ink) 12%, transparent); color: inherit; }
+html.paper .tab-btn.active .tab-count { background: color-mix(in srgb, var(--paper) 20%, transparent); }
+html.paper .btn-back:hover { color: var(--paper); }
+html.paper .footer-links a,
+html.paper .breadcrumb a { color: var(--rust); }
+
+/* --------------------------------------------------------------------------
+   One case study: story left, facts rail right, the app's screens below
+   -------------------------------------------------------------------------- */
+.case {
+  --display: 'Cormorant Garamond', Garamond, 'Times New Roman', serif;
+  --mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+  width: 100%;
+  max-width: 1152px;
+  margin: 0 auto;
+  padding: 2.5rem 16px 4.5rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 28px 48px;
+  color: var(--ink-2);
+}
+.case > * { min-width: 0; }
+.case a { color: var(--rust); text-underline-offset: 3px; }
+.case a:focus-visible { outline: 2px solid var(--rust); outline-offset: 3px; border-radius: 2px; }
+.case .breadcrumb { grid-column: 1 / -1; margin: 0; }
+
+.case h1, .case h2 { font-family: var(--display); color: var(--ink); text-wrap: balance; margin: 0; line-height: 1.1; }
+.case p { margin: 0; }
+.eyebrow { font-family: var(--mono); font-size: .74rem; letter-spacing: .12em; text-transform: uppercase; color: var(--rust); }
+
+.case-head { grid-column: 1 / -1; display: grid; gap: 10px; }
+.case-head h1 { font-size: clamp(2.6rem, 7vw, 4.2rem); font-weight: 600; }
+.dek { font-family: var(--display); font-size: clamp(1.35rem, 3vw, 1.8rem); font-style: italic; color: var(--ink); }
+
+.case figure { margin: 0; display: grid; gap: 8px; }
+.case figcaption { font-size: .85rem; line-height: 1.45; }
+.case img { width: 100%; height: auto; display: block; border-radius: 6px; border: 1px solid var(--line); }
+.case-hero { grid-column: 1 / -1; }
+
+/* The case study's own words (Markdown) */
+.story { display: grid; gap: 22px; max-width: 64ch; align-content: start; }
+.story h2 { font-family: Inter, sans-serif; font-size: .8rem; letter-spacing: .12em; text-transform: uppercase; font-weight: 600; margin-bottom: -10px; }
+.story ul { margin: 0; padding-left: 1.2em; display: grid; gap: .45em; }
+.story strong { color: var(--ink); }
+
+.facts { align-self: start; display: grid; gap: 18px; font-size: .92rem; padding: 18px 20px; border-radius: 6px; background: var(--paper-2); border: 1px solid var(--line); color: var(--ink); }
+.facts dl { margin: 0; display: grid; gap: 14px; }
+.facts dt { font-family: var(--mono); font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; opacity: .8; }
+.facts dd { margin: 2px 0 0; }
+.case .live { justify-self: start; font-weight: 600; padding: 10px 16px; border-radius: 6px; text-decoration: none; background: var(--gold); color: var(--paper); }
+.case .live:hover { background: var(--gold-hover); }
+
+.figs { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; align-items: start; }
+.figs .tall img { max-width: 260px; }
+
+/* --------------------------------------------------------------------------
+   The overview
+   -------------------------------------------------------------------------- */
+.app-cards { grid-column: 1 / -1; list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; }
+.app-card { display: grid; gap: 14px; align-content: start; border-top: 1px solid var(--line); padding-top: 20px; }
+.app-card h2 { font-size: 2.2rem; font-weight: 600; }
+.app-card h2 a { color: var(--ink); text-decoration: none; }
+.app-card h2 a:hover { text-decoration: underline; }
+/* the whole card opens the case study */
+.app-card { position: relative; }
+.app-card h2 a::after { content: ''; position: absolute; inset: 0; }
+.app-card-text { display: grid; gap: 8px; }
+.app-card img { aspect-ratio: 16 / 10; object-fit: contain; background: var(--paper-2); }
+
+@media (max-width: 820px) {
+  .case, .app-cards { grid-template-columns: 1fr; }
+  .figs { grid-template-columns: 1fr; }
+  .figs .tall img { max-width: 220px; }
+}

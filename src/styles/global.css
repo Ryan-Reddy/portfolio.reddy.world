@@ -103,6 +103,8 @@ body {
   border-radius: 999px;
   border: 1px solid rgba(199, 168, 109, 0.2);
   overflow-x: auto;
+  /* scroll the tabs inside the header on a phone, rather than widen the page */
+  max-width: 100%;
 }
 
 .tab-btn {
@@ -720,7 +722,8 @@ body {
 
 .footer-links {
   display: flex;
-  gap: 1.25rem;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
 }
 
 .footer-links a {

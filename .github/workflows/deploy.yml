@@ -35,6 +35,9 @@ jobs:
       # Builds the pages, writes firebase.json, and fails if a redirect target is missing
       - run: npm run build
 
+      # The software case studies as crawlers read them: title, description, one h1, alt, srcset, JSON-LD, sitemap
+      - run: node scripts/check-software.mjs
+
       - name: Deploy portfolio.reddy.world (redirects only)
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:

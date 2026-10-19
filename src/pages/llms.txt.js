@@ -1,7 +1,8 @@
+import { getCollection } from 'astro:content';
 import { portfolios, SITE, CONTACT, formatDate } from '../lib/portfolios.js';
 
 // https://llmstxt.org — a plain map of the archive for AI search tools
-export function GET() {
+export async function GET() {
   const lines = [
     '# portfolio.reddy.world',
     '',
@@ -20,5 +21,11 @@ export function GET() {
     }
     lines.push('');
   }
+  const software = (await getCollection('software')).sort((a, b) => a.data.order - b.data.order);
+  lines.push(`## Software and websites: case studies, made by Reddy.World Enterprises`, '');
+  for (const { id, data } of software) {
+    lines.push(`- [${data.title}](${SITE}/software/${id}/) (${data.year}): ${data.summary}${data.live ? ` Live: ${data.live}` : ''}`);
+  }
+  lines.push('');
   return new Response(lines.join('\n'), { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
 }

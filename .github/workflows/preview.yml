@@ -40,6 +40,9 @@ jobs:
       # Builds the pages, writes firebase.json, and fails if a redirect target is missing
       - run: npm run build
 
+      # The software case studies as crawlers read them: title, description, one h1, alt, srcset, JSON-LD, sitemap
+      - run: node scripts/check-software.mjs
+
       - name: Lay out the preview (the build under /portfolio/, / opens the software overview)
         run: |
           mkdir -p preview/public
