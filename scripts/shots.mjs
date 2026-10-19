@@ -19,10 +19,19 @@ import sharp from 'sharp';
 const DESKTOP = { width: 1440, height: 900 };
 const PHONE = { width: 390, height: 844 };
 const CAST = { width: 1280, height: 800 };
+// Sites like Wikipedia turn away headless browsers on cloud machines without saying who asks
+const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 reddy.world-portfolio-captures (+https://reddy.world/contact)';
+
+/** Opens a page, and fails when it answers with an error (a 429 from a busy site, a 404) */
+async function open(p, url) {
+  const res = await p.goto(url, { waitUntil: 'networkidle', timeout: 60000 });
+  if (res && res.status() >= 400) throw new Error(`${url} answered ${res.status()}; the old pictures stay`);
+  return res;
+}
 
 async function page(browser, viewport, { storage = {}, clock = false } = {}) {
   const phone = viewport.width < 500;
-  const ctx = await browser.newContext({ viewport, deviceScaleFactor: 2, isMobile: phone, hasTouch: phone });
+  const ctx = await browser.newContext({ viewport, deviceScaleFactor: 2, isMobile: phone, hasTouch: phone, userAgent: USER_AGENT });
   await ctx.addInitScript((s) => { for (const [k, v] of Object.entries(s)) localStorage.setItem(k, v); }, storage);
   const p = await ctx.newPage();
   if (clock) await p.clock.install();
@@ -59,7 +68,7 @@ async function withExtension(shoot) {
   const ext = await extension();
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'neuro-profile-'));
   const ctx = await chromium.launchPersistentContext(profile, {
-    channel: 'chromium', viewport: DESKTOP, deviceScaleFactor: 2,
+    channel: 'chromium', viewport: DESKTOP, deviceScaleFactor: 2, userAgent: USER_AGENT,
     args: [`--disable-extensions-except=${ext}`, `--load-extension=${ext}`],
   });
   try {
@@ -68,7 +77,7 @@ async function withExtension(shoot) {
     // the extension registers its content script on install; give it a moment
     await worker.evaluate(() => new Promise((r) => setTimeout(r, 2000)));
     const tab = ctx.pages()[0] ?? await ctx.newPage();
-    await tab.goto(ARTICLE, { waitUntil: 'networkidle', timeout: 60000 });
+    await open(tab, ARTICLE);
     await tab.waitForTimeout(2000);
     const tabId = await worker.evaluate(async (u) => (await chrome.tabs.query({})).find((t) => t.url === u).id, ARTICLE);
     return await shoot({ ctx, worker, id, tab, tabId });
@@ -98,7 +107,7 @@ const RECIPES = {
     'neuro-overlay-after.webp': () => withExtension(({ tab }) => tab.screenshot()),
     'neuro-overlay-before.webp': async (b) => {
       const p = await page(b, DESKTOP);
-      await p.goto(ARTICLE, { waitUntil: 'networkidle', timeout: 60000 });
+      await open(p, ARTICLE);
       const png = await p.screenshot();
       await done(p);
       return png;
