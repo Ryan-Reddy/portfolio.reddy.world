@@ -117,7 +117,8 @@ const RECIPES = {
       await tab.bringToFront();
       await worker.evaluate((t) => globalThis.neuroOpenWorkMode(t), tabId);
       await tab.waitForTimeout(2000);
-      return tab.screenshot();
+      // down to the end of the sections: on Wikipedia the References block shows the page's own CSS as text
+      return tab.screenshot({ clip: { x: 0, y: 0, width: DESKTOP.width, height: 780 } });
     }),
     // the side panel at its page check
     'neuro-overlay-page-check.webp': () => withExtension(async ({ ctx, id }) => {
@@ -125,7 +126,7 @@ const RECIPES = {
       await p.getByText('Page check', { exact: false }).first().scrollIntoViewIfNeeded();
       await p.evaluate(() => {
         const h = [...document.querySelectorAll('h2')].find((e) => /page check/i.test(e.textContent));
-        scrollTo(0, h.getBoundingClientRect().top + scrollY - 260);
+        scrollTo(0, h.getBoundingClientRect().top + scrollY - 165);
       });
       await p.waitForTimeout(500);
       return p.screenshot();
@@ -156,7 +157,8 @@ const RECIPES = {
       'focus-desk-phone.webp': (b) => running(b, PHONE),
       'focus-desk-cast-view.webp': async (b) => {
         const p = await withTasks(b, CAST);
-        await p.keyboard.press('c'); await p.clock.runFor(1000);
+        await p.keyboard.press('Space'); await p.clock.runFor(9 * 60 * 1000 + 18000);
+        await p.keyboard.press('c'); await p.clock.runFor(1000); await p.mouse.move(2, 2);
         const png = await p.screenshot();
         await done(p);
         return png;

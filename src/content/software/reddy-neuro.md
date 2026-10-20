@@ -18,7 +18,7 @@ audience: Readers who tire on busy, glaring pages
 maker: Reddy.World Enterprises
 role: "Concept, design and code: Ryan Reddy"
 order: 1
-updated: 2026-10-19
+updated: 2026-10-20
 screenshots:
   - file: neuro-overlay-after.webp
     pair: after
@@ -31,13 +31,13 @@ screenshots:
     alt: "The Wikipedia article on Atkinson Hyperlegible as Wikipedia shows it: black text on a white page with blue links, the contents on the left and the appearance settings on the right."
     caption: "The article as Wikipedia shows it, without NeuroOverlay."
   - file: neuro-overlay-work-mode.webp
-    alt: "NeuroOverlay's Work mode on the same article: the title, a dial with Gist, Key points, Structured (selected) and Full, the sections as short folded blocks, and a side column with next steps, the outline, tools (reading ruler, wait timers, read aloud) and the page score."
+    alt: "NeuroOverlay's Work mode on the same article: the title, a dial with Gist, Key points, Structured (selected) and Full, the sections as short folded blocks, and a side column with next steps, the outline and tools (reading ruler, wait timers)."
     caption: "Work mode, an early version: a quiet view of the page, with a dial for how much you see."
   - file: neuro-overlay-popup.webp
-    alt: "NeuroOverlay's popup on Wikipedia: on for en.wikipedia.org, a page score of 90 out of 100, sliders for Text (Comfortable), Colour (Dark), Clutter (fade 95%) and Focus, buttons for Work mode, Ruler and a wait timer, and the quick looks Calm, Night, Daylight and Dyslexia."
-    caption: "The popup: how much help you want, in four sliders."
+    alt: "NeuroOverlay's popup on Wikipedia: on for en.wikipedia.org, a dial for how much to show (Gist, Key points, Structured, Full) with Ruler and a wait timer, a page score of 90 out of 100, sliders for Text (Comfortable), Colour (Dark) and Clutter (fade 95%), and the quick looks Calm, Night, Daylight and Dyslexia."
+    caption: "The popup: how much to show, and how much help you want, in three sliders."
   - file: neuro-overlay-page-check.webp
-    alt: "The side panel's page check for the article: 90 out of 100 from its own checks, then five findings, from one long text block to lines of about 201 characters, each with a suggestion."
+    alt: "The side panel's page check for the article: 90 out of 100 from its own checks, how many of its COGA and W3C checks could run, then findings such as 7 paragraphs over 50 words and lines of about 208 characters, each with a suggestion and a link to the W3C pattern."
     caption: "The page check in the side panel: a quick look at how a page is built, not an official accessibility test."
 ---
 
@@ -47,7 +47,7 @@ I made it for people who tire quickly on glaring, cluttered pages, with ADHD in 
 
 ## What you can do
 
-- Set how much help you want with four sliders: Text, Colour, Clutter and Focus. Or pick a quick look: Calm, Night, Daylight or Dyslexia.
+- Set how much help you want with three sliders: Text, Colour and Clutter. Or pick a quick look: Calm, Night, Daylight or Dyslexia.
 - Choose the font (Atkinson Hyperlegible, Lexend Deca or OpenDyslexic), the line length, and the space between lines, letters and words.
 - Read in a soft dark theme such as Velvet Olive, or in a calm, paper-like light one.
 - Turn on a reading ruler, or set a wait timer of 30 seconds, 1 minute or 2 minutes.

@@ -14,7 +14,7 @@ audience: Anyone who works in focus blocks
 maker: Reddy.World Enterprises
 role: "Concept, design and code: Ryan Reddy"
 order: 2
-updated: 2026-10-17
+updated: 2026-10-20
 screenshots:
   - file: focus-desk-three-sessions.webp
     alt: "Three Focus Desk screens side by side in fullscreen. A red focus session on 'Write the project summary' with 15:40 left, a teal short break with 02:51 left, and a blue long break with 12:51 left. Each ring shows the time remaining."
@@ -23,7 +23,7 @@ screenshots:
     alt: "Focus Desk during a focus session: the timer at 15:42 with a Pause button, 'Now focusing on: Write the project summary', a task list with three tasks, and panels for noise, YouTube and SoundCloud below."
     caption: "A focus session nine minutes in, with the task list and the sound panels. The tasks are examples."
   - file: focus-desk-cast-view.webp
-    alt: "Focus Desk's cast view at 1280 by 800: a large 25:00 timer on the left and the three tasks on the right, with the settings and sound panels hidden."
+    alt: "Focus Desk's cast view at 1280 by 800: a running 15:41 timer on the left and the three tasks on the right, with the settings and sound panels hidden."
     caption: "Cast view for a 1280 × 800 wall display: just the timer and the tasks."
   - file: focus-desk-phone.webp
     alt: "Focus Desk on a phone during a focus session: the ring at 15:42 with Pause, Reset and Skip buttons, and the task list below."
