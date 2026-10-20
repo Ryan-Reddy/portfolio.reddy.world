@@ -45,6 +45,14 @@ jobs:
       - name: Take the pictures again from the live app
         run: npm run shots -- "${{ inputs.slug }}"
 
+      - name: Keep the new pictures for a look
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: captures-${{ inputs.slug }}
+          path: public/images/software/${{ inputs.slug }}/
+          if-no-files-found: ignore
+
       - name: What changed
         id: changed
         run: |
@@ -53,7 +61,8 @@ jobs:
 
       - name: The case study's date
         if: steps.changed.outputs.yes == 'true'
-        run: sed -i "s/^updated: .*/updated: $(date -u +%F)/" "src/content/software/${{ inputs.slug }}.md"
+        run: |
+          sed -i "s/^updated: .*/updated: $(date -u +%F)/" "src/content/software/${{ inputs.slug }}.md"
 
       # Builds the pages, writes firebase.json, and fails if a redirect target is missing
       - run: npm run build
