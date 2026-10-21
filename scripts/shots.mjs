@@ -4,6 +4,7 @@
 //
 //   npm run shots -- reddy-neuro
 //   npm run shots -- focus-desk
+//   npm run shots -- reddy-mail  (also ral-contrast-checker, archive-trawler, password-reddy-world)
 //
 // Needs Playwright's Chromium once: npx playwright install chromium
 // Example data typed into a live app is fine (agreed with Ryan, 2026-10-17); nothing is saved
@@ -183,6 +184,83 @@ const RECIPES = {
         return sharp({ create: { width: 1680, height: 700, channels: 3, background: '#000' } })
           .composite(tiles.map((input, i) => ({ input, left: i * 560, top: 0 }))).png().toBuffer();
       },
+    };
+  })(),
+  // The public demo only: a made-up studio's sample data, nothing sent or saved. Never /app, the
+  // owner-only workspace (reddy.world#120).
+  'reddy-mail': (() => {
+    async function demo(b, nav) {
+      const p = await page(b, DESKTOP);
+      await p.goto('https://mail.reddy.world/demo/', { waitUntil: 'networkidle', timeout: 60000 });
+      await p.waitForTimeout(1500);
+      if (nav) { await p.getByText(nav, { exact: true }).first().click(); await p.waitForTimeout(1500); }
+      const png = await p.screenshot();
+      await done(p);
+      return png;
+    }
+    return {
+      'reddy-mail-cleanbox.webp': (b) => demo(b),
+      'reddy-mail-socials.webp': (b) => demo(b, 'Socials & Berichten'),
+      'reddy-mail-my-day.webp': (b) => demo(b, 'My Day'),
+      'reddy-mail-publish.webp': (b) => demo(b, 'Publish'),
+    };
+  })(),
+  // The checker as it runs on reddy.world, with a pair that passes and a pair that fails
+  'ral-contrast-checker': (() => {
+    async function pair(b, background, object) {
+      const p = await page(b, { width: 1280, height: 800 });
+      await p.goto('https://reddy.world/ral-contrast-checker', { waitUntil: 'networkidle', timeout: 60000 });
+      const selects = p.locator('reddy-ral-contrast select');
+      await selects.first().waitFor({ timeout: 20000 });
+      await selects.nth(0).selectOption(background);
+      await selects.nth(1).selectOption(object);
+      await p.waitForTimeout(800);
+      const png = await p.screenshot();
+      await done(p);
+      return png;
+    }
+    return {
+      'ral-pass.webp': (b) => pair(b, '9005', '1023'),
+      'ral-fail.webp': (b) => pair(b, '7035', '7004'),
+    };
+  })(),
+  // The search form only: searching needs an account, and none is made on the live service
+  // (reddy.world#123). The example name is typed, never sent. On Render the first visit after a
+  // quiet spell wakes the service, which takes up to a minute.
+  'archive-trawler': {
+    'archive-trawler-search.webp': async (b) => {
+      const p = await page(b, DESKTOP);
+      const url = 'https://archivetrawler.reddy.world/zoeken/';
+      await p.goto(url, { waitUntil: 'networkidle', timeout: 120000 });
+      if (!(await p.locator('input').count())) { await p.waitForTimeout(60000); await p.goto(url, { waitUntil: 'networkidle', timeout: 120000 }); }
+      const field = (label) => p.locator(`xpath=//*[normalize-space(text())="${label}"]/following::input[1]`);
+      await field('achternaam:').fill('Visser');
+      await field('voornaam:').fill('Johanna');
+      await field('jaarVan:').fill('1850');
+      await field('jaarTot:').fill('1920');
+      await p.locator('xpath=//*[normalize-space(text())="Archief van Amsterdam"]/following::input[@type="checkbox"][1]').check();
+      await p.waitForTimeout(500);
+      const png = await p.screenshot();
+      await done(p);
+      return png;
+    },
+  },
+  // The wizard's first three steps; its plan is kept in the browser, so each capture starts fresh
+  'password-reddy-world': (() => {
+    async function step(b, n) {
+      const p = await page(b, DESKTOP);
+      await p.goto('https://password.reddy.world/', { waitUntil: 'networkidle', timeout: 60000 });
+      for (let i = 0; i < n; i++) { await p.getByRole('button', { name: /^(Next|Continue)/ }).first().click(); await p.waitForTimeout(600); }
+      await p.evaluate(() => scrollTo(0, 0));
+      await p.waitForTimeout(400);
+      const png = await p.screenshot();
+      await done(p);
+      return png;
+    }
+    return {
+      'password-choose.webp': (b) => step(b, 0),
+      'password-map.webp': (b) => step(b, 2),
+      'password-way-in.webp': (b) => step(b, 3),
     };
   })(),
 };

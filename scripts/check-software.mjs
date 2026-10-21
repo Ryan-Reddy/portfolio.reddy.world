@@ -33,7 +33,9 @@ for (const page of ['', ...slugs.map((s) => `${s}/`)]) {
   if (h1 !== 1) say(`${h1} <h1> elements, want 1`);
   const main = html.match(/<main[\s\S]*<\/main>/)?.[0] ?? '';
   const words = main.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<[^>]+>/g, ' ').split(/\s+/).filter(Boolean).length;
-  if (words < (page ? 150 : 30)) say(`only ${words} words of main text in the raw HTML`);
+  // a case study with no pictures on purpose (NIA: text only, reddy.world#126) is short too
+  const want = !page ? 30 : /<img/.test(main) ? 150 : 100;
+  if (words < want) say(`only ${words} words of main text in the raw HTML`);
 
   for (const img of html.match(/<img\b[^>]*>/g) ?? []) {
     const missing = ['alt', 'width', 'height', 'srcset'].filter((a) => !attr(img, a));
@@ -62,7 +64,7 @@ try {
   for (const slug of slugs) {
     const app = apps.find((a) => a.slug === slug);
     if (!app) problems.push(`software.json: no entry for ${slug}`);
-    else if (!app.hero?.alt || !app.hero?.width) problems.push(`software.json: ${slug} has no hero picture with alt and width`);
+    else if (app.pictures.length && (!app.hero?.alt || !app.hero?.width)) problems.push(`software.json: ${slug} has no hero picture with alt and width`);
   }
 } catch (e) {
   problems.push(`software.json: ${e.message}`);
