@@ -8,8 +8,8 @@ const VARIANTS = [480, 800, 1200];
 /** The picture's URL on reddy.world, root-absolute */
 export const shotUrl = (slug, file) => `/portfolio/images/software/${slug}/${file}`;
 
-/** src, srcset, width and height of a case study's picture, read from the file at build time */
-export async function shot(slug, { file, alt, caption }) {
+/** url, src, srcset, width and height of one picture file, read at build time */
+async function picture(slug, file) {
   const { width, height } = await sharp(path.join(process.cwd(), 'public', 'images', 'software', slug, file)).metadata();
   const url = shotUrl(slug, file);
   const at = (w) => url.replace(/\.(webp|jpe?g|png)$/i, `-${w}w.$1`);
@@ -20,8 +20,11 @@ export async function shot(slug, { file, alt, caption }) {
     url,
     width,
     height,
-    alt,
-    caption,
-    tall: height > width,
   };
+}
+
+/** A case study's picture, with its dark-mode twin's srcset where there is one */
+export async function shot(slug, { file, alt, caption, dark }) {
+  const p = await picture(slug, file);
+  return { ...p, alt, caption, tall: p.height > p.width, dark: dark ? (await picture(slug, dark)).srcset : undefined };
 }
