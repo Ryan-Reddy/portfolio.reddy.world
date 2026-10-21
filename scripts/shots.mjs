@@ -30,9 +30,9 @@ async function open(p, url) {
   return res;
 }
 
-async function page(browser, viewport, { storage = {}, clock = false } = {}) {
+async function page(browser, viewport, { storage = {}, clock = false, colorScheme = 'light' } = {}) {
   const phone = viewport.width < 500;
-  const ctx = await browser.newContext({ viewport, deviceScaleFactor: 2, isMobile: phone, hasTouch: phone, userAgent: USER_AGENT });
+  const ctx = await browser.newContext({ viewport, deviceScaleFactor: 2, isMobile: phone, hasTouch: phone, userAgent: USER_AGENT, colorScheme });
   await ctx.addInitScript((s) => { for (const [k, v] of Object.entries(s)) localStorage.setItem(k, v); }, storage);
   const p = await ctx.newPage();
   if (clock) await p.clock.install();
@@ -207,8 +207,8 @@ const RECIPES = {
   })(),
   // The checker as it runs on reddy.world, with a pair that passes and a pair that fails
   'ral-contrast-checker': (() => {
-    async function pair(b, background, object) {
-      const p = await page(b, { width: 1280, height: 800 });
+    async function pair(b, background, object, colorScheme = 'light') {
+      const p = await page(b, { width: 1280, height: 800 }, { colorScheme });
       await p.goto('https://reddy.world/ral-contrast-checker', { waitUntil: 'networkidle', timeout: 60000 });
       const selects = p.locator('reddy-ral-contrast select');
       await selects.first().waitFor({ timeout: 20000 });
@@ -222,6 +222,9 @@ const RECIPES = {
     return {
       'ral-pass.webp': (b) => pair(b, '9005', '1023'),
       'ral-fail.webp': (b) => pair(b, '7035', '7004'),
+      // the same pairs in dark mode, for visitors whose system is dark (#40)
+      'ral-pass-dark.webp': (b) => pair(b, '9005', '1023', 'dark'),
+      'ral-fail-dark.webp': (b) => pair(b, '7035', '7004', 'dark'),
     };
   })(),
   // The search form only: searching needs an account, and none is made on the live service
