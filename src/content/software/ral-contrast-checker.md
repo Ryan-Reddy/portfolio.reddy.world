@@ -19,9 +19,11 @@ order: 5
 updated: 2026-10-21
 screenshots:
   - file: ral-pass.webp
+    dark: ral-pass-dark.webp
     alt: "The RAL Contrast Checker with RAL 1023 Traffic yellow on RAL 9005 Jet black: a yellow block on a black field, LRV 4 and LRV 54, a difference of 50 that passes ΔLRV 30, and a WCAG contrast of 13.47 to 1."
     caption: "Traffic yellow on jet black: a light reflectance difference of 50, well over the pass mark of 30."
   - file: ral-fail.webp
+    dark: ral-fail-dark.webp
     alt: "The checker with RAL 7004 Signal grey on RAL 7035 Light grey: a grey block on a light grey field, LRV 57 and LRV 34, a difference of 23 marked as failing ΔLRV 30, and a WCAG contrast of 2.01 to 1, both badges in red."
     caption: "Signal grey on light grey: a difference of 23 fails, and the screen contrast fails too."
 ---

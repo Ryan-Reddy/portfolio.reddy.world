@@ -51,6 +51,9 @@ const software = defineCollection({
       // label names each side on it
       pair: z.enum(['before', 'after']).optional(),
       label: z.string().optional(),
+      // the same view in dark mode, shown when the visitor's system is dark (Ryan, 2026-10-21, #40:
+      // "screenshot is in light on darkmode ... these screenshots should be both depending how they get shown")
+      dark: z.string().optional(),
     })).default([]),
   }),
 });
