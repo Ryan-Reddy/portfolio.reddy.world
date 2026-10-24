@@ -1,9 +1,9 @@
 import rmaekers from '../data/rmaekers.json';
 import rrproductions from '../data/rrproductions.json';
-import maup from '../data/maup.json';
 import vaguelyvulgar from '../data/vaguelyvulgar.json';
 import { hasResizer } from './media-url.js';
 import { BRAND } from './brands.js';
+import { publicArchivePosts } from './archive-curation.js';
 
 export const ORIGIN = 'https://reddy.world';
 export const BASE = '/portfolio';
@@ -15,8 +15,7 @@ export const PERSON_ID = 'https://reddy.world/#ryan';
 const EXTRA = {
   rmaekers: { icon: '🎪', badge: 'Festival Decors & Stage Builds' },
   rrproductions: { icon: '🎨', badge: 'Fine Art, Sculptures & Inventions' },
-  maup: { icon: '🪑', badge: 'Bespoke Adaptive Furniture' },
-  vaguelyvulgar: { icon: '📸', badge: 'Personal Photo & Modelling Portfolio' },
+  vaguelyvulgar: { icon: '📸', badge: 'Selected modelling work' },
 };
 
 // Two plain questions for every project. What kind of work (one project can be several),
@@ -41,11 +40,11 @@ export const WHERE = [
 export const KIND_LABEL = Object.fromEntries([...WHAT, ...WHERE].map((k) => [k.id, k.label]));
 const kindsOf = (post) => [...WHAT, ...WHERE].filter((k) => k.test(post)).map((k) => k.id);
 
-export const portfolios = [rmaekers, rrproductions, maup, vaguelyvulgar].map((p) => ({
+export const portfolios = [rmaekers, rrproductions, vaguelyvulgar].map((p) => ({
   ...p,
   ...EXTRA[p.id],
   brand: BRAND[p.id],
-  posts: p.posts.map((post) => {
+  posts: publicArchivePosts(p.id, p.posts).map((post) => {
     const full = { ...post, portfolio: p.id, path: `/${p.id}/${post.slug}/` };
     return { ...full, kinds: kindsOf(full) };
   }),
@@ -87,9 +86,9 @@ export const THEME_TAGS = [
   { tag: 'festivals', label: 'Festivals',
     description: 'Festival decors and stage builds by ReddyMaekers: Dekmantel, Wicked Jazz Sounds, Oranjebloesem, By the Creek and more.' },
   { tag: 'light', label: 'Light & lightboxes',
-    description: 'Light installations, lamps and lightboxes by Ryan Reddy, ReddyMaekers and Maup de Kleermaeker.' },
+    description: 'Light installations, lamps and lightboxes by Ryan Reddy and ReddyMaekers.' },
   { tag: 'furniture', label: 'Furniture',
-    description: 'Furniture by Ryan Reddy: chairs, benches, swings and adaptive furniture across ReddyMaekers, RRproductions and Maup de Kleermaeker.' },
+    description: 'Furniture by Ryan Reddy across ReddyMaekers and RRproductions.' },
 ];
 export const themeByTag = Object.fromEntries(THEME_TAGS.map((t) => [t.tag, t]));
 

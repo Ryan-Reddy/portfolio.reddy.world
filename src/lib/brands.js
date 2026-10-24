@@ -3,6 +3,5 @@
 export const BRAND = {
   rmaekers: 'ReddyMaekers',
   rrproductions: 'Ryan Reddy Productions',
-  maup: 'Maup de Kleermaeker',
-  vaguelyvulgar: 'Vaguely Vulgar',
+  vaguelyvulgar: 'Ryan Reddy — modelling',
 };

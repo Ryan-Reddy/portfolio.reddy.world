@@ -43,7 +43,7 @@ jobs:
       # The software case studies as crawlers read them: title, description, one h1, alt, srcset, JSON-LD, sitemap
       - run: node scripts/check-software.mjs
 
-      - name: Lay out the preview (the build under /portfolio/, / opens the software overview)
+      - name: Lay out the preview (the build under /portfolio/, / follows the wall handoff)
         run: |
           mkdir -p preview/public
           cp -r dist preview/public/portfolio

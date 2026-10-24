@@ -1,11 +1,10 @@
 # portfolio.reddy.world
 
-Visual archive and physical production portfolios of **Ryan Reddy** and friends:
+Selected visual archive and physical production portfolios of **Ryan Reddy**:
 
 - 🎪 **RMaekers**: Festival decors, bespoke stage builds, mechanical props, and escape room fabrication (Georgies Wundergarten, Wicked Jazz Sounds, Lentekabinet, 11:11, Strafwerk).
 - 🎨 **RRproductions**: Ryan Reddy's fine art portfolio, sculptures, Taleidoscope (Beatific Viewer), and mechanical inventions.
-- 🪑 **Maup de Kleermaeker**: Bespoke adaptive furniture design and master craftsmanship (*Meubels met het gemak van aanpassing of hervorming*, Lightmaeker, Birthinchair, LoungeChair).
-- 🎭 **Vaguely Vulgar**: Theatrical performance, acting, and modelling archives.
+- 📷 **Modelling**: Ryan Reddy's selected photographs and modelling profile, under the legacy Vaguely Vulgar URL.
 
 ---
 
@@ -18,7 +17,7 @@ Visual archive and physical production portfolios of **Ryan Reddy** and friends:
 
 ## Where it is published
 
-- **The pages:** https://reddy.world/portfolio/. The reddy.world deploy builds this repo and publishes `dist/` under `/portfolio`.
+- **The pages:** project details are published below `https://reddy.world/portfolio/`. Portfolio, theme and software overview URLs hand visitors to the wall on reddy.world; there is no second browsing interface.
 - **The old host:** portfolio.reddy.world is the Firebase Hosting site `portfolio-reddy` (project `getreddyworld`). It only redirects: every old WordPress URL 301s to its page on reddy.world/portfolio. [deploy.yml](.github/workflows/deploy.yml) deploys it on every push to `main`, and starts the reddy.world deploy so the pages go live too.
 - `npm run build` writes `firebase.json` ([firebase-config.mjs](scripts/firebase-config.mjs)) and fails if a redirect target is missing from the build.
 - **Every PR gets a preview** ([preview.yml](.github/workflows/preview.yml)): the build on channel `pr<N>` of the `portfolio-reddy` site, opening on `/portfolio/software/`. One bot comment on the PR has the link and is updated for every push. The channel expires after 7 days and is deleted when the PR closes. It shows this archive only; links to reddy.world's app pages go to the live site.

@@ -11,6 +11,7 @@
 //
 // Run `npm run build` first: the check at the end confirms each target exists in dist/.
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { isPublicArchivePost } from '../src/lib/archive-curation.js';
 
 const KEYS = ['rmaekers', 'rrproductions', 'maup', 'vaguelyvulgar'];
 const FINAL = 'https://reddy.world/portfolio';
@@ -30,7 +31,13 @@ for (const key of KEYS) {
   const data = JSON.parse(readFileSync(new URL(`../src/data/${key}.json`, import.meta.url), 'utf-8'));
   for (const post of data.posts) {
     const from = oldPath(post.old_url);
-    if (from && !map.has(from)) map.set(from, `/${key}/${post.slug}/`);
+    // Maup is not Ryan's work. Preserve old links, but land them on the
+    // ReddyMaekers collection instead of continuing to publish the material.
+    // Likewise, retired raw/archive pages land on their public collection.
+    const to = key === 'maup'
+      ? '/rmaekers/'
+      : isPublicArchivePost(key, post) ? `/${key}/${post.slug}/` : `/${key}/`;
+    if (from && !map.has(from)) map.set(from, to);
   }
 }
 
