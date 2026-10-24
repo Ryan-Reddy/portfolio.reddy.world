@@ -1,16 +1,85 @@
 ---
-import { portfolios, photos, picture, SITE } from '../lib/portfolios.js';
+import { portfolios, photos, picture, SITE, KIND_LABEL } from '../lib/portfolios.js';
 
-const projects = portfolios.flatMap((portfolio) => portfolio.posts.map((post) => ({
-  id: `${portfolio.id}/${post.slug}`,
-  portfolio: portfolio.name,
-  title: post.title.trim(),
-  href: `${SITE}${post.path}`,
-  images: photos(post).filter((image) => !image.alt?.trim() && !image.caption?.trim()).map((image, index) => {
+const SEARCH_INTENT = {
+  rmaekers: ['creative fabrication Amsterdam', 'festival stage design', 'event decor Amsterdam', 'experiential design', 'set building', 'custom props', 'brand activation'],
+  rrproductions: ['creative technologist Amsterdam', 'industrial design', 'product design', 'art installation', 'sculpture', 'custom fabrication'],
+  vaguelyvulgar: ['male model Amsterdam', 'fashion model', 'editorial modelling', 'portrait photography', 'creative talent Amsterdam'],
+};
+const IMAGE_VOCABULARY = ['wide view', 'close-up', 'detail', 'finished installation', 'work in progress', 'night', 'daylight', 'people', 'lighting', 'materials'];
+const NOISE = new Set(['project', 'projects', 'portfolio', 'uncategorized', 'geen categorie']);
+const STOPWORDS = new Set('the a an and or of in on at for with from by to is are was were this that these those our my we you your it its as into over under de het een en of van voor met op in bij door dit deze die dat mijn onze foto photo image picture'.split(' '));
+const useful = (value) => String(value ?? '').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
+const unique = (values) => [...new Set(values.map(useful).filter((value) => value && value.length > 2 && !NOISE.has(value.toLowerCase())))];
+const mediaTitle = (value) => {
+  const title = useful(value);
+  return /(^img[_ -]?\d+$)|(^[\da-f-]{20,}$)|(^dsc[_ -]?\d+$)|(^fullsizeoutput_)/i.test(title) ? '' : title;
+};
+const handwrittenDescription = (image, projectTitle) => {
+  const text = useful(image.caption) || useful(image.alt);
+  if (!text || /^[\da-f]{8}-[\da-f-]{20,}$/i.test(text) || /^(img|dsc|fullsizeoutput)[_ -]?\w+$/i.test(text) || /\.(jpe?g|png|gif|webp)$/i.test(text)) return '';
+  if (text.toLowerCase() === useful(projectTitle).toLowerCase() || /,\s*(photo|image|picture)\s+\d+$/i.test(text)) return '';
+  return text;
+};
+const suggestionsFor = (portfolio, post) => unique([
+  ...(SEARCH_INTENT[portfolio.id] ?? []),
+  ...post.kinds.map((kind) => KIND_LABEL[kind]),
+  ...post.categories,
+  ...post.tags,
+  post.title,
+]).slice(0, 14);
+const wordsIn = (text) => useful(text).match(/[\p{L}\p{N}][\p{L}\p{N}'’-]*/gu) ?? [];
+const metadataKeywords = (texts, limit = 12) => {
+  const scores = new Map();
+  const add = (label, points) => {
+    const clean = useful(label).replace(/^[’'-]+|[’'-]+$/g, '');
+    const key = clean.toLowerCase();
+    if (clean.length < 3 || STOPWORDS.has(key) || NOISE.has(key) || /^\d+$/.test(key)) return;
+    const entry = scores.get(key) ?? {label: clean, score: 0};
+    entry.score += points;
+    scores.set(key, entry);
+  };
+  for (const text of texts) {
+    const words = wordsIn(text);
+    words.forEach((word) => add(word, 1));
+    for (let index = 0; index < words.length - 1; index++) {
+      if (!STOPWORDS.has(words[index].toLowerCase()) && !STOPWORDS.has(words[index + 1].toLowerCase())) add(`${words[index]} ${words[index + 1]}`, 1.6);
+    }
+  }
+  return [...scores.values()].sort((a, b) => b.score - a.score || a.label.localeCompare(b.label)).slice(0, limit).map(({label}) => label);
+};
+
+const projects = portfolios.flatMap((portfolio) => portfolio.posts.map((post) => {
+  const projectPhotos = photos(post);
+  const handwritten = projectPhotos.map((image, index) => ({index, text: handwrittenDescription(image, post.title)})).filter(({text}) => text);
+  const originalSuggestions = metadataKeywords(handwritten.map(({text}) => text));
+  return {
+    id: `${portfolio.id}/${post.slug}`,
+    portfolio: portfolio.name,
+    title: post.title.trim(),
+    href: `${SITE}${post.path}`,
+    originalSuggestions,
+    searchSuggestions: suggestionsFor(portfolio, post).filter((tag) => !originalSuggestions.some((original) => original.toLowerCase() === tag.toLowerCase())),
+    images: projectPhotos.map((image, index) => {
     const pic = picture(image);
-    return { key: image.url, index: index + 1, src: pic.src, srcset: pic.srcset ?? '', width: pic.width, height: pic.height };
-  }),
-}))).filter((project) => project.images.length);
+    const nearby = handwritten.filter((item) => item.index !== index).sort((a, b) => Math.abs(a.index - index) - Math.abs(b.index - index)).slice(0, 3);
+    const nearbySuggestions = metadataKeywords(nearby.map(({text}) => text), 8);
+    return {
+      key: `${portfolio.id}/${post.slug}::${image.url}`,
+      url: image.url,
+      index: index + 1,
+      src: pic.src,
+      srcset: pic.srcset ?? '',
+      width: pic.width,
+      height: pic.height,
+      existingDescription: handwrittenDescription(image, post.title),
+      nearby: nearby.map(({index: sourceIndex, text}) => ({image: sourceIndex + 1, text})),
+      nearbySuggestions,
+      suggestions: unique([...nearbySuggestions, mediaTitle(image.title), ...IMAGE_VOCABULARY]),
+    };
+    }),
+  };
+})).filter((project) => project.images.length);
 const count = projects.reduce((sum, project) => sum + project.images.length, 0);
 const queue = JSON.stringify({ projects, count }).replace(/</g, '\\u003c');
 ---
@@ -20,7 +89,7 @@ const queue = JSON.stringify({ projects, count }).replace(/</g, '\\u003c');
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
-  <title>Image-description focus mode — reddy.world</title>
+  <title>Image SEO focus mode — reddy.world</title>
   <style>
     :root { color-scheme: dark; font-family: Inter, system-ui, sans-serif; background: #0f0f0f; color: #f5f5f0; --gold: #c7a86d; --line: #41413e; }
     * { box-sizing: border-box; }
@@ -50,9 +119,23 @@ const queue = JSON.stringify({ projects, count }).replace(/</g, '\\u003c');
     label small, .hint { color: #aaa; font-weight: 400; line-height: 1.35; }
     input, textarea { width: 100%; color: #f5f5f0; background: #1a1a1a; border: 1px solid #666; padding: .75rem; }
     input:focus, textarea:focus, select:focus { outline: 2px solid var(--gold); outline-offset: 2px; }
-    textarea { min-height: 8rem; resize: vertical; line-height: 1.45; }
+    textarea { min-height: 5.5rem; resize: vertical; line-height: 1.45; }
     .inherited { min-height: 1.5rem; display: flex; flex-wrap: wrap; gap: .35rem; }
     .chip { padding: .2rem .45rem; background: #2b251a; color: #e7cf9d; font-size: .8rem; }
+    .suggestion-block { display: grid; gap: .4rem; }
+    .suggestion-head { display: flex; justify-content: space-between; gap: .75rem; color: #aaa; font-size: .78rem; }
+    .suggestion-head + .suggestion-head { margin-top: .35rem; }
+    .mini-actions { display: flex; flex-wrap: wrap; gap: .65rem; }
+    .suggestions { display: flex; flex-wrap: wrap; gap: .35rem; }
+    button.suggestion { min-height: 0; padding: .3rem .5rem; border-color: #555; color: #d7d7d1; border-radius: 999px; font-size: .78rem; }
+    button.suggestion[aria-pressed="true"] { border-color: var(--gold); color: #111; background: var(--gold); }
+    button.add-all { min-height: 0; padding: 0; border: 0; color: var(--gold); font-size: .78rem; }
+    .effective { color: #aaa; font-size: .78rem; line-height: 1.4; }
+    .nearby { display: grid; gap: .3rem; color: #bbb; font-size: .78rem; line-height: 1.35; }
+    .nearby q { color: #ddd; }
+    details.description { border-block: 1px solid #292927; padding-block: .45rem; }
+    details.description summary { cursor: pointer; color: #ddd; font-weight: 700; }
+    details.description label { margin-top: .6rem; }
     .controls { display: grid; grid-template-columns: 1fr 1fr 1.35fr; gap: .55rem; }
     .celebrate { min-height: 1.5rem; color: var(--gold); font-weight: 700; }
     kbd { border: 1px solid #555; padding: .1rem .3rem; font-size: .78rem; color: #bbb; }
@@ -72,7 +155,7 @@ const queue = JSON.stringify({ projects, count }).replace(/</g, '\\u003c');
 </head>
 <body>
   <header class="top">
-    <div class="brand"><strong>Picture focus</strong><small id="score">Ready when you are</small></div>
+    <div class="brand"><strong>Image SEO focus</strong><small id="score">Ready when you are</small></div>
     <div class="progress"><span id="progress-label">0 of {count}</span><span id="remaining">{count} to go</span><div class="bar"><span id="bar"></span></div></div>
     <div class="top-actions"><button id="help" type="button">Keys</button><button id="export" class="primary" type="button">Export</button></div>
   </header>
@@ -89,46 +172,70 @@ const queue = JSON.stringify({ projects, count }).replace(/</g, '\\u003c');
         <div class="project-row"><select id="project-picker" aria-label="Jump to project"></select><a id="project-link" class="project-link" target="_blank" rel="noreferrer">Open ↗</a></div>
       </div>
 
-      <label>Tags for this whole project
+      <label>Project keywords · every image in this post
         <input id="project-tags" autocomplete="off" placeholder="stage, night, Amsterdam, wood">
-        <small>Write these once. They apply to every picture in this project.</small>
+        <small>Set these once; every image inherits them in the export.</small>
       </label>
+      <div class="suggestion-block">
+        <div class="suggestion-head"><span>Your handwritten vocabulary from this post</span><button class="add-all" id="add-original-suggestions" type="button">Add your words</button></div>
+        <div class="suggestions" id="project-original-suggestions"></div>
+        <div class="suggestion-head"><span>Customer-search ideas for this project</span></div>
+        <div class="suggestions" id="project-search-suggestions"></div>
+      </div>
       <div class="inherited" id="inherited" aria-label="Project tags applied to this picture"></div>
 
-      <label>What is visible in this picture?
-        <textarea id="description" placeholder="A concise description for someone who cannot see it…"></textarea>
-      </label>
+      <details class="description" id="description-panel">
+        <summary>Alt description · human and accessible</summary>
+        <label>What is visible in this picture?
+          <textarea id="description" placeholder="A concise description for someone who cannot see it…"></textarea>
+        </label>
+      </details>
 
-      <label>Tags only for this picture
+      <label>Keywords only for this image
         <input id="image-tags" autocomplete="off" placeholder="close-up, blue light, Ryan welding">
-        <small>Comma-separated. Add only what differs from the project tags.</small>
+        <small>Type and press <kbd>Enter</kbd> to review + move on. Add only what is visibly true.</small>
       </label>
+      <div class="suggestion-block">
+        <div class="suggestion-head"><span>Your nearest handwritten descriptions</span><span class="mini-actions"><button class="add-all" id="add-nearby-suggestions" type="button">Add nearby words</button><button class="add-all" id="clear-image-tags" type="button">Clear image tags</button></span></div>
+        <div class="nearby" id="nearby"></div>
+        <div class="suggestion-head"><span>Nearby vocabulary + fast visual choices</span></div>
+        <div class="suggestions" id="image-suggestions"></div>
+      </div>
+      <div class="effective" id="effective" aria-live="polite"></div>
 
-      <div class="controls"><button id="previous" type="button">← Previous</button><button id="skip" type="button">Skip</button><button id="next" class="primary" type="submit">Save + next →</button></div>
+      <div class="controls"><button id="previous" type="button">← Previous</button><button id="skip" type="button">Skip</button><button id="next" class="primary" type="submit">Reviewed + next →</button></div>
       <div class="celebrate" id="celebrate" aria-live="polite"></div>
-      <p class="hint"><kbd>Ctrl</kbd> + <kbd>Enter</kbd> save + next · <kbd>Alt</kbd> + <kbd>←</kbd>/<kbd>→</kbd> move · everything autosaves</p>
+      <p class="hint"><kbd>Enter</kbd> in keywords or <kbd>Ctrl</kbd> + <kbd>Enter</kbd> anywhere: reviewed + next · <kbd>Alt</kbd> + <kbd>←</kbd>/<kbd>→</kbd>: browse · everything autosaves</p>
     </form>
   </main>
 
-  <dialog id="keys"><h2>Stay in the flow</h2><p><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Enter</kbd> saves and moves forward from any field.</p><p><kbd>Alt</kbd> + <kbd>←</kbd> or <kbd>→</kbd> moves without marking the picture complete.</p><p>Project tags are inherited by every picture. Individual tags add only what makes this image different.</p><button id="close-keys" class="primary" type="button">Got it</button></dialog>
+  <dialog id="keys"><h2>Stay in the flow</h2><p><kbd>Enter</kbd> in the image-keywords field, or <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Enter</kbd> anywhere, marks the image reviewed and moves forward.</p><p><kbd>Alt</kbd> + <kbd>←</kbd> or <kbd>→</kbd> browses without marking it reviewed.</p><p>Project keywords are inherited by every image in the post. Image keywords add only what is visibly distinct. Suggestions are optional: accuracy beats keyword volume.</p><button id="close-keys" class="primary" type="button">Got it</button></dialog>
   <script type="application/json" id="queue-data" set:html={queue}></script>
   <script is:inline>
     const DATA = JSON.parse(document.querySelector('#queue-data').textContent);
-    const STORE = 'reddy-world-image-metadata-v2';
+    const STORE = 'reddy-world-image-metadata-v3';
+    const PREVIOUS = 'reddy-world-image-metadata-v2';
     const LEGACY = 'reddy-world-image-descriptions-v1';
     const empty = {projects: {}, images: {}, cursor: 0, session: 0};
-    const read = () => { try { return {...empty, ...JSON.parse(localStorage.getItem(STORE) || '{}')}; } catch { return {...empty}; } };
+    const read = () => {
+      try {
+        const saved = localStorage.getItem(STORE) || localStorage.getItem(PREVIOUS) || '{}';
+        return {...empty, ...JSON.parse(saved)};
+      } catch { return {...empty}; }
+    };
     const state = read();
     if (!Object.keys(state.images).length) {
       try { const old = JSON.parse(localStorage.getItem(LEGACY) || '{}'); for (const [key, description] of Object.entries(old)) state.images[key] = {description, tags: ''}; } catch {}
     }
     const flat = DATA.projects.flatMap((project, projectIndex) => project.images.map((image, imageIndex) => ({project, projectIndex, image, imageIndex})));
     const $ = (id) => document.querySelector(`#${id}`);
-    const tags = (value) => value.split(',').map((tag) => tag.trim()).filter(Boolean);
+    const tags = (value = '') => [...new Map(value.split(',').map((tag) => tag.trim()).filter(Boolean).map((tag) => [tag.toLowerCase(), tag])).values()];
+    const putTags = (id, values) => { $(id).value = tags(values.join(', ')).join(', '); };
     const save = () => localStorage.setItem(STORE, JSON.stringify(state));
     const current = () => flat[state.cursor] ?? flat[0];
-    const completed = () => flat.filter(({image}) => state.images[image.key]?.description?.trim()).length;
-    const firstIncomplete = () => flat.findIndex(({image}) => !state.images[image.key]?.description?.trim());
+    const recordFor = (image) => state.images[image.key] ?? state.images[image.url] ?? {};
+    const completed = () => flat.filter(({image}) => recordFor(image).reviewed).length;
+    const firstIncomplete = () => flat.findIndex(({image}) => !recordFor(image).reviewed);
     if (!Number.isInteger(state.cursor) || !flat[state.cursor]) state.cursor = Math.max(0, firstIncomplete());
 
     for (const [index, project] of DATA.projects.entries()) $('project-picker').add(new Option(`${project.title} · ${project.images.length}`, String(index)));
@@ -136,20 +243,55 @@ const queue = JSON.stringify({ projects, count }).replace(/</g, '\\u003c');
     function collect() {
       const item = current();
       state.projects[item.project.id] = {tags: $('project-tags').value.trim()};
-      state.images[item.image.key] = {...state.images[item.image.key], description: $('description').value.trim(), tags: $('image-tags').value.trim()};
+      state.images[item.image.key] = {...recordFor(item.image), description: $('description').value.trim(), tags: $('image-tags').value.trim()};
       save();
+    }
+    function renderTagButtons(containerId, suggestions, inputId) {
+      const selected = new Set(tags($(inputId).value).map((tag) => tag.toLowerCase()));
+      $(containerId).replaceChildren(...suggestions.map((tag) => {
+        const button = Object.assign(document.createElement('button'), {type: 'button', className: 'suggestion', textContent: tag});
+        button.setAttribute('aria-pressed', String(selected.has(tag.toLowerCase())));
+        button.addEventListener('click', () => {
+          const values = tags($(inputId).value);
+          const at = values.findIndex((value) => value.toLowerCase() === tag.toLowerCase());
+          if (at >= 0) values.splice(at, 1); else values.push(tag);
+          putTags(inputId, values);
+          collect();
+          refreshKeywords();
+          $(inputId).focus({preventScroll: true});
+        });
+        return button;
+      }));
+    }
+    function refreshKeywords() {
+      const {project, image} = current();
+      const projectTags = tags($('project-tags').value);
+      const imageTags = tags($('image-tags').value);
+      $('inherited').replaceChildren(...projectTags.map((tag) => Object.assign(document.createElement('span'), {className: 'chip', textContent: tag})));
+      renderTagButtons('project-original-suggestions', project.originalSuggestions, 'project-tags');
+      renderTagButtons('project-search-suggestions', project.searchSuggestions, 'project-tags');
+      renderTagButtons('image-suggestions', image.suggestions, 'image-tags');
+      $('nearby').replaceChildren(...(image.nearby.length
+        ? image.nearby.map(({image: number, text}) => {
+          const line = document.createElement('span');
+          line.append(`Image ${number}: `, Object.assign(document.createElement('q'), {textContent: text}));
+          return line;
+        })
+        : [Object.assign(document.createElement('span'), {textContent: 'No other handwritten description in this post yet.'})]));
+      const effective = tags([...projectTags, ...imageTags].join(', '));
+      $('effective').textContent = effective.length ? `This image exports with ${effective.length} keywords: ${effective.join(' · ')}` : 'No keywords yet. Start with the project-wide suggestions, then add only visible image details.';
     }
     function updateProgress() {
       const done = completed();
-      $('progress-label').textContent = `${done} of ${flat.length} described`;
+      $('progress-label').textContent = `${done} of ${flat.length} reviewed`;
       $('remaining').textContent = done === flat.length ? 'Complete!' : `${flat.length - done} to go`;
       $('bar').style.width = `${done / flat.length * 100}%`;
-      $('score').textContent = state.session ? `${state.session} described this session` : 'Ready when you are';
+      $('score').textContent = state.session ? `${state.session} reviewed this session` : 'Ready when you are';
       document.title = `${done}/${flat.length} · ${current().project.title}`;
     }
     function render({focus = true} = {}) {
       const {project, projectIndex, image, imageIndex} = current();
-      const record = state.images[image.key] ?? {};
+      const record = recordFor(image);
       const projectRecord = state.projects[project.id] ?? {};
       $('picture').src = image.src;
       $('picture').srcset = image.srcset;
@@ -161,36 +303,42 @@ const queue = JSON.stringify({ projects, count }).replace(/</g, '\\u003c');
       $('project-picker').value = String(projectIndex);
       $('project-link').href = project.href;
       $('project-tags').value = projectRecord.tags ?? '';
-      $('description').value = record.description ?? '';
+      $('description').value = record.description ?? image.existingDescription ?? '';
+      $('description-panel').querySelector('summary').textContent = image.existingDescription ? 'Alt description · your original is loaded' : 'Alt description · human and accessible';
       $('image-tags').value = record.tags ?? '';
       $('image-counter').textContent = `${imageIndex + 1} / ${project.images.length}`;
-      $('inherited').replaceChildren(...tags(projectRecord.tags ?? '').map((tag) => Object.assign(document.createElement('span'), {className: 'chip', textContent: tag})));
+      refreshKeywords();
       updateProgress();
       save();
-      if (focus) $('description').focus({preventScroll: true});
+      if (focus) $('image-tags').focus({preventScroll: true});
     }
     function move(delta, complete = false) {
       const key = current().image.key;
       collect();
       const record = state.images[key];
-      if (complete && record.description?.trim() && !record.celebrated) {
-        record.celebrated = true;
+      if (complete && !record.reviewed) {
+        record.reviewed = true;
         state.session++;
-        const cheers = ['Nice. Keep rolling.', 'Locked in.', 'Another picture made useful.', 'Good eye.', 'That one is done.'];
+        const cheers = ['Nice. Keep rolling.', 'Locked in.', 'Another image made findable.', 'Good eye.', 'That one is reviewed.'];
         $('celebrate').textContent = cheers[state.session % cheers.length];
       } else $('celebrate').textContent = '';
+      save();
       state.cursor = (state.cursor + delta + flat.length) % flat.length;
       render();
     }
 
-    $('editor').addEventListener('input', () => { collect(); updateProgress(); });
+    $('editor').addEventListener('input', (event) => {
+      collect();
+      updateProgress();
+      if (event.target.id === 'project-tags' || event.target.id === 'image-tags') refreshKeywords();
+    });
     $('editor').addEventListener('submit', (event) => { event.preventDefault(); move(1, true); });
     $('previous').addEventListener('click', () => move(-1));
     $('skip').addEventListener('click', () => move(1));
     $('project-picker').addEventListener('change', (event) => { collect(); state.cursor = flat.findIndex(({projectIndex}) => projectIndex === Number(event.target.value)); render(); });
-    $('project-tags').addEventListener('input', () => {
-      $('inherited').replaceChildren(...tags($('project-tags').value).map((tag) => Object.assign(document.createElement('span'), {className: 'chip', textContent: tag})));
-    });
+    $('add-original-suggestions').addEventListener('click', () => { putTags('project-tags', [...tags($('project-tags').value), ...current().project.originalSuggestions]); collect(); refreshKeywords(); });
+    $('add-nearby-suggestions').addEventListener('click', () => { putTags('image-tags', [...tags($('image-tags').value), ...current().image.nearbySuggestions]); collect(); refreshKeywords(); $('image-tags').focus({preventScroll: true}); });
+    $('clear-image-tags').addEventListener('click', () => { $('image-tags').value = ''; collect(); refreshKeywords(); $('image-tags').focus({preventScroll: true}); });
     addEventListener('keydown', (event) => {
       if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') { event.preventDefault(); move(1, true); }
       if (event.altKey && event.key === 'ArrowLeft') { event.preventDefault(); move(-1); }
@@ -198,7 +346,21 @@ const queue = JSON.stringify({ projects, count }).replace(/</g, '\\u003c');
     });
     $('export').addEventListener('click', () => {
       collect();
-      const output = {version: 2, exportedAt: new Date().toISOString(), projects: state.projects, images: state.images};
+      const images = Object.fromEntries(flat.map(({project, image}) => {
+        const record = recordFor(image);
+        const projectKeywords = tags(state.projects[project.id]?.tags);
+        const imageKeywords = tags(record.tags);
+        return [image.key, {
+          projectId: project.id,
+          url: image.url,
+          description: record.description ?? image.existingDescription ?? '',
+          projectKeywords,
+          imageKeywords,
+          keywords: tags([...projectKeywords, ...imageKeywords].join(', ')),
+          reviewed: Boolean(record.reviewed),
+        }];
+      }));
+      const output = {version: 3, exportedAt: new Date().toISOString(), projects: state.projects, images};
       const blob = new Blob([JSON.stringify(output, null, 2) + '\n'], {type: 'application/json'});
       const link = Object.assign(document.createElement('a'), {href: URL.createObjectURL(blob), download: 'reddy-world-image-metadata.json'});
       link.click();
