@@ -1,12 +1,18 @@
 ---
 import { portfolios, photos, picture, SITE } from '../lib/portfolios.js';
 
-const groups = portfolios.flatMap((portfolio) => portfolio.posts.map((post) => ({
+const projects = portfolios.flatMap((portfolio) => portfolio.posts.map((post) => ({
+  id: `${portfolio.id}/${post.slug}`,
   portfolio: portfolio.name,
-  post,
-  images: photos(post).filter((image) => !image.alt?.trim() && !image.caption?.trim()),
-}))).filter((group) => group.images.length);
-const count = groups.reduce((sum, group) => sum + group.images.length, 0);
+  title: post.title.trim(),
+  href: `${SITE}${post.path}`,
+  images: photos(post).filter((image) => !image.alt?.trim() && !image.caption?.trim()).map((image, index) => {
+    const pic = picture(image);
+    return { key: image.url, index: index + 1, src: pic.src, srcset: pic.srcset ?? '', width: pic.width, height: pic.height };
+  }),
+}))).filter((project) => project.images.length);
+const count = projects.reduce((sum, project) => sum + project.images.length, 0);
+const queue = JSON.stringify({ projects, count }).replace(/</g, '\\u003c');
 ---
 <!doctype html>
 <html lang="en">
@@ -14,81 +20,193 @@ const count = groups.reduce((sum, group) => sum + group.images.length, 0);
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
-  <title>Image-description queue — reddy.world</title>
+  <title>Image-description focus mode — reddy.world</title>
   <style>
-    :root { color-scheme: dark; font-family: Inter, system-ui, sans-serif; background: #0f0f0f; color: #f5f5f0; }
-    body { margin: 0; }
-    main { width: min(74rem, calc(100% - 2rem)); margin: 0 auto; padding: 2rem 0 6rem; }
-    h1, h2 { font-family: Georgia, serif; }
-    h1 { font-size: clamp(2.2rem, 6vw, 4.5rem); margin: 0 0 1rem; }
-    .lead { max-width: 65ch; color: #c9c9c4; }
-    .tools { position: sticky; top: 0; z-index: 2; display: flex; gap: .75rem; align-items: center; padding: 1rem 0; background: #0f0f0f; border-bottom: 1px solid #444; }
-    button, .project { color: #0f0f0f; background: #c7a86d; border: 0; padding: .7rem 1rem; font: inherit; font-weight: 700; cursor: pointer; text-decoration: none; }
-    #status { color: #c9c9c4; }
-    details { border-top: 1px solid #444; padding: 1rem 0; }
-    summary { cursor: pointer; font-size: 1.15rem; font-weight: 700; }
-    .project { display: inline-block; margin: 1rem 0; background: transparent; border: 1px solid #c7a86d; color: #c7a86d; }
-    .images { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr)); gap: 1rem; }
-    figure { margin: 0; display: grid; gap: .6rem; align-content: start; }
-    img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: contain; background: #1a1a1a; }
-    textarea { width: 100%; min-height: 6rem; box-sizing: border-box; resize: vertical; padding: .7rem; color: #f5f5f0; background: #1a1a1a; border: 1px solid #666; font: inherit; }
-    textarea:focus { outline: 2px solid #c7a86d; outline-offset: 2px; }
-    small { color: #aaa; overflow-wrap: anywhere; }
+    :root { color-scheme: dark; font-family: Inter, system-ui, sans-serif; background: #0f0f0f; color: #f5f5f0; --gold: #c7a86d; --line: #41413e; }
+    * { box-sizing: border-box; }
+    body { margin: 0; overflow: hidden; }
+    button, input, textarea, select { font: inherit; }
+    button, .project-link { min-height: 2.75rem; border: 1px solid var(--gold); padding: .65rem .9rem; color: var(--gold); background: transparent; cursor: pointer; text-decoration: none; }
+    button.primary { color: #0f0f0f; background: var(--gold); font-weight: 750; }
+    button:hover, button:focus-visible, .project-link:hover, .project-link:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+    .top { height: 4.5rem; padding: .7rem 1rem; display: grid; grid-template-columns: minmax(10rem, 1fr) minmax(12rem, 2fr) auto; gap: 1rem; align-items: center; border-bottom: 1px solid var(--line); }
+    .brand { min-width: 0; }
+    .brand strong { display: block; font-family: Georgia, serif; font-size: 1.3rem; }
+    .brand small, #score { color: #aaa; }
+    .progress { display: grid; grid-template-columns: 1fr auto; gap: .35rem .75rem; align-items: center; }
+    .bar { grid-column: 1 / -1; height: .35rem; background: #2a2a28; }
+    .bar span { display: block; height: 100%; width: 0; background: var(--gold); transition: width .2s ease; }
+    .top-actions { display: flex; gap: .5rem; }
+    .workbench { height: calc(100dvh - 4.5rem); display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(22rem, .8fr); }
+    .stage { position: relative; min-width: 0; display: grid; place-items: center; padding: 1.25rem; background: #090909; }
+    .stage img { display: block; max-width: 100%; max-height: calc(100dvh - 7rem); object-fit: contain; background: #151515; }
+    .counter { position: absolute; top: 1rem; left: 1rem; padding: .35rem .55rem; color: #eee; background: rgba(0,0,0,.75); font-variant-numeric: tabular-nums; }
+    .panel { min-width: 0; overflow-y: auto; border-left: 1px solid var(--line); padding: 1.1rem; display: grid; align-content: start; gap: .85rem; }
+    .project-head { display: grid; gap: .55rem; }
+    .project-head h1 { margin: 0; font-family: Georgia, serif; font-size: clamp(1.5rem, 3vw, 2.1rem); line-height: 1.05; }
+    .project-row { display: flex; gap: .6rem; align-items: center; }
+    #project-picker { min-width: 0; width: 100%; color: #f5f5f0; background: #1a1a1a; border: 1px solid #666; padding: .65rem; }
+    label { display: grid; gap: .4rem; font-weight: 700; }
+    label small, .hint { color: #aaa; font-weight: 400; line-height: 1.35; }
+    input, textarea { width: 100%; color: #f5f5f0; background: #1a1a1a; border: 1px solid #666; padding: .75rem; }
+    input:focus, textarea:focus, select:focus { outline: 2px solid var(--gold); outline-offset: 2px; }
+    textarea { min-height: 8rem; resize: vertical; line-height: 1.45; }
+    .inherited { min-height: 1.5rem; display: flex; flex-wrap: wrap; gap: .35rem; }
+    .chip { padding: .2rem .45rem; background: #2b251a; color: #e7cf9d; font-size: .8rem; }
+    .controls { display: grid; grid-template-columns: 1fr 1fr 1.35fr; gap: .55rem; }
+    .celebrate { min-height: 1.5rem; color: var(--gold); font-weight: 700; }
+    kbd { border: 1px solid #555; padding: .1rem .3rem; font-size: .78rem; color: #bbb; }
+    dialog { max-width: 34rem; color: #f5f5f0; background: #151515; border: 1px solid var(--gold); }
+    dialog::backdrop { background: rgba(0,0,0,.75); }
+    @media (max-width: 760px) {
+      body { overflow: auto; }
+      .top { height: auto; grid-template-columns: 1fr; }
+      .top-actions { flex-wrap: wrap; }
+      .workbench { height: auto; grid-template-columns: 1fr; }
+      .stage { min-height: 55dvh; }
+      .stage img { max-height: 50dvh; }
+      .panel { overflow: visible; border: 0; border-top: 1px solid var(--line); }
+    }
+    @media (prefers-reduced-motion: reduce) { .bar span { transition: none; } }
   </style>
 </head>
 <body>
-  <main>
-    <h1>Describe the pictures</h1>
-    <p class="lead">{count} pictures still have an automatic “project title, photo number” description. Open one project at a time, write only what is useful to someone who cannot see the picture, and export whenever you want. Your text stays in this browser until you export or clear it.</p>
-    <div class="tools">
-      <button id="export" type="button">Export descriptions</button>
-      <button id="clear" type="button">Clear saved text</button>
-      <span id="status" aria-live="polite">0 described</span>
-    </div>
-    {groups.map(({ portfolio, post, images }) => (
-      <details>
-        <summary>{post.title.trim()} · {portfolio} · {images.length}</summary>
-        <a class="project" href={`${SITE}${post.path}`} target="_blank" rel="noreferrer">Open the project ↗</a>
-        <div class="images">
-          {images.map((image, index) => {
-            const pic = picture(image);
-            return (
-              <figure>
-                <img src={pic.src} srcset={pic.srcset} sizes="(max-width: 600px) 100vw, 280px" width={pic.width} height={pic.height} alt="" loading="lazy" decoding="async">
-                <textarea data-image={image.url} aria-label={`Description for ${post.title.trim()}, picture ${index + 1}`} placeholder="Describe the useful visual information…"></textarea>
-                <small>{image.url}</small>
-              </figure>
-            );
-          })}
-        </div>
-      </details>
-    ))}
+  <header class="top">
+    <div class="brand"><strong>Picture focus</strong><small id="score">Ready when you are</small></div>
+    <div class="progress"><span id="progress-label">0 of {count}</span><span id="remaining">{count} to go</span><div class="bar"><span id="bar"></span></div></div>
+    <div class="top-actions"><button id="help" type="button">Keys</button><button id="export" class="primary" type="button">Export</button></div>
+  </header>
+
+  <main class="workbench">
+    <section class="stage" aria-label="Picture being described">
+      <span class="counter" id="image-counter"></span>
+      <img id="picture" alt="Picture to describe">
+    </section>
+    <form class="panel" id="editor">
+      <div class="project-head">
+        <small id="portfolio"></small>
+        <h1 id="project-title"></h1>
+        <div class="project-row"><select id="project-picker" aria-label="Jump to project"></select><a id="project-link" class="project-link" target="_blank" rel="noreferrer">Open ↗</a></div>
+      </div>
+
+      <label>Tags for this whole project
+        <input id="project-tags" autocomplete="off" placeholder="stage, night, Amsterdam, wood">
+        <small>Write these once. They apply to every picture in this project.</small>
+      </label>
+      <div class="inherited" id="inherited" aria-label="Project tags applied to this picture"></div>
+
+      <label>What is visible in this picture?
+        <textarea id="description" placeholder="A concise description for someone who cannot see it…"></textarea>
+      </label>
+
+      <label>Tags only for this picture
+        <input id="image-tags" autocomplete="off" placeholder="close-up, blue light, Ryan welding">
+        <small>Comma-separated. Add only what differs from the project tags.</small>
+      </label>
+
+      <div class="controls"><button id="previous" type="button">← Previous</button><button id="skip" type="button">Skip</button><button id="next" class="primary" type="submit">Save + next →</button></div>
+      <div class="celebrate" id="celebrate" aria-live="polite"></div>
+      <p class="hint"><kbd>Ctrl</kbd> + <kbd>Enter</kbd> save + next · <kbd>Alt</kbd> + <kbd>←</kbd>/<kbd>→</kbd> move · everything autosaves</p>
+    </form>
   </main>
+
+  <dialog id="keys"><h2>Stay in the flow</h2><p><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Enter</kbd> saves and moves forward from any field.</p><p><kbd>Alt</kbd> + <kbd>←</kbd> or <kbd>→</kbd> moves without marking the picture complete.</p><p>Project tags are inherited by every picture. Individual tags add only what makes this image different.</p><button id="close-keys" class="primary" type="button">Got it</button></dialog>
+  <script type="application/json" id="queue-data" set:html={queue}></script>
   <script is:inline>
-    const STORE = 'reddy-world-image-descriptions-v1';
-    const fields = [...document.querySelectorAll('textarea[data-image]')];
-    const status = document.querySelector('#status');
-    const read = () => { try { return JSON.parse(localStorage.getItem(STORE) || '{}'); } catch { return {}; } };
-    const update = () => {
-      const values = Object.fromEntries(fields.map((field) => [field.dataset.image, field.value.trim()]).filter(([, value]) => value));
-      localStorage.setItem(STORE, JSON.stringify(values));
-      status.textContent = `${Object.keys(values).length} described`;
-      return values;
-    };
-    const saved = read();
-    fields.forEach((field) => { field.value = saved[field.dataset.image] || ''; field.addEventListener('input', update); });
-    update();
-    document.querySelector('#export').addEventListener('click', () => {
-      const blob = new Blob([JSON.stringify(update(), null, 2) + '\n'], {type: 'application/json'});
-      const link = Object.assign(document.createElement('a'), {href: URL.createObjectURL(blob), download: 'reddy-world-image-descriptions.json'});
+    const DATA = JSON.parse(document.querySelector('#queue-data').textContent);
+    const STORE = 'reddy-world-image-metadata-v2';
+    const LEGACY = 'reddy-world-image-descriptions-v1';
+    const empty = {projects: {}, images: {}, cursor: 0, session: 0};
+    const read = () => { try { return {...empty, ...JSON.parse(localStorage.getItem(STORE) || '{}')}; } catch { return {...empty}; } };
+    const state = read();
+    if (!Object.keys(state.images).length) {
+      try { const old = JSON.parse(localStorage.getItem(LEGACY) || '{}'); for (const [key, description] of Object.entries(old)) state.images[key] = {description, tags: ''}; } catch {}
+    }
+    const flat = DATA.projects.flatMap((project, projectIndex) => project.images.map((image, imageIndex) => ({project, projectIndex, image, imageIndex})));
+    const $ = (id) => document.querySelector(`#${id}`);
+    const tags = (value) => value.split(',').map((tag) => tag.trim()).filter(Boolean);
+    const save = () => localStorage.setItem(STORE, JSON.stringify(state));
+    const current = () => flat[state.cursor] ?? flat[0];
+    const completed = () => flat.filter(({image}) => state.images[image.key]?.description?.trim()).length;
+    const firstIncomplete = () => flat.findIndex(({image}) => !state.images[image.key]?.description?.trim());
+    if (!Number.isInteger(state.cursor) || !flat[state.cursor]) state.cursor = Math.max(0, firstIncomplete());
+
+    for (const [index, project] of DATA.projects.entries()) $('project-picker').add(new Option(`${project.title} · ${project.images.length}`, String(index)));
+
+    function collect() {
+      const item = current();
+      state.projects[item.project.id] = {tags: $('project-tags').value.trim()};
+      state.images[item.image.key] = {...state.images[item.image.key], description: $('description').value.trim(), tags: $('image-tags').value.trim()};
+      save();
+    }
+    function updateProgress() {
+      const done = completed();
+      $('progress-label').textContent = `${done} of ${flat.length} described`;
+      $('remaining').textContent = done === flat.length ? 'Complete!' : `${flat.length - done} to go`;
+      $('bar').style.width = `${done / flat.length * 100}%`;
+      $('score').textContent = state.session ? `${state.session} described this session` : 'Ready when you are';
+      document.title = `${done}/${flat.length} · ${current().project.title}`;
+    }
+    function render({focus = true} = {}) {
+      const {project, projectIndex, image, imageIndex} = current();
+      const record = state.images[image.key] ?? {};
+      const projectRecord = state.projects[project.id] ?? {};
+      $('picture').src = image.src;
+      $('picture').srcset = image.srcset;
+      $('picture').width = image.width || 1;
+      $('picture').height = image.height || 1;
+      $('picture').alt = `${project.title}, picture ${imageIndex + 1}, ready to describe`;
+      $('portfolio').textContent = project.portfolio;
+      $('project-title').textContent = project.title;
+      $('project-picker').value = String(projectIndex);
+      $('project-link').href = project.href;
+      $('project-tags').value = projectRecord.tags ?? '';
+      $('description').value = record.description ?? '';
+      $('image-tags').value = record.tags ?? '';
+      $('image-counter').textContent = `${imageIndex + 1} / ${project.images.length}`;
+      $('inherited').replaceChildren(...tags(projectRecord.tags ?? '').map((tag) => Object.assign(document.createElement('span'), {className: 'chip', textContent: tag})));
+      updateProgress();
+      save();
+      if (focus) $('description').focus({preventScroll: true});
+    }
+    function move(delta, complete = false) {
+      const key = current().image.key;
+      collect();
+      const record = state.images[key];
+      if (complete && record.description?.trim() && !record.celebrated) {
+        record.celebrated = true;
+        state.session++;
+        const cheers = ['Nice. Keep rolling.', 'Locked in.', 'Another picture made useful.', 'Good eye.', 'That one is done.'];
+        $('celebrate').textContent = cheers[state.session % cheers.length];
+      } else $('celebrate').textContent = '';
+      state.cursor = (state.cursor + delta + flat.length) % flat.length;
+      render();
+    }
+
+    $('editor').addEventListener('input', () => { collect(); updateProgress(); });
+    $('editor').addEventListener('submit', (event) => { event.preventDefault(); move(1, true); });
+    $('previous').addEventListener('click', () => move(-1));
+    $('skip').addEventListener('click', () => move(1));
+    $('project-picker').addEventListener('change', (event) => { collect(); state.cursor = flat.findIndex(({projectIndex}) => projectIndex === Number(event.target.value)); render(); });
+    $('project-tags').addEventListener('input', () => {
+      $('inherited').replaceChildren(...tags($('project-tags').value).map((tag) => Object.assign(document.createElement('span'), {className: 'chip', textContent: tag})));
+    });
+    addEventListener('keydown', (event) => {
+      if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') { event.preventDefault(); move(1, true); }
+      if (event.altKey && event.key === 'ArrowLeft') { event.preventDefault(); move(-1); }
+      if (event.altKey && event.key === 'ArrowRight') { event.preventDefault(); move(1); }
+    });
+    $('export').addEventListener('click', () => {
+      collect();
+      const output = {version: 2, exportedAt: new Date().toISOString(), projects: state.projects, images: state.images};
+      const blob = new Blob([JSON.stringify(output, null, 2) + '\n'], {type: 'application/json'});
+      const link = Object.assign(document.createElement('a'), {href: URL.createObjectURL(blob), download: 'reddy-world-image-metadata.json'});
       link.click();
       URL.revokeObjectURL(link.href);
     });
-    document.querySelector('#clear').addEventListener('click', () => {
-      if (!confirm('Clear every saved description on this device?')) return;
-      fields.forEach((field) => { field.value = ''; });
-      update();
-    });
+    $('help').addEventListener('click', () => $('keys').showModal());
+    $('close-keys').addEventListener('click', () => $('keys').close());
+    render();
   </script>
 </body>
 </html>
