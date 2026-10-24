@@ -6,7 +6,7 @@ export async function GET() {
   const lines = [
     '# portfolio.reddy.world',
     '',
-    '> Visual archive of Ryan Reddy (Amsterdam): festival decors, stage builds and props (ReddyMaekers), fine art, sculptures and inventions (RRproductions), adaptive furniture (Maup de Kleermaeker) and personal photography (Vaguely Vulgar).',
+    '> Selected work by Ryan Reddy (Amsterdam): festival decors, stage builds and props (ReddyMaekers), objects and inventions (RRproductions), and modelling photographs.',
     '',
     `Contact and free 30-minute intro talks: ${CONTACT}`,
     'Main site: https://reddy.world',

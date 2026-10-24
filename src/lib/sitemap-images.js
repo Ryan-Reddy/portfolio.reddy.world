@@ -3,14 +3,16 @@ import { readFileSync, readdirSync } from 'node:fs';
 import yaml from 'js-yaml';
 import { absUrl } from './media-url.js';
 import { BRAND } from './brands.js';
+import { isPublicArchivePost } from './archive-curation.js';
 
-const KEYS = ['rmaekers', 'rrproductions', 'maup', 'vaguelyvulgar'];
+const KEYS = ['rmaekers', 'rrproductions', 'vaguelyvulgar'];
 const SITE = 'https://reddy.world/portfolio';
 
 const byPath = new Map();
 for (const key of KEYS) {
   const data = JSON.parse(readFileSync(new URL(`../data/${key}.json`, import.meta.url), 'utf-8'));
   for (const post of data.posts) {
+    if (!isPublicArchivePost(key, post)) continue;
     // the pictures the page shows, and its featured image
     const shown = post.media.filter((m) => m.type === 'image' && m.duplicate_of === undefined);
     if (post.featured && !shown.some((m) => m.url === post.featured.url)) shown.unshift(post.featured);

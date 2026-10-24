@@ -2,7 +2,7 @@
   "name": "portfolio.reddy.world",
   "version": "1.0.0",
   "private": true,
-  "description": "Visual archive of Ryan Reddy: ReddyMaekers, RRproductions, Maup de Kleermaeker and Vaguely Vulgar",
+  "description": "Selected visual archive of Ryan Reddy: ReddyMaekers, RRproductions and modelling work",
   "type": "module",
   "scripts": {
     "dev": "astro dev",
