@@ -187,7 +187,10 @@ const article = isPost ? { published: post.published, modified: post.modified, s
     <button type="button" class="lightbox-prev" aria-label="Previous photo">&#10094;</button>
     <button type="button" class="lightbox-next" aria-label="Next photo">&#10095;</button>
     <div class="lightbox-stage">
-      <img id="lightbox-img" src="" alt="">
+      <!-- The source is assigned only when a visitor opens a picture.  Do not
+           emit src="": crawlers correctly report that as a broken image on
+           every project page that has the optional lightbox. -->
+      <img id="lightbox-img" alt="">
       <div class="lightbox-caption">
         <span id="lightbox-count"></span>
         <a id="lightbox-ask" class="ask-link" href="#">Ask about this picture</a>
