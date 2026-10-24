@@ -4,20 +4,20 @@
 
 :root {
   color-scheme: dark;
-  --bg: #0c0e12;
-  --bg-gradient: radial-gradient(circle at 50% 0%, #171c26 0%, #0c0e12 75%);
-  --surface: #141820;
-  --surface-hover: #1c212c;
-  --surface-elevated: #222836;
+  --bg: #0f0f0f;
+  --bg-gradient: none;
+  --surface: #1a1a1a;
+  --surface-hover: #242424;
+  --surface-elevated: #262626;
   --fg: #f5f5f0;
   --fg-muted: rgba(245, 245, 240, 0.65);
   --gold: #c7a86d;
   --gold-hover: #e4c27f;
   --gold-dim: rgba(199, 168, 109, 0.15);
   --gold-border: rgba(199, 168, 109, 0.3);
-  --border-radius-sm: 4px;
-  --border-radius: 8px;
-  --border-radius-lg: 12px;
+  --border-radius-sm: 0;
+  --border-radius: 0;
+  --border-radius-lg: 0;
   --font-base: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-display: 'Cormorant Garamond', Garamond, 'Times New Roman', serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
@@ -922,6 +922,83 @@ body {
 :focus-visible {
   outline: 2px solid var(--gold);
   outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   reddy.world shell — the archive is part of the site, not a separate app
+   -------------------------------------------------------------------------- */
+.site-header {
+  position: relative;
+  background: var(--bg);
+  backdrop-filter: none;
+  border-bottom-color: rgba(245, 245, 240, 0.16);
+}
+
+.header-inner {
+  max-width: 88rem;
+  min-height: 4.75rem;
+  padding: 1rem max(1rem, calc((100vw - 84rem) / 2));
+  gap: 1.5rem;
+}
+
+.brand-link { gap: .55rem; }
+.brand-link:hover { transform: none; text-decoration: underline; text-decoration-color: var(--gold); text-underline-offset: .35rem; }
+.brand-sub { color: var(--fg); font-family: var(--font-display); font-size: 1.5rem; font-weight: 600; letter-spacing: 0; text-transform: none; }
+.brand-main { color: var(--gold); font-family: var(--font-base); font-size: .72rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; }
+
+.portfolio-nav {
+  gap: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  scrollbar-width: thin;
+}
+.tab-btn {
+  border-radius: 0;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  padding: .55rem .7rem;
+  color: var(--fg-muted);
+  font-size: .78rem;
+}
+.tab-btn:hover, .tab-btn.active { background: transparent; color: var(--fg); box-shadow: none; border-bottom-color: var(--gold); }
+.tab-count { display: none; }
+.btn-back { border-radius: 0; padding: .65rem 1rem; font-size: .78rem; font-weight: 600; letter-spacing: .04em; }
+
+.site-footer { background: var(--bg); border-top-color: rgba(245, 245, 240, .16); padding: 3rem max(1rem, calc((100vw - 84rem) / 2)); }
+.footer-inner { max-width: 84rem; align-items: flex-start; }
+.footer-name { color: var(--fg); font-family: var(--font-display); font-size: 1.75rem; font-weight: 600; line-height: 1; margin: 0 0 .65rem; }
+.footer-copy { max-width: 34ch; }
+.footer-links { gap: .75rem 1.5rem; }
+.footer-links a { color: var(--fg); text-underline-offset: .25rem; }
+.footer-links a:hover { color: var(--gold); }
+
+/* Keep every archive type on the same calm dark canvas. Individual work is
+   allowed to be colourful inside its pictures, never in the surrounding UI. */
+html.paper {
+  color-scheme: dark;
+  --paper: var(--bg);
+  --paper-2: var(--surface);
+  --ink: var(--fg);
+  --ink-2: var(--fg-muted);
+  --rust: var(--gold);
+  --line: rgba(245, 245, 240, .16);
+  --gold: #c7a86d;
+  --gold-hover: #f0d98d;
+}
+html.paper .site-header, html.paper .site-footer { background: var(--bg); }
+html.paper .portfolio-nav { background: transparent; border: 0; }
+html.paper .tab-btn.active { background: transparent; color: var(--fg); }
+html.paper .footer-links a, html.paper .breadcrumb a { color: var(--fg); }
+
+@media (max-width: 780px) {
+  .header-inner { display: grid; grid-template-columns: 1fr auto; padding: 1rem; gap: .8rem; }
+  .portfolio-nav { grid-column: 1 / -1; width: 100%; overflow-x: auto; }
+  .tab-btn { padding: .55rem .6rem; }
+  .btn-back { padding: .55rem .7rem; white-space: nowrap; }
+  .brand-sub { font-size: 1.3rem; }
+  .site-footer { padding: 2.5rem 1rem; }
 }
 
 @media (max-width: 768px) {

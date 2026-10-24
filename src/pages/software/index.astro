@@ -11,7 +11,7 @@ const cards = await Promise.all(entries.map(async (e) => ({
   hero: e.data.screenshots[0] && await shot(e.id, e.data.screenshots[0]),
 })));
 const pageUrl = `${SITE}/software/`;
-const description = 'Software and websites by Ryan Reddy and Reddy.World Enterprises: apps for reading, focus, mail, speech, food and family passwords, with real screens and live links.';
+const description = 'Software and websites by Ryan Reddy: apps for reading, focus, mail, speech, food and family passwords, with real screens and live links.';
 const jsonLd = [
   {
     '@context': 'https://schema.org',
@@ -39,14 +39,14 @@ const jsonLd = [
   active="software"
   jsonLd={jsonLd}
   theme="paper"
-  footnote="Software and websites, made by Reddy.World Enterprises."
+  footnote="Software and websites by Ryan Reddy."
 >
   <section class="case software-index" aria-labelledby="software-title">
     <nav class="breadcrumb" aria-label="Breadcrumb">
       <a href={`${BASE}/`}>Portfolio</a>
     </nav>
     <header class="case-head">
-      <p class="eyebrow">Made by Reddy.World Enterprises</p>
+      <p class="eyebrow">Selected digital work</p>
       <h1 id="software-title">Software and websites</h1>
     </header>
 
