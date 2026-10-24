@@ -107,9 +107,9 @@ const queue = JSON.stringify({ projects, count }).replace(/</g, '\\u003c');
     * { box-sizing: border-box; }
     body { margin: 0; overflow: hidden; }
     button, input, textarea, select { font: inherit; }
-    button, .project-link { min-height: 2.75rem; border: 1px solid var(--gold); padding: .65rem .9rem; color: var(--gold); background: transparent; cursor: pointer; text-decoration: none; }
-    button.primary { color: #0f0f0f; background: var(--gold); font-weight: 750; }
-    button:hover, button:focus-visible, .project-link:hover, .project-link:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+    :global(button), .project-link { min-height: 2.75rem; border: 1px solid var(--gold); padding: .65rem .9rem; color: var(--gold); background: transparent; cursor: pointer; text-decoration: none; }
+    :global(button.primary) { color: #0f0f0f; background: var(--gold); font-weight: 750; }
+    :global(button:hover), :global(button:focus-visible), .project-link:hover, .project-link:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
     .top { height: 4.5rem; padding: .7rem 1rem; display: grid; grid-template-columns: minmax(10rem, 1fr) minmax(12rem, 2fr) auto; gap: 1rem; align-items: center; border-bottom: 1px solid var(--line); }
     .brand { min-width: 0; }
     .brand strong { display: block; font-family: Georgia, serif; font-size: 1.3rem; }
@@ -123,9 +123,9 @@ const queue = JSON.stringify({ projects, count }).replace(/</g, '\\u003c');
     .stage > img { display: block; max-width: 100%; max-height: calc(100dvh - 12rem); object-fit: contain; background: #151515; }
     .counter { position: absolute; top: 1rem; left: 1rem; padding: .35rem .55rem; color: #eee; background: rgba(0,0,0,.75); font-variant-numeric: tabular-nums; }
     .filmstrip { position: absolute; inset: auto 0 0; min-width: 0; height: 5.25rem; padding: .55rem .75rem; display: flex; align-items: center; gap: .45rem; overflow-x: auto; overflow-y: hidden; background: rgba(10,10,10,.94); border-top: 1px solid var(--line); }
-    .filmstrip button { flex: 0 0 auto; width: 4.25rem; height: 4.05rem; min-height: 0; padding: .15rem; overflow: hidden; border-color: #555; }
-    .filmstrip button[aria-current="true"] { border-color: var(--gold); outline: 2px solid var(--gold); outline-offset: -3px; }
-    .filmstrip img { display: block; width: 100%; height: 100%; object-fit: cover; }
+    :global(.filmstrip button) { flex: 0 0 auto; width: 4.25rem; height: 4.05rem; min-height: 0; padding: .15rem; overflow: hidden; border-color: #555; }
+    :global(.filmstrip button[aria-current="true"]) { border-color: var(--gold); outline: 2px solid var(--gold); outline-offset: -3px; }
+    :global(.filmstrip img) { display: block; width: 100%; height: 100%; object-fit: cover; }
     .panel { min-width: 0; overflow-y: auto; border-left: 1px solid var(--line); padding: 1.1rem; display: grid; align-content: start; gap: .85rem; }
     .project-head { display: grid; gap: .55rem; }
     .project-head h1 { margin: 0; font-family: Georgia, serif; font-size: clamp(1.5rem, 3vw, 2.1rem); line-height: 1.05; }
@@ -137,21 +137,21 @@ const queue = JSON.stringify({ projects, count }).replace(/</g, '\\u003c');
     input:focus, textarea:focus, select:focus { outline: 2px solid var(--gold); outline-offset: 2px; }
     textarea { min-height: 5.5rem; resize: vertical; line-height: 1.45; }
     .inherited { min-height: 1.5rem; display: flex; flex-wrap: wrap; gap: .35rem; }
-    .chip { padding: .2rem .45rem; background: #2b251a; color: #e7cf9d; font-size: .8rem; }
+    :global(.chip) { padding: .2rem .45rem; background: #2b251a; color: #e7cf9d; font-size: .8rem; }
     .suggestion-block { display: grid; gap: .4rem; }
     .suggestion-head { display: flex; justify-content: space-between; gap: .75rem; color: #aaa; font-size: .78rem; }
     .suggestion-head + .suggestion-head { margin-top: .35rem; }
     .mini-actions { display: flex; flex-wrap: wrap; gap: .65rem; }
     .suggestions { display: flex; flex-wrap: wrap; gap: .35rem; }
-    .suggestion-set { display: inline-flex; align-items: stretch; border: 1px solid #555; border-radius: 999px; overflow: hidden; }
-    button.suggestion { min-height: 0; padding: .3rem .5rem; border: 0; color: #d7d7d1; font-size: .78rem; }
-    button.suggestion[aria-pressed="true"] { border-color: var(--gold); color: #111; background: var(--gold); }
-    button.scope { min-height: 0; padding: .25rem .38rem; border: 0; border-left: 1px solid #555; color: #bbb; font-size: .68rem; }
-    button.scope:hover, button.scope:focus-visible { color: #111; background: var(--gold); outline: 0; }
+    :global(.suggestion-set) { display: inline-flex; align-items: stretch; border: 1px solid #555; border-radius: 999px; overflow: hidden; }
+    :global(button.suggestion) { min-height: 0; padding: .3rem .5rem; border: 0; color: #d7d7d1; font-size: .78rem; }
+    :global(button.suggestion[aria-pressed="true"]) { border-color: var(--gold); color: #111; background: var(--gold); }
+    :global(button.scope) { min-height: 0; padding: .25rem .38rem; border: 0; border-left: 1px solid #555; color: #bbb; font-size: .68rem; }
+    :global(button.scope:hover), :global(button.scope:focus-visible) { color: #111; background: var(--gold); outline: 0; }
     button.add-all { min-height: 0; padding: 0; border: 0; color: var(--gold); font-size: .78rem; }
     .effective { color: #aaa; font-size: .78rem; line-height: 1.4; }
     .nearby { display: grid; gap: .3rem; color: #bbb; font-size: .78rem; line-height: 1.35; }
-    .nearby q { color: #ddd; }
+    :global(.nearby q) { color: #ddd; }
     details.description { border-block: 1px solid #292927; padding-block: .45rem; }
     details.description summary { cursor: pointer; color: #ddd; font-weight: 700; }
     details.description label { margin-top: .6rem; }
@@ -163,9 +163,9 @@ const queue = JSON.stringify({ projects, count }).replace(/</g, '\\u003c');
     .map-tools { position: sticky; top: 0; display: flex; gap: .6rem; padding-bottom: .75rem; background: #151515; }
     .map-tools input { flex: 1; }
     .keyword-map { display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: .45rem; }
-    .keyword-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: .3rem; padding: .45rem; border: 1px solid #3a3a38; }
-    .keyword-row strong, .keyword-row small { display: block; overflow-wrap: anywhere; }
-    .keyword-row small { margin-top: .15rem; color: #aaa; }
+    :global(.keyword-row) { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: .3rem; padding: .45rem; border: 1px solid #3a3a38; }
+    :global(.keyword-row strong), :global(.keyword-row small) { display: block; overflow-wrap: anywhere; }
+    :global(.keyword-row small) { margin-top: .15rem; color: #aaa; }
     dialog::backdrop { background: rgba(0,0,0,.75); }
     @media (max-width: 760px) {
       body { overflow: auto; }
