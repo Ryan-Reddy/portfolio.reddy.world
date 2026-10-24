@@ -9,6 +9,7 @@
     "build": "astro build && node scripts/firebase-config.mjs",
     "preview": "astro preview",
     "import": "python scripts/parse_wordpress.py",
+    "media:self-host": "node scripts/self-host-wordpress.mjs",
     "shots": "node scripts/shots.mjs"
   },
   "devDependencies": {
