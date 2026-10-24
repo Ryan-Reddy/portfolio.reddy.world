@@ -187,7 +187,9 @@ const article = isPost ? { published: post.published, modified: post.modified, s
     <button type="button" class="lightbox-prev" aria-label="Previous photo">&#10094;</button>
     <button type="button" class="lightbox-next" aria-label="Next photo">&#10095;</button>
     <div class="lightbox-stage">
-      <img id="lightbox-img" src="" alt="">
+      <!-- A valid inert image keeps the closed dialog valid for crawlers. The
+           selected photograph replaces it only when a visitor opens this. -->
+      <img id="lightbox-img" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" alt="">
       <div class="lightbox-caption">
         <span id="lightbox-count"></span>
         <a id="lightbox-ask" class="ask-link" href="#">Ask about this picture</a>

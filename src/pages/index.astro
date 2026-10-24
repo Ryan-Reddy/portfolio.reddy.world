@@ -4,7 +4,7 @@ import Grid from '../components/Grid.astro';
 import { portfolios, allPosts, PERSON_ID, SITE, filterRows, seriesLinks } from '../lib/portfolios.js';
 
 const photoCount = allPosts.reduce((n, p) => n + p.media.filter((m) => m.type === 'image').length, 0);
-const description = 'Visual archive of Ryan Reddy: festival decors and stage builds (ReddyMaekers), fine art and inventions (RRproductions), adaptive furniture (Maup de Kleermaeker) and personal photography.';
+const description = 'Selected work by Ryan Reddy: festival decors and stage builds (ReddyMaekers), objects and inventions (RRproductions), and modelling photographs.';
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'CollectionPage',
@@ -40,6 +40,6 @@ const jsonLd = {
   <script is:inline>
     // Old links used #rmaekers etc.; send them to the real page (base is /portfolio)
     const key = location.hash.slice(1);
-    if (['rmaekers', 'rrproductions', 'maup', 'vaguelyvulgar'].includes(key)) location.replace(`/portfolio/${key}/`);
+    if (['rmaekers', 'rrproductions', 'vaguelyvulgar'].includes(key)) location.replace(`/portfolio/${key}/`);
   </script>
 </Base>

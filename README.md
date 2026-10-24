@@ -1,11 +1,10 @@
 # portfolio.reddy.world
 
-Visual archive and physical production portfolios of **Ryan Reddy** and friends:
+Selected visual archive and physical production portfolios of **Ryan Reddy**:
 
 - 🎪 **RMaekers**: Festival decors, bespoke stage builds, mechanical props, and escape room fabrication (Georgies Wundergarten, Wicked Jazz Sounds, Lentekabinet, 11:11, Strafwerk).
 - 🎨 **RRproductions**: Ryan Reddy's fine art portfolio, sculptures, Taleidoscope (Beatific Viewer), and mechanical inventions.
-- 🪑 **Maup de Kleermaeker**: Bespoke adaptive furniture design and master craftsmanship (*Meubels met het gemak van aanpassing of hervorming*, Lightmaeker, Birthinchair, LoungeChair).
-- 🎭 **Vaguely Vulgar**: Theatrical performance, acting, and modelling archives.
+- 📷 **Modelling**: Ryan Reddy's selected photographs and modelling profile, under the legacy Vaguely Vulgar URL.
 
 ---
 
