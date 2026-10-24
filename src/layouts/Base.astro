@@ -1,7 +1,6 @@
 ---
 import '../styles/global.css';
-import { getCollection } from 'astro:content';
-import { portfolios, contactUrl, ORIGIN, BASE, SITE } from '../lib/portfolios.js';
+import { contactUrl, ORIGIN, SITE } from '../lib/portfolios.js';
 
 interface Props {
   title: string;
@@ -18,7 +17,6 @@ interface Props {
 
 const { title, description, image, active, jsonLd, type = 'website', article, theme,
   footnote = 'Selected work, notes and experiments by Ryan Reddy.' } = Astro.props;
-const softwareCount = (await getCollection('software')).length;
 // Astro.url includes the base, so this is the page's reddy.world/portfolio URL
 const canonical = new URL(Astro.url.pathname, ORIGIN).href;
 ---
@@ -72,19 +70,14 @@ const canonical = new URL(Astro.url.pathname, ORIGIN).href;
 <body>
   <header class="site-header">
     <div class="header-inner">
-      <a href="https://reddy.world/" class="brand-link" title="Ryan Reddy — home">
+      <a href="https://reddy.world/?at=work" class="brand-link" title="Ryan Reddy — the wall">
         <span class="brand-sub">Ryan Reddy</span>
         <span class="brand-main">the work</span>
       </a>
 
       <nav class="portfolio-nav" aria-label="Browse work">
-        {portfolios.map((p) => (
-          <a href={`${BASE}/${p.id}/`} class:list={['tab-btn', { active: active === p.id }]} aria-current={active === p.id ? 'page' : undefined}>
-            <span class="tab-title">{p.name}</span>
-          </a>
-        ))}
-        <a href={`${BASE}/software/`} class:list={['tab-btn', { active: active === 'software' }]} aria-current={active === 'software' ? 'page' : undefined}>
-          <span class="tab-title">Software</span>
+        <a href="https://reddy.world/?at=work" class="tab-btn">
+          <span class="tab-title">The wall</span>
         </a>
       </nav>
 

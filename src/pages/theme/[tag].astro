@@ -1,60 +1,11 @@
 ---
-import Base from '../../layouts/Base.astro';
-import Grid from '../../components/Grid.astro';
-import { allPosts, THEME_TAGS, PERSON_ID, SITE, BASE, filterRows } from '../../lib/portfolios.js';
+import WallRedirect from '../../components/WallRedirect.astro';
+import { THEME_TAGS } from '../../lib/portfolios.js';
 
-// One page per series or theme (signage, Cantina, festivals...), listing every project
-// that carries its tag across all portfolios. Indexable, so each theme has its own landing page.
 export function getStaticPaths() {
-  return THEME_TAGS.map((theme) => ({ params: { tag: theme.tag }, props: { theme } }));
+  return THEME_TAGS.map((theme) => ({ params: { tag: theme.tag }, props: { label: theme.label } }));
 }
 
-const { theme } = Astro.props;
-const posts = allPosts.filter((post) => post.tags.includes(theme.tag));
-const photoCount = posts.reduce((n, post) => n + post.media.filter((m) => m.type === 'image').length, 0);
-const others = THEME_TAGS.filter((t) => t.tag !== theme.tag);
-const jsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'CollectionPage',
-  url: `${SITE}/theme/${theme.tag}/`,
-  name: theme.label,
-  description: theme.description,
-  author: { '@id': PERSON_ID },
-  isPartOf: { '@id': `${SITE}/#archive` },
-  mainEntity: {
-    '@type': 'ItemList',
-    numberOfItems: posts.length,
-    itemListElement: posts.map((post, i) => ({ '@type': 'ListItem', position: i + 1, url: `${SITE}${post.path}` })),
-  },
-};
+const { label } = Astro.props;
 ---
-<Base title={`${theme.label} — projects by Ryan Reddy`} description={theme.description} jsonLd={jsonLd}>
-  <section class="archive-hero" aria-labelledby="hero-title">
-    <div class="hero-inner">
-      <div class="hero-badge">Series &amp; themes</div>
-      <h1 class="hero-title" id="hero-title">{theme.label}</h1>
-      <p class="hero-subtitle">{theme.description}</p>
-      <div class="hero-meta">
-        <span class="meta-item"><strong>{posts.length}</strong> Projects</span>
-        <span class="meta-dot">&bull;</span>
-        <span class="meta-item"><strong>{photoCount.toLocaleString('en-US')}</strong> Photographs</span>
-      </div>
-    </div>
-  </section>
-
-  <Grid posts={posts} rows={filterRows(posts, { portfolioRow: true })} showPortfolio />
-
-  <nav class="theme-links" aria-label="Other series and themes">
-    <h2>More series &amp; themes</h2>
-    <ul>
-      {others.map((t) => <li><a href={`${BASE}/theme/${t.tag}/`}>{t.label}</a></li>)}
-    </ul>
-  </nav>
-</Base>
-
-<style>
-  .theme-links { max-width: 1200px; margin: 3rem auto 4rem; padding: 0 1.5rem; }
-  .theme-links h2 { font-size: 1.25rem; margin: 0 0 1rem; }
-  .theme-links ul { display: flex; flex-wrap: wrap; gap: 0.6rem; list-style: none; margin: 0; padding: 0; }
-  .theme-links a { display: inline-block; padding: 0.45rem 0.9rem; border: 1px solid currentColor; border-radius: 999px; text-decoration: none; }
-</style>
+<WallRedirect label={label} />

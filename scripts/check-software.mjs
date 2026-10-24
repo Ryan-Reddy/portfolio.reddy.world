@@ -17,7 +17,7 @@ const sitemap = readdirSync(DIST).filter((f) => /^sitemap-\d+\.xml$/.test(f)).ma
 const llms = read('llms.txt');
 const titles = new Map();
 
-for (const page of ['', ...slugs.map((s) => `${s}/`)]) {
+for (const page of slugs.map((s) => `${s}/`)) {
   const where = `software/${page}`;
   const html = read(`${where}index.html`);
   const say = (msg) => problems.push(`${where}: ${msg}`);
@@ -34,7 +34,7 @@ for (const page of ['', ...slugs.map((s) => `${s}/`)]) {
   const main = html.match(/<main[\s\S]*<\/main>/)?.[0] ?? '';
   const words = main.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<[^>]+>/g, ' ').split(/\s+/).filter(Boolean).length;
   // a case study with no pictures on purpose (NIA: text only, reddy.world#126) is short too
-  const want = !page ? 30 : /<img/.test(main) ? 150 : 100;
+  const want = /<img/.test(main) ? 150 : 100;
   if (words < want) say(`only ${words} words of main text in the raw HTML`);
 
   for (const img of html.match(/<img\b[^>]*>/g) ?? []) {
@@ -58,6 +58,11 @@ for (const page of ['', ...slugs.map((s) => `${s}/`)]) {
   if (page && !llms.includes(`(${SITE}/${where})`)) say('not in llms.txt');
 }
 
+const overview = read('software/index.html');
+if (!overview.includes('name="robots" content="noindex, follow"')) problems.push('software overview: not marked noindex');
+if (!overview.includes('https://reddy.world/?at=work')) problems.push('software overview: does not hand off to the wall');
+if (sitemap.includes(`<loc>${SITE}/software/</loc>`)) problems.push('software overview: redirect stub is still in the sitemap');
+
 // software.json, which reddy.world's wall reads: every case study, each with its hero picture
 try {
   const { apps } = JSON.parse(read('software.json'));
@@ -74,4 +79,4 @@ if (problems.length) {
   console.error(`check-software: ${problems.length} problems\n- ${problems.join('\n- ')}`);
   process.exit(1);
 }
-console.log(`check-software: the overview and ${slugs.length} case studies pass`);
+console.log(`check-software: wall handoff and ${slugs.length} case studies pass`);

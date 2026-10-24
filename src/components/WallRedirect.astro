@@ -1,0 +1,27 @@
+---
+interface Props {
+  label?: string;
+}
+
+const { label = 'the work' } = Astro.props;
+const target = 'https://reddy.world/?at=work';
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{label} now lives on Ryan Reddy’s wall</title>
+  <meta name="robots" content="noindex, follow">
+  <meta name="description" content="Browse Ryan Reddy’s work on the wall at reddy.world.">
+  <link rel="canonical" href="https://reddy.world/">
+  <meta http-equiv="refresh" content={`0; url=${target}`}>
+  <script is:inline define:vars={{ target }}>location.replace(target);</script>
+</head>
+<body>
+  <main>
+    <p>The archive now opens through the wall.</p>
+    <a href={target}>Browse {label} on Ryan Reddy’s wall</a>
+  </main>
+</body>
+</html>
