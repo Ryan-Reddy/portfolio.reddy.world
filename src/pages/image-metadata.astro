@@ -2,9 +2,19 @@
 import { portfolios, photos, picture, SITE, KIND_LABEL } from '../lib/portfolios.js';
 
 const SEARCH_INTENT = {
-  rmaekers: ['creative fabrication Amsterdam', 'festival stage design', 'event decor Amsterdam', 'experiential design', 'set building', 'custom props', 'brand activation'],
-  rrproductions: ['creative technologist Amsterdam', 'industrial design', 'product design', 'art installation', 'sculpture', 'custom fabrication'],
+  rmaekers: ['production studio Amsterdam', 'experiential design studio Amsterdam', 'creative fabrication Amsterdam', 'brand activations Amsterdam', 'exhibition stand design Amsterdam'],
+  rrproductions: ['creative technologist Amsterdam', 'industrial design', 'product design', 'product solutions', 'art installation', 'sculpture', 'custom fabrication'],
   vaguelyvulgar: ['male model Amsterdam', 'fashion model', 'editorial modelling', 'portrait photography', 'creative talent Amsterdam'],
+};
+const PROJECT_INTENT = {
+  decor: ['festival stage design', 'event decor Amsterdam', 'art installations Amsterdam', 'set building', 'custom props'],
+  signage: ['custom signage Amsterdam', 'light installations', 'exhibition design'],
+  furniture: ['furniture design Amsterdam', 'interior design Amsterdam', 'custom interiors', 'product design solutions'],
+  design: ['product design Amsterdam', 'interior design Amsterdam', 'creative product solutions'],
+  rentals: ['event furniture rental Amsterdam', 'festival decor rental'],
+  artists: ['artist collaboration', 'art production Amsterdam'],
+  festivals: ['festival production Amsterdam', 'festival installations'],
+  clubs: ['club decor Amsterdam', 'nightlife design'],
 };
 const IMAGE_VOCABULARY = ['wide view', 'close-up', 'detail', 'finished installation', 'work in progress', 'night', 'daylight', 'people', 'lighting', 'materials'];
 const NOISE = new Set(['project', 'projects', 'portfolio', 'uncategorized', 'geen categorie']);
@@ -23,11 +33,12 @@ const handwrittenDescription = (image, projectTitle) => {
 };
 const suggestionsFor = (portfolio, post) => unique([
   ...(SEARCH_INTENT[portfolio.id] ?? []),
+  ...post.kinds.flatMap((kind) => PROJECT_INTENT[kind] ?? []),
   ...post.kinds.map((kind) => KIND_LABEL[kind]),
   ...post.categories,
   ...post.tags,
   post.title,
-]).slice(0, 14);
+]).slice(0, 18);
 const wordsIn = (text) => useful(text).match(/[\p{L}\p{N}][\p{L}\p{N}'’-]*/gu) ?? [];
 const metadataKeywords = (texts, limit = 12) => {
   const scores = new Map();
@@ -59,6 +70,7 @@ const projects = portfolios.flatMap((portfolio) => portfolio.posts.map((post) =>
     title: post.title.trim(),
     href: `${SITE}${post.path}`,
     originalSuggestions,
+    currentKeywords: unique([...originalSuggestions, ...post.kinds.map((kind) => KIND_LABEL[kind]), ...post.categories, ...post.tags]),
     searchSuggestions: suggestionsFor(portfolio, post).filter((tag) => !originalSuggestions.some((original) => original.toLowerCase() === tag.toLowerCase())),
     images: projectPhotos.map((image, index) => {
     const pic = picture(image);
@@ -107,9 +119,13 @@ const queue = JSON.stringify({ projects, count }).replace(/</g, '\\u003c');
     .bar span { display: block; height: 100%; width: 0; background: var(--gold); transition: width .2s ease; }
     .top-actions { display: flex; gap: .5rem; }
     .workbench { height: calc(100dvh - 4.5rem); display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(22rem, .8fr); }
-    .stage { position: relative; min-width: 0; display: grid; place-items: center; padding: 1.25rem; background: #090909; }
-    .stage img { display: block; max-width: 100%; max-height: calc(100dvh - 7rem); object-fit: contain; background: #151515; }
+    .stage { position: relative; min-width: 0; display: grid; place-items: center; padding: 1.25rem 1.25rem 6.25rem; background: #090909; }
+    .stage > img { display: block; max-width: 100%; max-height: calc(100dvh - 12rem); object-fit: contain; background: #151515; }
     .counter { position: absolute; top: 1rem; left: 1rem; padding: .35rem .55rem; color: #eee; background: rgba(0,0,0,.75); font-variant-numeric: tabular-nums; }
+    .filmstrip { position: absolute; inset: auto 0 0; min-width: 0; height: 5.25rem; padding: .55rem .75rem; display: flex; align-items: center; gap: .45rem; overflow-x: auto; overflow-y: hidden; background: rgba(10,10,10,.94); border-top: 1px solid var(--line); }
+    .filmstrip button { flex: 0 0 auto; width: 4.25rem; height: 4.05rem; min-height: 0; padding: .15rem; overflow: hidden; border-color: #555; }
+    .filmstrip button[aria-current="true"] { border-color: var(--gold); outline: 2px solid var(--gold); outline-offset: -3px; }
+    .filmstrip img { display: block; width: 100%; height: 100%; object-fit: cover; }
     .panel { min-width: 0; overflow-y: auto; border-left: 1px solid var(--line); padding: 1.1rem; display: grid; align-content: start; gap: .85rem; }
     .project-head { display: grid; gap: .55rem; }
     .project-head h1 { margin: 0; font-family: Georgia, serif; font-size: clamp(1.5rem, 3vw, 2.1rem); line-height: 1.05; }
@@ -127,8 +143,11 @@ const queue = JSON.stringify({ projects, count }).replace(/</g, '\\u003c');
     .suggestion-head + .suggestion-head { margin-top: .35rem; }
     .mini-actions { display: flex; flex-wrap: wrap; gap: .65rem; }
     .suggestions { display: flex; flex-wrap: wrap; gap: .35rem; }
-    button.suggestion { min-height: 0; padding: .3rem .5rem; border-color: #555; color: #d7d7d1; border-radius: 999px; font-size: .78rem; }
+    .suggestion-set { display: inline-flex; align-items: stretch; border: 1px solid #555; border-radius: 999px; overflow: hidden; }
+    button.suggestion { min-height: 0; padding: .3rem .5rem; border: 0; color: #d7d7d1; font-size: .78rem; }
     button.suggestion[aria-pressed="true"] { border-color: var(--gold); color: #111; background: var(--gold); }
+    button.scope { min-height: 0; padding: .25rem .38rem; border: 0; border-left: 1px solid #555; color: #bbb; font-size: .68rem; }
+    button.scope:hover, button.scope:focus-visible { color: #111; background: var(--gold); outline: 0; }
     button.add-all { min-height: 0; padding: 0; border: 0; color: var(--gold); font-size: .78rem; }
     .effective { color: #aaa; font-size: .78rem; line-height: 1.4; }
     .nearby { display: grid; gap: .3rem; color: #bbb; font-size: .78rem; line-height: 1.35; }
@@ -140,6 +159,13 @@ const queue = JSON.stringify({ projects, count }).replace(/</g, '\\u003c');
     .celebrate { min-height: 1.5rem; color: var(--gold); font-weight: 700; }
     kbd { border: 1px solid #555; padding: .1rem .3rem; font-size: .78rem; color: #bbb; }
     dialog { max-width: 34rem; color: #f5f5f0; background: #151515; border: 1px solid var(--gold); }
+    dialog.map-dialog { width: min(64rem, calc(100% - 2rem)); max-width: none; max-height: calc(100dvh - 2rem); }
+    .map-tools { position: sticky; top: 0; display: flex; gap: .6rem; padding-bottom: .75rem; background: #151515; }
+    .map-tools input { flex: 1; }
+    .keyword-map { display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: .45rem; }
+    .keyword-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: .3rem; padding: .45rem; border: 1px solid #3a3a38; }
+    .keyword-row strong, .keyword-row small { display: block; overflow-wrap: anywhere; }
+    .keyword-row small { margin-top: .15rem; color: #aaa; }
     dialog::backdrop { background: rgba(0,0,0,.75); }
     @media (max-width: 760px) {
       body { overflow: auto; }
@@ -147,7 +173,8 @@ const queue = JSON.stringify({ projects, count }).replace(/</g, '\\u003c');
       .top-actions { flex-wrap: wrap; }
       .workbench { height: auto; grid-template-columns: 1fr; }
       .stage { min-height: 55dvh; }
-      .stage img { max-height: 50dvh; }
+      .stage > img { max-height: 43dvh; }
+      .filmstrip { height: 4.75rem; }
       .panel { overflow: visible; border: 0; border-top: 1px solid var(--line); }
     }
     @media (prefers-reduced-motion: reduce) { .bar span { transition: none; } }
@@ -157,13 +184,14 @@ const queue = JSON.stringify({ projects, count }).replace(/</g, '\\u003c');
   <header class="top">
     <div class="brand"><strong>Image SEO focus</strong><small id="score">Ready when you are</small></div>
     <div class="progress"><span id="progress-label">0 of {count}</span><span id="remaining">{count} to go</span><div class="bar"><span id="bar"></span></div></div>
-    <div class="top-actions"><button id="help" type="button">Keys</button><button id="export" class="primary" type="button">Export</button></div>
+    <div class="top-actions"><button id="map" type="button">Keyword map</button><button id="help" type="button">Keys</button><button id="export" class="primary" type="button">Export</button></div>
   </header>
 
   <main class="workbench">
     <section class="stage" aria-label="Picture being described">
       <span class="counter" id="image-counter"></span>
       <img id="picture" alt="Picture to describe">
+      <nav class="filmstrip" id="filmstrip" aria-label="All images in this project"></nav>
     </section>
     <form class="panel" id="editor">
       <div class="project-head">
@@ -209,7 +237,8 @@ const queue = JSON.stringify({ projects, count }).replace(/</g, '\\u003c');
     </form>
   </main>
 
-  <dialog id="keys"><h2>Stay in the flow</h2><p><kbd>Enter</kbd> in the image-keywords field, or <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Enter</kbd> anywhere, marks the image reviewed and moves forward.</p><p><kbd>Alt</kbd> + <kbd>←</kbd> or <kbd>→</kbd> browses without marking it reviewed.</p><p>Project keywords are inherited by every image in the post. Image keywords add only what is visibly distinct. Suggestions are optional: accuracy beats keyword volume.</p><button id="close-keys" class="primary" type="button">Got it</button></dialog>
+  <dialog id="keyword-map" class="map-dialog"><h2>Current keyword map</h2><p>Words already present in the archive plus anything saved in this browser. Counts show how many projects currently use each phrase.</p><div class="map-tools"><input id="map-filter" type="search" placeholder="Filter keywords…" aria-label="Filter keyword map"><button id="close-map" type="button">Close</button></div><div class="keyword-map" id="map-list"></div></dialog>
+  <dialog id="keys"><h2>Stay in the flow</h2><p>Every suggestion has <strong>I</strong> (add to this image) and <strong>P</strong> (add to the whole post). Clicking its main label toggles it in the row’s natural place.</p><p><kbd>Enter</kbd> in the image-keywords field, or <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Enter</kbd> anywhere, marks the image reviewed and moves forward.</p><p><kbd>Alt</kbd> + <kbd>←</kbd> or <kbd>→</kbd> browses without marking it reviewed.</p><p>Project keywords are inherited by every image in the post. Image keywords add only what is visibly distinct. Suggestions are optional: accuracy beats keyword volume.</p><button id="close-keys" class="primary" type="button">Got it</button></dialog>
   <script type="application/json" id="queue-data" set:html={queue}></script>
   <script is:inline>
     const DATA = JSON.parse(document.querySelector('#queue-data').textContent);
@@ -246,22 +275,49 @@ const queue = JSON.stringify({ projects, count }).replace(/</g, '\\u003c');
       state.images[item.image.key] = {...recordFor(item.image), description: $('description').value.trim(), tags: $('image-tags').value.trim()};
       save();
     }
+    function changeTag(inputId, tag, toggle = false) {
+      const values = tags($(inputId).value);
+      const at = values.findIndex((value) => value.toLowerCase() === tag.toLowerCase());
+      if (at >= 0 && toggle) values.splice(at, 1);
+      else if (at < 0) values.push(tag);
+      putTags(inputId, values);
+      collect();
+      refreshKeywords();
+    }
     function renderTagButtons(containerId, suggestions, inputId) {
-      const selected = new Set(tags($(inputId).value).map((tag) => tag.toLowerCase()));
+      const projectSelected = new Set(tags($('project-tags').value).map((tag) => tag.toLowerCase()));
+      const imageSelected = new Set(tags($('image-tags').value).map((tag) => tag.toLowerCase()));
       $(containerId).replaceChildren(...suggestions.map((tag) => {
+        const wrap = Object.assign(document.createElement('span'), {className: 'suggestion-set'});
         const button = Object.assign(document.createElement('button'), {type: 'button', className: 'suggestion', textContent: tag});
-        button.setAttribute('aria-pressed', String(selected.has(tag.toLowerCase())));
+        button.setAttribute('aria-pressed', String((inputId === 'project-tags' ? projectSelected : imageSelected).has(tag.toLowerCase())));
+        button.title = `Toggle “${tag}” in ${inputId === 'project-tags' ? 'this whole post' : 'this image'}`;
         button.addEventListener('click', () => {
-          const values = tags($(inputId).value);
-          const at = values.findIndex((value) => value.toLowerCase() === tag.toLowerCase());
-          if (at >= 0) values.splice(at, 1); else values.push(tag);
-          putTags(inputId, values);
-          collect();
-          refreshKeywords();
+          changeTag(inputId, tag, true);
           $(inputId).focus({preventScroll: true});
         });
+        const image = Object.assign(document.createElement('button'), {type: 'button', className: 'scope', textContent: 'I', title: `Add “${tag}” to this image`});
+        image.setAttribute('aria-label', `Add ${tag} to this image`);
+        image.addEventListener('click', () => { changeTag('image-tags', tag); $('image-tags').focus({preventScroll: true}); });
+        const project = Object.assign(document.createElement('button'), {type: 'button', className: 'scope', textContent: 'P', title: `Add “${tag}” to every image in this post`});
+        project.setAttribute('aria-label', `Add ${tag} to this whole post`);
+        project.addEventListener('click', () => { changeTag('project-tags', tag); $('project-tags').focus({preventScroll: true}); });
+        wrap.append(button, image, project);
+        return wrap;
+      }));
+    }
+    function renderFilmstrip(project, projectIndex, imageIndex) {
+      const start = flat.findIndex((item) => item.projectIndex === projectIndex);
+      $('filmstrip').replaceChildren(...project.images.map((image, index) => {
+        const button = Object.assign(document.createElement('button'), {type: 'button', title: `Open image ${index + 1} of ${project.images.length}`});
+        button.setAttribute('aria-label', `Open image ${index + 1} of ${project.images.length}`);
+        button.setAttribute('aria-current', String(index === imageIndex));
+        const thumbnail = Object.assign(document.createElement('img'), {src: image.src, alt: '', loading: 'lazy'});
+        button.append(thumbnail);
+        button.addEventListener('click', () => { collect(); state.cursor = start + index; render(); });
         return button;
       }));
+      requestAnimationFrame(() => $('filmstrip').querySelector('[aria-current="true"]')?.scrollIntoView({block: 'nearest', inline: 'center'}));
     }
     function refreshKeywords() {
       const {project, image} = current();
@@ -307,6 +363,7 @@ const queue = JSON.stringify({ projects, count }).replace(/</g, '\\u003c');
       $('description-panel').querySelector('summary').textContent = image.existingDescription ? 'Alt description · your original is loaded' : 'Alt description · human and accessible';
       $('image-tags').value = record.tags ?? '';
       $('image-counter').textContent = `${imageIndex + 1} / ${project.images.length}`;
+      renderFilmstrip(project, projectIndex, imageIndex);
       refreshKeywords();
       updateProgress();
       save();
@@ -325,6 +382,35 @@ const queue = JSON.stringify({ projects, count }).replace(/</g, '\\u003c');
       save();
       state.cursor = (state.cursor + delta + flat.length) % flat.length;
       render();
+    }
+    function keywordRows() {
+      const map = new Map();
+      const add = (tag, projectId, imageKey) => {
+        const key = tag.toLowerCase();
+        const entry = map.get(key) ?? {tag, projects: new Set(), images: new Set()};
+        entry.projects.add(projectId);
+        if (imageKey) entry.images.add(imageKey);
+        map.set(key, entry);
+      };
+      for (const project of DATA.projects) {
+        for (const tag of [...project.currentKeywords, ...tags(state.projects[project.id]?.tags)]) add(tag, project.id);
+        for (const image of project.images) for (const tag of tags(recordFor(image).tags)) add(tag, project.id, image.key);
+      }
+      return [...map.values()].sort((a, b) => b.projects.size - a.projects.size || b.images.size - a.images.size || a.tag.localeCompare(b.tag));
+    }
+    function renderMap() {
+      const query = $('map-filter').value.trim().toLowerCase();
+      $('map-list').replaceChildren(...keywordRows().filter(({tag}) => tag.toLowerCase().includes(query)).map(({tag, projects, images}) => {
+        const row = Object.assign(document.createElement('div'), {className: 'keyword-row'});
+        const label = document.createElement('div');
+        label.append(Object.assign(document.createElement('strong'), {textContent: tag}), Object.assign(document.createElement('small'), {textContent: `${projects.size} project${projects.size === 1 ? '' : 's'}${images.size ? ` · ${images.size} individually tagged image${images.size === 1 ? '' : 's'}` : ''}`}));
+        const image = Object.assign(document.createElement('button'), {type: 'button', textContent: '+ image', title: `Add “${tag}” to this image`});
+        image.addEventListener('click', () => { changeTag('image-tags', tag); renderMap(); });
+        const project = Object.assign(document.createElement('button'), {type: 'button', textContent: '+ post', title: `Add “${tag}” to this whole post`});
+        project.addEventListener('click', () => { changeTag('project-tags', tag); renderMap(); });
+        row.append(label, image, project);
+        return row;
+      }));
     }
 
     $('editor').addEventListener('input', (event) => {
@@ -368,6 +454,9 @@ const queue = JSON.stringify({ projects, count }).replace(/</g, '\\u003c');
     });
     $('help').addEventListener('click', () => $('keys').showModal());
     $('close-keys').addEventListener('click', () => $('keys').close());
+    $('map').addEventListener('click', () => { collect(); renderMap(); $('keyword-map').showModal(); $('map-filter').focus(); });
+    $('map-filter').addEventListener('input', renderMap);
+    $('close-map').addEventListener('click', () => $('keyword-map').close());
     render();
   </script>
 </body>
