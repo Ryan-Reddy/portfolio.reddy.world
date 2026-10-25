@@ -1,126 +1,181 @@
-// Before the old WordPress.com sites go offline: what do they still publish, and
-// is every public post and picture also in this repository?
+// Before the old WordPress.com sites go offline: is everything they still publish also
+// in this repository? Exits 1 and lists every gap when something is missing.
 //
-//   node scripts/wordpress-capture.mjs            (a Markdown report on stdout)
+//   npm run media:capture              (a Markdown report on stdout; about a minute)
+//   npm run media:capture -- --probe   (also asks WordPress for every upload id again; 4 minutes)
+//   npm run media:capture -- --fix     (first copies what is missing into archive/wordpress/)
 //
-// Reads each site's public posts and pages from the public WordPress.com API (no
-// account or token; the media library itself is not public), takes every picture
-// a post shows, links to, features or has attached, and looks each one up in
-// src/data/<key>.json and on disk under public/. Nothing is written.
-import { existsSync, readFileSync } from 'node:fs';
+// Reads each site's public posts and pages (and Jetpack portfolio items) and their full
+// pages from the public WordPress.com API, no account. Checks, per site:
+// - every public post and page has a record in src/data/<key>.json (or is covered by one)
+// - every picture a page shows (text, featured image, theme) has a copy in the repo
+// - every upload a page links to (a PDF, a full-size picture) has a copy, or a recorded decision
+// - every embed (YouTube, Vimeo, VideoPress, Sketchfab, other players) is in the record's
+//   text, and every video has a `videos` entry (title, channel, status, thumbnail on disk)
+// - every upload in the media library that no page shows is accounted for, with its reason,
+//   in src/data/wordpress-unused.json (scripts/wordpress-unused.mjs)
+// Nothing is written, except with --fix: then a missing page's WordPress record goes to
+// archive/wordpress/<key>/pages/<id>-<slug>.json and a missing file to
+// archive/wordpress/<key>/<yyyy>/<mm>/<name>: documents and GIFs as WordPress serves them,
+// still pictures like the rest of the archive (at most 2000 px, metadata stripped). archive/ is
+// in the repo but not on the site. A file that carries the former surname is never copied.
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import sharp from 'sharp';
+import { inventory } from './wordpress-inventory.mjs';
+import { IMAGE, SITES, embedsIn, uploadKey, uploadPath } from './wordpress-lib.mjs';
 
-const SITES = [
-  { key: 'rmaekers', site: 'reddymaekersproductions.wordpress.com' },
-  { key: 'rrproductions', site: 'ryanvanlil.wordpress.com' },
-  { key: 'maup', site: 'mbdekleermaeker.wordpress.com' },
-  { key: 'vaguelyvulgar', site: 'vaguelyvulgar.wordpress.com' },
-];
 const ROOT = new URL('../', import.meta.url);
-const UPLOAD = /https?:\/\/[^"'\s<>()]*(?:\.files\.wordpress\.com|\.wordpress\.com\/wp-content\/uploads|\.wp\.com\/[^"'\s<>]*?\/wp-content\/uploads)\/(\d{4})\/(\d{2})\/([^"'\s<>?#/]+)/gi;
-const IMAGE = /\.(jpe?g|png|gif|webp)$/i;
+const PROBE = process.argv.includes('--probe');
+const FIX = process.argv.includes('--fix');
+const FORMER_NAME = /van[\s_-]*lil/i;
+const VIDEO_KINDS = new Set(['youtube', 'vimeo', 'videopress']);
 
-/** One name per upload, whatever size or host WordPress served it at: 2016/07/img_0955.jpg */
-function uploadKey(url) {
-  UPLOAD.lastIndex = 0;
-  const m = UPLOAD.exec(url) ?? /\/(\d{4})\/(\d{2})\/([^/?#]+)$/.exec(url ?? '');
-  if (!m) return null;
-  // WordPress names a resized copy name-300x200.jpg and an edited one name-e1446400187992.jpg
-  const file = decodeURIComponent(m[3]).toLowerCase().replace(/-\d+x\d+(?=\.[a-z]+$)/, '').replace(/-e\d{9,}(?=\.[a-z]+$)/, '');
-  return `${m[1]}/${m[2]}/${file}`;
+// A public WordPress page whose words and pictures another record already holds
+const COVERED = {
+  rrproductions: {
+    // Jetpack portfolio item "School Integral project 8": the same school cabinet, pictures and
+    // drawing as post 397, which is in the archive
+    123: '397',
+  },
+};
+// Uploads deliberately not copied, with the decision
+export const NOT_COPIED = {
+  '2015/10/17-6-materialenmix-2.pdf': 'carries the former full name: not copied, link dropped (PR #44 decision 2, Ryan 2026-10-25)',
+};
+
+const readJson = (p) => JSON.parse(readFileSync(new URL(p, ROOT), 'utf-8'));
+const onDisk = (url) => url?.startsWith('/portfolio/') && existsSync(new URL(`public${url.slice('/portfolio'.length)}`, ROOT));
+const inArchive = (rel) => rel && existsSync(new URL(rel, ROOT));
+const archived = (key, rel) => inArchive(`archive/wordpress/${key}/${rel}`);
+
+/** --fix: keep a missing upload, as WordPress serves it, in archive/wordpress/<key>/ */
+async function keep(key, rel, url) {
+  if (!FIX || archived(key, rel)) return archived(key, rel);
+  const res = await fetch(url, { headers: { 'User-Agent': 'reddy.world archive capture' } });
+  if (!res.ok) return false;
+  const buffer = Buffer.from(await res.arrayBuffer());
+  if (FORMER_NAME.test(rel) || FORMER_NAME.test(buffer.toString('latin1'))) return false;
+  const to = new URL(`archive/wordpress/${key}/${rel}`, ROOT);
+  mkdirSync(new URL('./', to), { recursive: true });
+  if (/\.(jpe?g|png|webp)$/i.test(rel)) {
+    const image = sharp(buffer).rotate().resize({ width: 2000, height: 2000, fit: 'inside', withoutEnlargement: true });
+    const ext = rel.split('.').pop().toLowerCase();
+    await (ext === 'png' ? image.png({ compressionLevel: 9 }) : ext === 'webp' ? image.webp({ quality: 82 }) : image.jpeg({ quality: 82, progressive: true, mozjpeg: true })).toFile(fileURLToPath(to));
+  } else writeFileSync(to, buffer);
+  return true;
 }
 
-const uploadsIn = (html) => [...String(html ?? '').matchAll(UPLOAD)].map((m) => m[0]);
-
-async function wordpressPosts(site) {
-  const fields = 'ID,type,status,URL,slug,title,content,featured_image,attachments';
-  const posts = [];
-  for (let page = 1; ; page++) {
-    const url = `https://public-api.wordpress.com/rest/v1.1/sites/${site}/posts/?type=any&number=100&page=${page}&fields=${fields}`;
-    const res = await fetch(url, { headers: { 'User-Agent': 'reddy.world archive capture check' } });
-    if (!res.ok) throw new Error(`${res.status} ${url}`);
-    const data = await res.json();
-    posts.push(...data.posts);
-    if (posts.length >= data.found || !data.posts.length) return posts;
-  }
-}
-
-function repoIndex(key) {
-  const data = JSON.parse(readFileSync(new URL(`src/data/${key}.json`, ROOT), 'utf-8'));
-  const local = new Map(); // upload key -> local file exists
-  const localSet = (k) => local.set(k, true);
-  for (const post of data.posts) {
+// Every upload the repo keeps a copy of, from any source site's records (a page on one site
+// sometimes shows a picture uploaded to another), and the copies kept but not served
+const local = new Set();
+const data = Object.fromEntries(SITES.map(({ key }) => [key, readJson(`src/data/${key}.json`)]));
+for (const d of Object.values(data)) {
+  for (const post of d.posts) {
     for (const m of [post.featured, ...post.media].filter(Boolean)) {
-      for (const u of [m.url, m.wp_url].filter(Boolean)) {
-        const k = uploadKey(u);
-        const onDisk = m.url.startsWith('/portfolio/') && existsSync(new URL(`public${m.url.slice('/portfolio'.length)}`, ROOT));
-        if (k) local.set(k, local.get(k) || onDisk);
-      }
+      if (onDisk(m.url) || inArchive(m.copy)) for (const u of [m.url, m.wp_url].filter(Boolean)) local.add(uploadKey(u));
     }
+    for (const [, u] of String(post.content ?? '').matchAll(/"(\/portfolio\/(?:images|files)\/[^"]+)"/g)) if (onDisk(u)) local.add(uploadKey(u));
+    for (const v of post.videos ?? []) if (onDisk(v.thumbnail)) local.add(`video:${v.kind}:${v.id}`);
   }
-  // uploads a post's text links to that were copied (public/images or public/files)
-  for (const post of data.posts) {
-    for (const [, local] of String(post.content ?? '').matchAll(/"(\/portfolio\/(?:images|files)\/[^"]+)"/g)) {
-      const k = uploadKey(local);
-      if (k && existsSync(new URL(`public${local.slice('/portfolio'.length)}`, ROOT))) localSet(k);
-    }
-  }
-  // anything in the posts' text that still points at WordPress
-  const remoteInText = data.posts.flatMap((post) => uploadsIn(post.content).map((u) => ({ post, url: u })));
-  const remoteMedia = data.posts.flatMap((post) => [post.featured, ...post.media].filter(Boolean)
-    .filter((m) => /^https?:/.test(m.url)).map((m) => ({ post, url: m.url, type: m.type ?? 'image' })));
-  return { data, local, remoteInText, remoteMedia };
 }
+const unused = existsSync(new URL('src/data/wordpress-unused.json', ROOT)) ? readJson('src/data/wordpress-unused.json') : { sites: {} };
+const accounted = new Map();
+for (const [key, s] of Object.entries(unused.sites)) for (const u of s.uploads) {
+  accounted.set(`${key}:${u.file}`, u);
+  if (inArchive(u.copy)) local.add(uploadKey(`/${u.file}`));
+}
+const saved = readJson('src/data/wordpress-inventory.json');
 
-const lines = [
-  '| Source site | Public posts and pages on WordPress | Also in the repo | Pictures the posts show | Copied into the repo | Uploads attached but never shown | Copied into the repo |',
-  '|---|---|---|---|---|---|---|',
+const table = [
+  '| Site | Public pages | In the repo | Pictures shown | Copied | Files linked | Copied or decided | Embeds | In the repo | Uploads no page shows | Accounted for |',
+  '|---|---|---|---|---|---|---|---|---|---|---|',
 ];
 const gaps = [];
-const attachedOnly = [];
-for (const { key, site } of SITES) {
-  const wp = await wordpressPosts(site);
-  const repo = repoIndex(key);
-  const repoIds = new Set(repo.data.posts.map((p) => String(p.id)));
-  const missingPosts = wp.filter((p) => !repoIds.has(String(p.ID)));
+for (const s of SITES) {
+  const { key, site } = s;
+  const live = await inventory(s, { probe: PROBE });
+  const attachments = PROBE ? live.attachments : saved.sites[key]?.attachments ?? [];
+  const records = new Map(data[key].posts.map((p) => [String(p.id), p]));
+  const gap = (msg) => gaps.push(`- \`${key}\`: ${msg}`);
+  const pub = live.posts.filter((p) => p.status === 'publish');
 
-  // what a visitor sees (the text and the featured image) apart from what was only uploaded to a post
+  let inRepo = 0;
+  for (const p of pub) {
+    const page = `pages/${p.id}-${p.slug}.json`;
+    if (FIX && !records.has(String(p.id)) && !COVERED[key]?.[p.id] && !archived(key, page)) {
+      const record = await (await fetch(`https://public-api.wordpress.com/rest/v1.1/sites/${site}/posts/${p.id}?fields=ID,type,status,slug,title,URL,date,modified,content,excerpt,featured_image`)).json();
+      if (!FORMER_NAME.test(JSON.stringify(record))) {
+        mkdirSync(new URL(`archive/wordpress/${key}/pages/`, ROOT), { recursive: true });
+        writeFileSync(new URL(`archive/wordpress/${key}/${page}`, ROOT), `${JSON.stringify(record, null, 1)}
+`);
+      }
+    }
+    if (records.has(String(p.id)) || COVERED[key]?.[p.id] || archived(key, page)) inRepo++;
+    else gap(`${p.type} ${p.id} [${p.title}](${p.url}) is not in src/data/${key}.json`);
+    if (p.page_status !== 200) gap(`${p.url} answers ${p.page_status}`);
+  }
+
   const shown = new Map();
-  const attached = new Map();
-  for (const p of wp) {
-    const featured = p.featured_image ? [[p.featured_image, 'featured image']] : [];
-    for (const [u, how] of [...uploadsIn(p.content).map((u) => [u, 'text']), ...featured]) {
-      const k = uploadKey(u);
-      if (k && IMAGE.test(k) && !shown.has(k)) shown.set(k, { url: u.split('?')[0], post: p, how });
+  for (const p of pub) {
+    for (const [k, how] of [...p.shown.map((k) => [k, 'in its text']), [uploadKey(p.featured), 'as its featured image'], ...p.theme.map((k) => [k, 'in the theme'])]) {
+      if (k && IMAGE.test(k) && !shown.has(k)) shown.set(k, { p, how });
     }
   }
-  for (const p of wp) {
-    for (const a of Object.values(p.attachments ?? {}).filter((x) => /^image\//.test(x.mime_type))) {
-      const k = uploadKey(a.URL);
-      if (k && IMAGE.test(k) && !shown.has(k) && !attached.has(k)) attached.set(k, { url: a.URL, post: p });
-    }
+  let shownCopied = 0;
+  for (const [k, { p, how }] of shown) {
+    if (local.has(k) || await keep(key, uploadPath(p.urls[k]) ?? k, p.urls[k])) shownCopied++;
+    else gap(`${p.slug} shows ${k} (${how}), which has no copy in the repo`);
   }
-  const missing = (map) => [...map].filter(([k]) => !repo.local.get(k));
-  const shownMissing = missing(shown);
-  const attachedMissing = missing(attached);
-  lines.push(`| ${site} (\`${key}\`) | ${wp.length} | ${wp.length - missingPosts.length} | ${shown.size} | ${shown.size - shownMissing.length} | ${attached.size} | ${attached.size - attachedMissing.length} |`);
 
-  for (const p of missingPosts) gaps.push(`- \`${key}\`: post ${p.ID} [${p.title}](${p.URL}) is not in src/data/${key}.json`);
-  for (const [, { url, post, how }] of shownMissing) gaps.push(`- \`${key}\`: post ${post.ID} \`${post.slug}\` shows ${url} (${how === 'text' ? 'in its text' : 'as its featured image'}), which has no copy in the repo`);
-  for (const { post, url, type } of repo.remoteMedia) gaps.push(`- \`${key}\`: the ${type} record in post ${post.id} \`${post.slug}\` still points at ${url}`);
-  for (const { post, url } of repo.remoteInText) gaps.push(`- \`${key}\`: the text of post ${post.id} \`${post.slug}\` links to ${url}`);
-  const perPost = new Map();
-  for (const [, { post }] of attachedMissing) perPost.set(post, (perPost.get(post) ?? 0) + 1);
-  for (const [post, n] of perPost) attachedOnly.push(`- \`${key}\`: ${n} in post ${post.ID} [\`${post.slug}\`](${post.URL})`);
+  // records (hidden posts too) whose picture or file still lives only on WordPress
+  for (const post of data[key].posts) {
+    for (const m of [post.featured, ...post.media].filter(Boolean)) {
+      if (!/^https?:/.test(m.url) || local.has(uploadKey(m.url))) continue;
+      if (!(await keep(key, uploadPath(m.url), m.url.split('?')[0]))) gap(`the ${m.type ?? 'image'} record in ${post.slug} still points at ${uploadPath(m.url)} on WordPress`);
+    }
+  }
+
+  const linked = new Map();
+  for (const p of pub) for (const k of p.linked) if (!shown.has(k) && !linked.has(k)) linked.set(k, p);
+  let linkedOk = 0;
+  for (const [k, p] of linked) {
+    if (local.has(k) || NOT_COPIED[k] || await keep(key, uploadPath(p.urls[k]) ?? k, p.urls[k])) linkedOk++;
+    else gap(`${p.slug} links to ${k}, which has no copy in the repo`);
+  }
+
+  let embeds = 0;
+  let embedsOk = 0;
+  for (const p of pub) {
+    const record = records.get(String(COVERED[key]?.[p.id] ?? p.id));
+    const have = new Set(embedsIn(record?.content).map((e) => `${e.kind}:${e.id}`));
+    for (const e of [...p.embeds, ...p.page_embeds]) {
+      if (e.kind === 'document') continue; // counted with the linked files
+      embeds++;
+      const id = `${e.kind}:${e.id}`;
+      const video = record?.videos?.find((v) => v.kind === e.kind && v.id === e.id);
+      if (!have.has(id) && !(e.kind === 'wordpress-video' && local.has(e.id))) gap(`${p.slug} embeds ${id} (${e.url}), which its record does not`);
+      else if (VIDEO_KINDS.has(e.kind) && !video) gap(`${p.slug}: video ${id} has no \`videos\` entry (npm run media:videos)`);
+      else if (VIDEO_KINDS.has(e.kind) && video.status === 'public' && !local.has(`video:${e.kind}:${e.id}`)) gap(`${p.slug}: video ${id} has no thumbnail on disk`);
+      else embedsOk++;
+    }
+  }
+
+  const notShown = attachments.filter((a) => !shown.has(uploadKey(a.file)) && !linked.has(uploadKey(a.file)));
+  let ok = 0;
+  for (const a of notShown) {
+    const rel = decodeURIComponent(new URL(a.file).pathname).split('/').slice(-3).join('/').toLowerCase();
+    if (accounted.has(`${key}:${rel}`) || local.has(uploadKey(a.file))) ok++;
+    else gap(`upload ${a.id} ${rel} is shown nowhere and not in src/data/wordpress-unused.json (npm run media:unused)`);
+  }
+  table.push(`| ${site} | ${pub.length} | ${inRepo} | ${shown.size} | ${shownCopied} | ${linked.size} | ${linkedOk} | ${embeds} | ${embedsOk} | ${notShown.length}${PROBE ? '' : ` (as of ${saved.checked})`} | ${ok} |`);
 }
 
 console.log([
-  ...lines,
+  ...table,
   '',
-  gaps.length ? `### Gaps: shown on WordPress or linked, not in the repo (${gaps.length})` : '### Gaps: none',
+  gaps.length ? `### Gaps: on WordPress, not in the repo (${gaps.length})` : '### Gaps: none',
   '',
   ...gaps,
-  '',
-  `### Uploaded to a post but never shown, not in the repo (${attachedOnly.length} posts)`,
-  '',
-  ...attachedOnly,
 ].join('\n'));
+if (gaps.length) process.exit(1);
