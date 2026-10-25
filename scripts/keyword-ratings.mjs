@@ -244,7 +244,8 @@ async function main() {
     const fetchJson = politeFetcher({ deadline: Date.now() + budget * 1000, log: console.log });
     const { ratings, updated, stale, topics } = await refreshRatings(lists, previous, { fetchJson, bingKey: process.env.BING_WEBMASTER_API_KEY ?? '', log: console.log });
     const text = serialise(ratings);
-    if (!existsSync(OUT) || text !== readFileSync(OUT, 'utf-8')) writeFileSync(OUT, text);
+    // a Windows checkout has the file with CRLF; that alone is no reason to write it
+    if (!existsSync(OUT) || text !== readFileSync(OUT, 'utf-8').replace(/\r\n/g, '\n')) writeFileSync(OUT, text);
     console.log(`Keyword ratings: ${topics} topics, ${stale} to refresh, ${updated} refreshed${stale > updated ? ` (${stale - updated} left for the next build: time budget or a source down)` : ''}`);
   } catch (error) {
     // never the reason a build fails: the page shows "no data" for what is missing
