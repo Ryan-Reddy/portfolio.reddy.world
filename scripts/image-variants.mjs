@@ -3,7 +3,8 @@
 // For pictures under public/images/<portfolio>/<YYYY>/<MM>/ (the old WordPress uploads,
 // and new ones filed the same way) and the software screenshots under
 // public/images/software/<slug>/ (WebP). Animated WebPs stay whole. Uses sharp, which Astro
-// already installs.
+// already installs. These copies stay clean: the build stamps the served ones with Ryan's mark
+// (scripts/watermark.mjs).
 //
 //   node scripts/image-variants.mjs public/images/rmaekers/2017/10/photo.jpg [...more]
 //   node scripts/image-variants.mjs public/images/rmaekers        (a whole folder)

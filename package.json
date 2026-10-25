@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build && node scripts/firebase-config.mjs",
+    "build": "astro build && node scripts/watermark.mjs && node scripts/check-watermark.mjs && node scripts/firebase-config.mjs",
+    "mark:make": "node scripts/watermark/make-mark.mjs",
     "preview": "astro preview",
     "import": "python scripts/parse_wordpress.py",
     "media:self-host": "node scripts/self-host-wordpress.mjs",
