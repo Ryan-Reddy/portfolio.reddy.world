@@ -46,6 +46,8 @@ function apply(merged, { keepPlace }) {
   for (const key of Object.keys(desk.state)) if (!(key in merged)) delete desk.state[key];
   Object.assign(desk.state, merged);
   snap = snapshotOf(desk.state);
+  // kept in the browser at once, so work merged in from the account is the browser's own copy from now on
+  try { localStorage.setItem(desk.STORE, JSON.stringify(desk.state)); } catch {}
   desk.render({ focus: false });
 }
 
@@ -56,7 +58,7 @@ function push() {
     if (!navigator.onLine) return show({ kind: 'offline' });
     show({ kind: 'saving' });
     try {
-      const merged = await cloud.save((remote) => ({ ...mergeStates(desk.state, remote), summary: overviewSummary() }));
+      const merged = await cloud.save((remote) => ({ ...mergeStates(desk.state, remote, existing), summary: overviewSummary() }));
       remoteCopy = merged;
       if (!sameWork(merged, desk.state)) apply(merged, { keepPlace: true });
       show({ kind: 'saved', at: Date.now() });
@@ -172,10 +174,9 @@ import('./desk-cloud.js').then((module) => {
     remoteCopy = null;
     unwatch = cloud.watchRemote((remote, updated) => {
       remoteCopy = remote;
-      const merged = mergeStates(desk.state, remote);
+      const merged = mergeStates(desk.state, remote, existing);
       if (!sameWork(merged, desk.state) || (first && remote && merged.cursor !== desk.state.cursor)) {
         apply(merged, { keepPlace: !first });
-        try { localStorage.setItem(desk.STORE, JSON.stringify(desk.state)); } catch {}
       }
       const behind = !remote || !sameWork(merged, remote);
       first = false;

@@ -138,6 +138,19 @@ try {
     check('device 1: no page errors', one.errors.length === 0, one.errors.join(' / '));
     check('device 2: no page errors', two.errors.length === 0, two.errors.join(' / '));
 
+    // an old browser with work from before the stamps, on the project device 1 just changed (stamped)
+    const lastId = await one.page.evaluate(() => window.imageDesk.DATA.projects.at(-1).id);
+    const oldPc = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    await oldPc.addInitScript(([key, id]) => {
+      if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify({ projects: { [id]: { tags: 'legacy-work', reviewed: true } }, images: {}, cursor: 0, session: 0 }));
+    }, ['reddy-world-image-metadata-v4', lastId]);
+    const old = await open(oldPc);
+    await old.page.evaluate(() => window.__deskSignInForTest('klugook@gmail.com'));
+    const both = (id) => { const p = window.imageDesk.state.projects[id] ?? {}; return /legacy-work/.test(p.tags) && /last project word/.test(p.tags) && p.reviewed === true; };
+    check('old browser, signed in: its unstamped work and the stamped word are both kept', await waitFor(old.page, both, lastId), JSON.stringify(await old.page.evaluate((id) => window.imageDesk.state.projects[id], lastId)));
+    check('device 1: gets the old browser\'s work too', await waitFor(one.page, both, lastId), JSON.stringify(await one.page.evaluate((id) => window.imageDesk.state.projects[id], lastId)));
+    check('old browser: no page errors', old.errors.length === 0, old.errors.join(' / '));
+
     const stranger = await browser.newContext();
     const other = await open(stranger);
     await other.page.locator('#project-tags').fill('not Ryan');

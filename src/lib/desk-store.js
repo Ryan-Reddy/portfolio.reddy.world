@@ -9,8 +9,8 @@
 //   - `doneAt` on a project: when Ryan marked it done on the desk, for "done today" (not for a loaded export);
 //   - `days`: {"YYYY-MM-DD": true} for every day Ryan changed something;
 //   - `savedAt`: the last change of the whole copy, which decides whose place (cursor) is kept.
-// A copy from before these stamps has no `at`; two such entries merge field by field, keeping whatever
-// either side has, so nothing typed before this change is lost either.
+// A copy from before these stamps has no `at`; such an entry merges field by field with the other copy's,
+// stamped or not, keeping whatever either side has, so nothing typed before this change is lost either.
 //
 // Pure functions only: the page, the cloud sync and the tests all use them.
 
@@ -85,19 +85,36 @@ export function stamp(state, snap, now, existing = {}) {
 }
 
 const tagList = (value) => String(value ?? '').split(',').map((tag) => tag.trim()).filter(Boolean);
+const tagSet = (value) => new Set(tagList(value).map((tag) => tag.toLowerCase()));
+const covers = (big, small) => [...tagSet(small)].every((tag) => tagSet(big).has(tag));
+/** Every tag of both, once. When one side already has them all, that side as it is, so two devices settle. */
 const unionTags = (a, b) => {
+  if (covers(b, a)) return b;
+  if (covers(a, b)) return a;
   const seen = new Map();
   for (const tag of [...tagList(a), ...tagList(b)]) if (!seen.has(tag.toLowerCase())) seen.set(tag.toLowerCase(), tag);
   return [...seen.values()].join(', ');
 };
 
-/** One project or picture from two copies: the newer change wins; without stamps, keep what either has. */
-export function mergeEntry(a, b) {
+/**
+ * One project or picture from two copies.
+ * - Both stamped, at different times: the newer change wins whole (a deliberate clear stays cleared).
+ * - Otherwise (either side has no stamp, or both the same one), field by field, so nothing typed is lost:
+ *   a blank field takes the other side's value, tags are joined, done stays done, numbers take the larger
+ *   (so the result carries the stamped side's `at` and is an ordinary stamped entry from then on), and the
+ *   longer description is kept, unless one side only holds the post's own caption (`existingDescription`).
+ *   Any other clash (a lead picture, a credit) goes to the stamped side, which is known to be the later
+ *   change: stamps only exist from this version on, so unstamped work in a browser was typed before it.
+ * `b` is the account copy in mergeStates; ties go to it, so two devices settle on one value.
+ */
+export function mergeEntry(a, b, existingDescription) {
   if (!a) return b;
   if (!b) return a;
   const ta = Number(a.at) || 0;
   const tb = Number(b.at) || 0;
-  if (ta !== tb) return ta > tb ? a : b;
+  if (ta && tb && ta !== tb) return ta > tb ? a : b;
+  const aFirst = ta > tb;
+  const caption = String(existingDescription ?? '').trim();
   const out = {};
   for (const key of new Set([...Object.keys(b), ...Object.keys(a)])) {
     const va = a[key];
@@ -105,22 +122,27 @@ export function mergeEntry(a, b) {
     if (blank(va)) out[key] = vb;
     else if (blank(vb)) out[key] = va;
     else if (key === 'tags') out[key] = unionTags(va, vb);
-    else if (typeof va === 'string' && typeof vb === 'string') out[key] = va.length >= vb.length ? va : vb;
     else if (typeof va === 'boolean') out[key] = va || vb;
     else if (typeof va === 'number' && typeof vb === 'number') out[key] = Math.max(va, vb);
-    else out[key] = va;
+    else if (key === 'description' && typeof va === 'string' && typeof vb === 'string') {
+      if (caption && va.trim() === caption) out[key] = vb;
+      else if (caption && vb.trim() === caption) out[key] = va;
+      else out[key] = va.length > vb.length || (va.length === vb.length && aFirst) ? va : vb;
+    } else if (!ta && !tb && typeof va === 'string' && typeof vb === 'string') out[key] = va.length > vb.length ? va : vb;
+    else out[key] = aFirst ? va : vb;
   }
   return out;
 }
 
-const mergeMap = (a = {}, b = {}) => Object.fromEntries([...new Set([...Object.keys(a), ...Object.keys(b)])]
-  .map((key) => [key, mergeEntry(a[key], b[key])]));
+const mergeMap = (a = {}, b = {}, existing = {}) => Object.fromEntries([...new Set([...Object.keys(a), ...Object.keys(b)])]
+  .map((key) => [key, mergeEntry(a[key], b[key], existing[key])]));
 
 /**
  * Two copies of the desk into one: this browser's (`local`) and the one saved to Ryan's account (`remote`).
  * Entry by entry, so newer work on either side survives; the place (cursor) comes from the copy changed last.
+ * `existing` maps a picture key to the caption its post already had (see mergeEntry).
  */
-export function mergeStates(local, remote) {
+export function mergeStates(local, remote, existing = {}) {
   const a = local ?? {};
   const b = remote ?? {};
   const newer = (Number(b.savedAt) || 0) > (Number(a.savedAt) || 0) ? b : a;
@@ -128,7 +150,7 @@ export function mergeStates(local, remote) {
     ...b,
     ...a,
     projects: mergeMap(a.projects, b.projects),
-    images: mergeMap(a.images, b.images),
+    images: mergeMap(a.images, b.images, existing),
     days: {...b.days, ...a.days},
     cursor: Number.isInteger(newer.cursor) ? newer.cursor : (a.cursor ?? b.cursor ?? 0),
     session: Math.max(Number(a.session) || 0, Number(b.session) || 0),

@@ -18,6 +18,7 @@ const DATA = [
 ];
 const existing = { [img(A, 1)]: 'Old caption' };
 const fresh = () => ({ projects: {}, images: {}, cursor: 0, session: 0 });
+const tagsOf = (value) => String(value).split(',').map((tag) => tag.trim()).sort();
 
 test('a change is stamped with its time; the day counts as worked', () => {
   const state = fresh();
@@ -213,4 +214,61 @@ test('load export refuses anything that is not a version 4 export, and changes n
   assert.throws(() => applyExport(state, { version: 3, images: {} }, T2), /version 4/);
   assert.throws(() => applyExport(state, { version: 4 }, T2), /version 4/);
   assert.deepEqual(state.projects[A], { tags: 'x', at: T0 });
+});
+
+// The checker's case (2026-10-25): work in a browser from before the stamps, and a stamped edit of the same
+// project on another device. Before, the stamped record won whole and the browser's tags and done were lost.
+const legacyPc = () => ({ ...fresh(), projects: { [A]: { tags: 'legacy-work', reviewed: true } } });
+const stampedPhone = () => ({ ...fresh(), projects: { [A]: { tags: 'phone', at: 5 } }, savedAt: 5 });
+
+test('unstamped work in this browser survives a stamped edit in the account copy', () => {
+  const merged = mergeStates(legacyPc(), stampedPhone(), existing);
+  assert.deepEqual(tagsOf(merged.projects[A].tags), ['legacy-work', 'phone']);
+  assert.equal(merged.projects[A].reviewed, true);
+  assert.equal(merged.projects[A].at, 5, 'carries the stamp, so a later change on either device wins as usual');
+});
+
+test('unstamped work in the account copy survives a stamped edit in this browser', () => {
+  const merged = mergeStates(stampedPhone(), legacyPc(), existing);
+  assert.deepEqual(tagsOf(merged.projects[A].tags), ['legacy-work', 'phone']);
+  assert.equal(merged.projects[A].reviewed, true);
+  assert.equal(merged.projects[A].at, 5);
+});
+
+test('after the unstamped work is merged in, both devices settle on one copy (no save loop)', () => {
+  const account = mergeStates(legacyPc(), stampedPhone(), existing); // the PC signs in and saves
+  const phone = mergeStates(stampedPhone(), account, existing); // the phone hears of it
+  assert.equal(sameWork(phone, account), true);
+  const pc = mergeStates(account, phone, existing);
+  assert.equal(sameWork(pc, account), true);
+  // and from then on the newer change wins whole: the phone drops a tag
+  const phoneLater = { ...phone, projects: { [A]: { ...phone.projects[A], tags: 'phone', at: 9 } } };
+  assert.equal(mergeStates(pc, phoneLater, existing).projects[A].tags, 'phone');
+});
+
+test('unstamped words are kept over a stamped copy that only has the post caption, in both orders', () => {
+  const pc = { ...fresh(), images: { [img(A, 1)]: { description: 'A welder at night', tags: 'welding' } } };
+  // the phone only ticked the picture: its description is the post's caption, collect() wrote it
+  const phone = { ...fresh(), images: { [img(A, 1)]: { description: 'Old caption', tags: '', reviewed: true, at: T1 } } };
+  for (const merged of [mergeStates(pc, phone, existing), mergeStates(phone, pc, existing)]) {
+    assert.equal(merged.images[img(A, 1)].description, 'A welder at night');
+    assert.equal(merged.images[img(A, 1)].tags, 'welding');
+    assert.equal(merged.images[img(A, 1)].reviewed, true);
+  }
+});
+
+test('a browser that only showed a picture cannot undo a shorter description typed on another device', () => {
+  const account = { ...fresh(), images: { [img(A, 1)]: { description: 'Welder', tags: '', at: T1 } } };
+  const stale = { ...fresh(), images: { [img(A, 1)]: { description: 'Old caption', tags: '' } } };
+  for (const merged of [mergeStates(stale, account, existing), mergeStates(account, stale, existing)]) {
+    assert.equal(merged.images[img(A, 1)].description, 'Welder');
+  }
+});
+
+test('on a clash of a lead picture, the stamped side wins; an unstamped one only fills a blank', () => {
+  const pc = { ...fresh(), projects: { [A]: { hero: 'a1', tags: 'x' } } };
+  const phone = { ...fresh(), projects: { [A]: { hero: 'a2', tags: '', at: T1 } } };
+  assert.equal(mergeStates(pc, phone).projects[A].hero, 'a2');
+  assert.equal(mergeStates(phone, pc).projects[A].hero, 'a2');
+  assert.equal(mergeStates(pc, { ...fresh(), projects: { [A]: { tags: 'y', at: T1 } } }).projects[A].hero, 'a1');
 });

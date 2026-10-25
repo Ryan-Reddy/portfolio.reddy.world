@@ -24,10 +24,11 @@ const db = getFirestore(app);
 const ref = doc(db, 'private-desk', 'image-desk');
 
 // `PUBLIC_DESK_EMULATORS=1 npm run build` points the desk at the local Auth and Firestore emulators, for
-// testing the signed-in path (scripts/desk-sync-check.mjs). Unset, as in every real build, this block is dropped.
+// testing the signed-in path (scripts/desk-sync-check.mjs); PUBLIC_DESK_FIRESTORE_PORT moves Firestore off 8080
+// when another emulator holds it. Unset, as in every real build, this block is dropped.
 if (import.meta.env.PUBLIC_DESK_EMULATORS) {
   connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
-  connectFirestoreEmulator(db, '127.0.0.1', 8080);
+  connectFirestoreEmulator(db, '127.0.0.1', Number(import.meta.env.PUBLIC_DESK_FIRESTORE_PORT || 8080));
   // the Auth emulator takes an unsigned Google token at face value
   window.__deskSignInForTest = (email) => signInWithCredential(auth, GoogleAuthProvider.credential(JSON.stringify({ sub: email, email, email_verified: true })));
 }
