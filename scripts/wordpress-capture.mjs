@@ -24,7 +24,8 @@ function uploadKey(url) {
   UPLOAD.lastIndex = 0;
   const m = UPLOAD.exec(url) ?? /\/(\d{4})\/(\d{2})\/([^/?#]+)$/.exec(url ?? '');
   if (!m) return null;
-  const file = decodeURIComponent(m[3]).toLowerCase().replace(/-\d+x\d+(?=\.[a-z]+$)/, '');
+  // WordPress names a resized copy name-300x200.jpg and an edited one name-e1446400187992.jpg
+  const file = decodeURIComponent(m[3]).toLowerCase().replace(/-\d+x\d+(?=\.[a-z]+$)/, '').replace(/-e\d{9,}(?=\.[a-z]+$)/, '');
   return `${m[1]}/${m[2]}/${file}`;
 }
 
@@ -46,6 +47,7 @@ async function wordpressPosts(site) {
 function repoIndex(key) {
   const data = JSON.parse(readFileSync(new URL(`src/data/${key}.json`, ROOT), 'utf-8'));
   const local = new Map(); // upload key -> local file exists
+  const localSet = (k) => local.set(k, true);
   for (const post of data.posts) {
     for (const m of [post.featured, ...post.media].filter(Boolean)) {
       for (const u of [m.url, m.wp_url].filter(Boolean)) {
@@ -53,6 +55,13 @@ function repoIndex(key) {
         const onDisk = m.url.startsWith('/portfolio/') && existsSync(new URL(`public${m.url.slice('/portfolio'.length)}`, ROOT));
         if (k) local.set(k, local.get(k) || onDisk);
       }
+    }
+  }
+  // uploads a post's text links to that were copied (public/images or public/files)
+  for (const post of data.posts) {
+    for (const [, local] of String(post.content ?? '').matchAll(/"(\/portfolio\/(?:images|files)\/[^"]+)"/g)) {
+      const k = uploadKey(local);
+      if (k && existsSync(new URL(`public${local.slice('/portfolio'.length)}`, ROOT))) localSet(k);
     }
   }
   // anything in the posts' text that still points at WordPress
