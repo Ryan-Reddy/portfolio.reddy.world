@@ -69,6 +69,8 @@ const projects = portfolios.flatMap((portfolio) => portfolio.posts.map((post) =>
     portfolio: portfolio.name,
     title: post.title.trim(),
     href: `${SITE}${post.path}`,
+    // the picture that leads the project today (its card, its page, the wall); Ryan can choose another
+    hero: post.featured?.url ?? '',
     originalSuggestions,
     currentKeywords: unique([...originalSuggestions, ...post.kinds.map((kind) => KIND_LABEL[kind]), ...post.categories, ...post.tags]),
     searchSuggestions: suggestionsFor(portfolio, post).filter((tag) => !originalSuggestions.some((original) => original.toLowerCase() === tag.toLowerCase())),
@@ -122,6 +124,10 @@ const queue = JSON.stringify({ projects, count }).replace(/</g, '\\u003c');
     .stage { position: relative; min-width: 0; display: grid; place-items: center; padding: 1.25rem 1.25rem 6.25rem; background: #090909; }
     .stage > img { display: block; max-width: 100%; max-height: calc(100dvh - 12rem); object-fit: contain; background: #151515; }
     .counter { position: absolute; top: 1rem; left: 1rem; padding: .35rem .55rem; color: #eee; background: rgba(0,0,0,.75); font-variant-numeric: tabular-nums; }
+    .hero-pick { position: absolute; top: .75rem; right: 1rem; min-height: 2.5rem; background: rgba(0,0,0,.75); }
+    .hero-pick[aria-pressed="true"] { color: #0f0f0f; background: var(--gold); font-weight: 750; }
+    :global(.filmstrip button[data-hero="true"]) { position: relative; border-color: var(--gold); }
+    :global(.filmstrip button[data-hero="true"])::after { content: '★'; position: absolute; top: .1rem; right: .25rem; color: var(--gold); font-size: .9rem; text-shadow: 0 0 3px #000; }
     .filmstrip { position: absolute; inset: auto 0 0; min-width: 0; height: 5.25rem; padding: .55rem .75rem; display: flex; align-items: center; gap: .45rem; overflow-x: auto; overflow-y: hidden; background: rgba(10,10,10,.94); border-top: 1px solid var(--line); }
     :global(.filmstrip button) { flex: 0 0 auto; width: 4.25rem; height: 4.05rem; min-height: 0; padding: .15rem; overflow: hidden; border-color: #555; }
     :global(.filmstrip button[aria-current="true"]) { border-color: var(--gold); outline: 2px solid var(--gold); outline-offset: -3px; }
@@ -191,6 +197,7 @@ const queue = JSON.stringify({ projects, count }).replace(/</g, '\\u003c');
     <section class="stage" aria-label="Picture being described">
       <span class="counter" id="image-counter"></span>
       <img id="picture" alt="Picture to describe">
+      <button id="make-hero" class="hero-pick" type="button" aria-pressed="false">☆ Make this the lead picture</button>
       <nav class="filmstrip" id="filmstrip" aria-label="All images in this project"></nav>
     </section>
     <form class="panel" id="editor">
@@ -237,7 +244,7 @@ const queue = JSON.stringify({ projects, count }).replace(/</g, '\\u003c');
   </main>
 
   <dialog id="keyword-map" class="map-dialog"><h2>Current keyword map</h2><p>Words already present in the archive plus anything saved in this browser. Counts show how many projects currently use each phrase.</p><div class="map-tools"><input id="map-filter" type="search" placeholder="Filter keywords…" aria-label="Filter keyword map"><button id="close-map" type="button">Close</button></div><div class="keyword-map" id="map-list"></div></dialog>
-  <dialog id="keys"><h2>One clean pass</h2><p>Choose shared words for the whole project, then press <kbd>Enter</kbd> or <strong>Project tagged + next</strong>. Every image in that project inherits them.</p><p>Use the thumbnails to understand the full set. Individual descriptions and extra tags remain under <strong>Later round · star or outlier image</strong>; you can ignore those for now.</p><p>Suggestions are optional. A smaller accurate set is better than keyword stuffing.</p><button id="close-keys" class="primary" type="button">Got it</button></dialog>
+  <dialog id="keys"><h2>One clean pass</h2><p>Choose shared words for the whole project, then press <kbd>Enter</kbd> or <strong>Project tagged + next</strong>. Every image in that project inherits them.</p><p>Use the thumbnails to understand the full set. Individual descriptions and extra tags remain under <strong>Later round · star or outlier image</strong>; you can ignore those for now.</p><p>Suggestions are optional. A smaller accurate set is better than keyword stuffing.</p><p>The ★ marks the project's lead picture. Open another thumbnail and press <strong>Make this the lead picture</strong> to choose it; it heads the project page, its card and the wall after the next import.</p><button id="close-keys" class="primary" type="button">Got it</button></dialog>
   <script type="application/json" id="queue-data" set:html={queue}></script>
   <script is:inline>
     const DATA = JSON.parse(document.querySelector('#queue-data').textContent);
@@ -263,6 +270,8 @@ const queue = JSON.stringify({ projects, count }).replace(/</g, '\\u003c');
     const save = () => localStorage.setItem(STORE, JSON.stringify(state));
     const current = () => flat[state.cursor] ?? flat[0];
     const recordFor = (image) => state.images[image.key] ?? state.images[image.url] ?? {};
+    // the lead picture: Ryan's choice on this desk, else the one the post has today
+    const heroOf = (project) => state.projects[project.id]?.hero || project.hero;
     for (const project of DATA.projects) {
       if (state.projects[project.id]?.reviewed === undefined && project.images.every((image) => recordFor(image).reviewed)) {
         state.projects[project.id] = {...state.projects[project.id], reviewed: true};
@@ -312,7 +321,9 @@ const queue = JSON.stringify({ projects, count }).replace(/</g, '\\u003c');
       const start = flat.findIndex((item) => item.projectIndex === projectIndex);
       $('filmstrip').replaceChildren(...project.images.map((image, index) => {
         const button = Object.assign(document.createElement('button'), {type: 'button', title: `Open image ${index + 1} of ${project.images.length}`});
-        button.setAttribute('aria-label', `Open image ${index + 1} of ${project.images.length}`);
+        const lead = image.url === heroOf(project);
+        button.dataset.hero = String(lead);
+        button.setAttribute('aria-label', `Open image ${index + 1} of ${project.images.length}${lead ? ', the lead picture' : ''}`);
         button.setAttribute('aria-current', String(index === imageIndex));
         const thumbnail = Object.assign(document.createElement('img'), {src: image.src, alt: '', loading: 'lazy'});
         button.append(thumbnail);
@@ -366,6 +377,9 @@ const queue = JSON.stringify({ projects, count }).replace(/</g, '\\u003c');
       $('description-panel').querySelector('summary').textContent = image.existingDescription ? 'Later round · original description loaded' : 'Later round · star or outlier image';
       $('image-tags').value = record.tags ?? '';
       $('image-counter').textContent = `${imageIndex + 1} / ${project.images.length}`;
+      const lead = image.url === heroOf(project);
+      $('make-hero').setAttribute('aria-pressed', String(lead));
+      $('make-hero').textContent = lead ? '★ Lead picture of this project' : '☆ Make this the lead picture';
       renderFilmstrip(project, projectIndex, imageIndex);
       refreshKeywords();
       updateProgress();
@@ -453,6 +467,14 @@ const queue = JSON.stringify({ projects, count }).replace(/</g, '\\u003c');
       const link = Object.assign(document.createElement('a'), {href: URL.createObjectURL(blob), download: 'reddy-world-image-metadata.json'});
       link.click();
       URL.revokeObjectURL(link.href);
+    });
+    $('make-hero').addEventListener('click', () => {
+      const {project, image} = current();
+      collect();
+      state.projects[project.id] = {...state.projects[project.id], hero: image.url};
+      save();
+      render({focus: false});
+      $('celebrate').textContent = 'Lead picture chosen: it heads the project, its card and the wall.';
     });
     $('help').addEventListener('click', () => $('keys').showModal());
     $('close-keys').addEventListener('click', () => $('keys').close());

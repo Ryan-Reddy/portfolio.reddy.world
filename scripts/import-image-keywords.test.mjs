@@ -62,3 +62,24 @@ test('something that is not a version 4 export is refused', () => {
   assert.throws(() => applyKeywords({ version: 3, images: {} }, archive()), /version 3/);
   assert.throws(() => applyKeywords({}, archive()), /not an image desk export/);
 });
+
+test('the lead picture Ryan chose becomes the featured picture of the post; twice changes nothing', () => {
+  const data = archive();
+  const post = data.rmaekers.posts.find((p) => p.media.filter((m) => m.type === 'image').length > 1);
+  const other = post.media.find((m) => m.type === 'image' && m.url !== post.featured?.url);
+  const exported = { version: 4, projects: { [`rmaekers/${post.slug}`]: { hero: other.url } }, images: {} };
+  const report = applyKeywords(exported, data);
+  assert.equal(post.featured.url, other.url);
+  assert.equal(post.featured.width, other.width);
+  assert.equal(report.heroes, 1);
+  assert.equal(applyKeywords(exported, data).heroes, 0);
+});
+
+test('a lead picture that is not in the post is reported, not written', () => {
+  const data = archive();
+  const post = data.rmaekers.posts[0];
+  const before = JSON.stringify(post.featured);
+  const report = applyKeywords({ version: 4, projects: { [`rmaekers/${post.slug}`]: { hero: '/portfolio/images/gone.jpg' } }, images: {} }, data);
+  assert.equal(JSON.stringify(post.featured), before);
+  assert.equal(report.unmatched.length, 1);
+});
