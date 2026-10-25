@@ -3,16 +3,26 @@ import { readFileSync, readdirSync } from 'node:fs';
 import yaml from 'js-yaml';
 import { absUrl } from './media-url.js';
 import { BRAND } from './brands.js';
-import { isPublicArchivePost } from './archive-curation.js';
+import { isPublicArchivePost, curatedPost, KEPT_NOT_SHOWN } from './archive-curation.js';
 
 const KEYS = ['rmaekers', 'rrproductions', 'vaguelyvulgar'];
 const SITE = 'https://reddy.world/portfolio';
 
 const byPath = new Map();
+// no-index pages at the old addresses of hidden posts and of the sources kept but not shown
+const retired = new Set();
+for (const key of KEPT_NOT_SHOWN) {
+  retired.add(`${SITE}/${key}/`);
+  for (const post of JSON.parse(readFileSync(new URL(`../data/${key}.json`, import.meta.url), 'utf-8')).posts) retired.add(`${SITE}/${key}/${post.slug}/`);
+}
 for (const key of KEYS) {
   const data = JSON.parse(readFileSync(new URL(`../data/${key}.json`, import.meta.url), 'utf-8'));
-  for (const post of data.posts) {
-    if (!isPublicArchivePost(key, post)) continue;
+  for (const record of data.posts) {
+    if (!isPublicArchivePost(key, record)) {
+      retired.add(`${SITE}/${key}/${record.slug}/`);
+      continue;
+    }
+    const post = curatedPost(key, record);
     // the pictures the page shows, and its featured image
     const shown = post.media.filter((m) => m.type === 'image' && m.duplicate_of === undefined);
     if (post.featured && !shown.some((m) => m.url === post.featured.url)) shown.unshift(post.featured);
@@ -40,6 +50,11 @@ for (const name of readdirSync(SOFTWARE_DIR).filter((f) => f.endsWith('.md'))) {
   byPath.set(`${SITE}/software/${slug}/`, { img, lastmod });
 }
 byPath.set(`${SITE}/software/`, { img: [], lastmod: newest || undefined });
+
+/** A no-index page at a retired address: never in the sitemap */
+export function isRetired(url) {
+  return retired.has(url);
+}
 
 /** Image entries and last edit of a project page, by its URL */
 export function pageInfo(url) {

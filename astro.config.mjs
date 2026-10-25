@@ -1,6 +1,6 @@
 import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
-import { pageInfo } from './src/lib/sitemap-images.js';
+import { pageInfo, isRetired } from './src/lib/sitemap-images.js';
 
 // Built here, published by reddy.world under /portfolio (see src/lib/portfolios.js)
 export default defineConfig({
@@ -13,7 +13,8 @@ export default defineConfig({
       // are deliberately absent from search results; project details remain.
       filter(page) {
         const path = new URL(page).pathname;
-        return path !== '/portfolio/'
+        return !isRetired(page)
+          && path !== '/portfolio/'
           && path !== '/portfolio/image-metadata/'
           && path !== '/portfolio/software/'
           && !/^\/portfolio\/(rmaekers|rrproductions|vaguelyvulgar)\/$/.test(path)

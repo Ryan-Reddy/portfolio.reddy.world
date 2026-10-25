@@ -11,10 +11,12 @@
 //
 // Run `npm run build` first: the check at the end confirms each target exists in dist/.
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { isPublicArchivePost } from '../src/lib/archive-curation.js';
+import { isPublicArchivePost, KEPT_NOT_SHOWN } from '../src/lib/archive-curation.js';
 
 const KEYS = ['rmaekers', 'rrproductions', 'maup', 'vaguelyvulgar'];
 const FINAL = 'https://reddy.world/portfolio';
+const HOME = 'https://reddy.world/';
+const dest = (to) => (to.startsWith('https://') ? to : `${FINAL}${to}`);
 
 const oldPath = (url) => {
   try {
@@ -31,11 +33,11 @@ for (const key of KEYS) {
   const data = JSON.parse(readFileSync(new URL(`../src/data/${key}.json`, import.meta.url), 'utf-8'));
   for (const post of data.posts) {
     const from = oldPath(post.old_url);
-    // Maup is not Ryan's work. Preserve old links, but land them on the
-    // ReddyMaekers collection instead of continuing to publish the material.
-    // Likewise, retired raw/archive pages land on their public collection.
-    const to = key === 'maup'
-      ? '/rmaekers/'
+    // Maup is kept in the repo but is not Ryan's work (Ryan, 2026-10-24): its old
+    // links land on reddy.world's home. Retired raw/archive pages land on their
+    // public collection, which hands the visitor to the wall.
+    const to = KEPT_NOT_SHOWN.includes(key)
+      ? HOME
       : isPublicArchivePost(key, post) ? `/${key}/${post.slug}/` : `/${key}/`;
     if (from && !map.has(from)) map.set(from, to);
   }
@@ -44,9 +46,9 @@ for (const key of KEYS) {
 // Every rule points straight at the final URL, so each old path is one hop
 const redirects = () => [
   ...[...map].flatMap(([from, to]) => [
-    { source: from, destination: `${FINAL}${to}`, type: 301 },
-    { source: `${from}/`, destination: `${FINAL}${to}`, type: 301 },
-    { source: `${from}/**`, destination: `${FINAL}${to}`, type: 301 },
+    { source: from, destination: dest(to), type: 301 },
+    { source: `${from}/`, destination: dest(to), type: 301 },
+    { source: `${from}/**`, destination: dest(to), type: 301 },
   ]),
   // anything else from the old WordPress structure lands on the overview
   ...['/category/**', '/tag/**', '/201*/**', '/202*/**'].map((source) => ({ source, destination: `${FINAL}/`, type: 301 })),
@@ -63,7 +65,7 @@ console.log(`firebase.json: ${map.size} old URLs mapped, 2 redirect-only sites`)
 
 // Check: every mapped target is a page in the build (dist/ is the reddy.world/portfolio root)
 if (existsSync(new URL('../dist/', import.meta.url))) {
-  const missing = [...map.values()].filter((to) => !existsSync(new URL(`../dist${to}index.html`, import.meta.url)));
+  const missing = [...map.values()].filter((to) => to !== HOME && !existsSync(new URL(`../dist${to}index.html`, import.meta.url)));
   if (missing.length) {
     console.error(`${missing.length} redirect targets missing from dist:\n${missing.join('\n')}`);
     process.exit(1);
