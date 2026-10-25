@@ -57,6 +57,8 @@ for (const dir of pages) {
 }
 
 if (!existsSync(new URL('image-metadata/index.html', DIST))) problems.push('the image desk /portfolio/image-metadata/ was not built');
+if (!existsSync(new URL('image-metadata/unused/index.html', DIST))) problems.push('the review page /portfolio/image-metadata/unused/ was not built');
+else if (!/<meta name="robots" content="noindex/.test(read('image-metadata/unused/index.html'))) problems.push('/portfolio/image-metadata/unused/ is not no-index');
 for (const file of ['rss.xml', 'llms.txt', 'software.json', ...readdirSync(DIST).filter((f) => /^sitemap-.*\.xml$/.test(f))]) {
   if (/maup|kleermaeker/i.test(read(file))) problems.push(`${file} mentions Maup`);
 }

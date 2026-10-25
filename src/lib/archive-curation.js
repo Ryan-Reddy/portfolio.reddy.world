@@ -48,6 +48,14 @@ export function publicArchivePosts(portfolio, posts) {
 // Rule: "No meta copy on public pages" (Ryan, 2026-10-25).
 const COPY = {
   rrproductions: {
+    // The One and the NEPCO internship link each other (Ryan, 2026-10-25: "worked on via NEPCO"):
+    // links on his own words only, no new sentence
+    '566': {
+      swap: [['worked with Nepco on the costumes', 'worked with <a href="/portfolio/rrproductions/internship-at-studio-nepco/">Nepco</a> on the costumes']],
+    },
+    '662': {
+      swap: [['<a href="https://youtu.be/7w6ySPAXsDA" target="_blank">previous post</a>', '<a href="/portfolio/rrproductions/sander-kleinenberg-felix-leiter-the-one-official-music-video/">previous post</a>']],
+    },
     // its text: "De opdracht was dus, om een kastje te creeeren met bewegend en/of sluitend deel."
     '397': { title: 'A cabinet with a moving part (school project, second year)' },
     // decision 2 in PR #44 (Ryan, 2026-10-25, option a): the materialenmix PDF carries his former
@@ -92,12 +100,16 @@ const COPY = {
 export function curatedPost(portfolio, post) {
   const copy = COPY[portfolio]?.[String(post.id)];
   if (!copy) return post;
-  const { intro, cut = [], ...fields } = copy;
+  const { intro, cut = [], swap = [], ...fields } = copy;
   let content = fields.content ?? post.content;
   for (const text of cut) {
     // a cut that no longer matches would quietly put the words back on the page
     if (!content.includes(text)) throw new Error(`archive-curation: ${portfolio}/${post.id}: text to cut not found: ${text.slice(0, 120)}`);
     content = content.replace(text, '');
+  }
+  for (const [from, to] of swap) {
+    if (!content.includes(from)) throw new Error(`archive-curation: ${portfolio} ${post.id} no longer has "${from.slice(0, 60)}"`);
+    content = content.replace(from, to);
   }
   return { ...post, ...fields, content: intro ? `${intro}\n\n${content}` : content };
 }

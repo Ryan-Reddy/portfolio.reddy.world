@@ -15,7 +15,7 @@ export default defineConfig({
         const path = new URL(page).pathname;
         return !isRetired(page)
           && path !== '/portfolio/'
-          && path !== '/portfolio/image-metadata/'
+          && !path.startsWith('/portfolio/image-metadata/')
           && path !== '/portfolio/software/'
           && !/^\/portfolio\/(rmaekers|rrproductions|vaguelyvulgar)\/$/.test(path)
           && !path.startsWith('/portfolio/theme/');

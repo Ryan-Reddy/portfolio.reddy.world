@@ -1,0 +1,102 @@
+---
+// Working page next to the image desk, for Ryan only: every upload on the old WordPress.com
+// sites that no published page shows, grouped by site and by why, so he can decide per group.
+// No-index, not in the sitemap, no links to WordPress (one site's address carries his former
+// surname). Data: src/data/wordpress-unused.json (scripts/wordpress-unused.mjs).
+import unused from '../../data/wordpress-unused.json';
+import { BRAND } from '../../lib/brands.js';
+
+// Maup is kept in the repo but never shown (Ryan, 2026-10-24), not even here
+const SHOWN_SITES = ['rmaekers', 'rrproductions', 'vaguelyvulgar'];
+const ORDER = ['not-placed', 'closed', 'hidden-post', 'unattached', 'burst', 'duplicate', 'edited-copy', 'linked-as-text', 'theme-only'];
+const mb = (n) => `${(n / 1e6).toFixed(1)} MB`;
+const sites = SHOWN_SITES.map((key) => {
+  const s = unused.sites[key];
+  const groups = ORDER.filter((r) => s.counts[r]).map((reason) => {
+    const items = s.uploads.filter((u) => u.reason === reason);
+    return { reason, id: `${key}-${reason}`, items, inRepo: items.filter((u) => u.in_repo || u.copy).length, bytes: items.reduce((n, u) => n + u.bytes, 0) };
+  });
+  return { key, name: BRAND[key], ...s, groups };
+});
+const nameOf = (u) => u.file.split('/').pop();
+const about = (u) => [
+  u.parent_title ? `on “${u.parent_title}”${u.parent_status && u.parent_status !== 'publish' ? ` (${u.parent_status})` : ''}` : '',
+  u.of ? `same as ${u.of.split('/').pop()}` : '',
+  u.on ? `linked on ${u.on}` : '',
+  u.credit ? `credit: ${u.credit}` : '',
+].filter(Boolean).join(' · ');
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Uploads never shown — reddy.world</title>
+  <style>
+    :root { color-scheme: dark; font-family: Inter, system-ui, sans-serif; --bg: #0f0f0f; --fg: #f5f5f0; --muted: #aaa; --gold: #c7a86d; --line: #41413e; --card: #181816; }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 1rem; background: var(--bg); color: var(--fg); line-height: 1.45; }
+    main { max-width: 80rem; margin: 0 auto; }
+    h1, h2 { font-family: Georgia, serif; margin: 1rem 0 .5rem; }
+    h1 { font-size: clamp(1.6rem, 4vw, 2.3rem); }
+    a { color: var(--gold); }
+    .lede, .muted, small { color: var(--muted); }
+    nav ul { display: flex; flex-wrap: wrap; gap: .5rem 1rem; padding: 0; list-style: none; }
+    table { width: 100%; border-collapse: collapse; margin: .5rem 0 1rem; font-variant-numeric: tabular-nums; }
+    th, td { text-align: left; padding: .4rem .5rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+    td.n { text-align: right; white-space: nowrap; }
+    .table-wrap { overflow-x: auto; }
+    details { border: 1px solid var(--line); margin: .5rem 0; background: var(--card); }
+    summary { cursor: pointer; padding: .7rem .8rem; font-weight: 700; }
+    summary small { font-weight: 400; }
+    summary:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr)); gap: .6rem; padding: 0 .8rem .8rem; margin: 0; list-style: none; }
+    figure { margin: 0; }
+    figure img, .noimg { display: block; width: 100%; height: auto; aspect-ratio: 1; object-fit: cover; background: #222; }
+    .noimg { display: grid; place-items: center; color: var(--muted); font-size: .8rem; text-align: center; padding: .5rem; }
+    figcaption { font-size: .72rem; color: var(--muted); overflow-wrap: anywhere; margin-top: .25rem; }
+    figcaption b { color: var(--fg); font-weight: 600; }
+    .tag { display: inline-block; padding: 0 .3rem; margin-right: .2rem; background: #2b251a; color: #e7cf9d; font-size: .68rem; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Uploads never shown</h1>
+  <p class="lede">Every file in the WordPress media exports that no published page on the old site shows, by site and by why. Checked {unused.checked}. Nothing here is deleted; decide per group (the group's name is in brackets).</p>
+  <p class="muted"><a href="/portfolio/image-metadata/">Back to the image desk</a></p>
+
+  <nav aria-label="Sites"><ul>{sites.map((s) => <li><a href={`#${s.key}`}>{s.name}</a> <small>({s.not_shown})</small></li>)}</ul></nav>
+
+  {sites.map((s) => (
+    <section id={s.key} aria-labelledby={`${s.key}-title`}>
+      <h2 id={`${s.key}-title`}>{s.name}</h2>
+      <p class="muted">{s.files} files in the media export: {s.shown} shown on a page, {s.not_shown} not ({mb(s.bytes_not_shown)}).</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th scope="col">Why it was never shown</th><th scope="col" class="n">Files</th><th scope="col" class="n">Already in the repo</th><th scope="col" class="n">Size</th></tr></thead>
+        <tbody>{s.groups.map((g) => (
+          <tr><td><a href={`#${g.id}`}>{unused.reasons[g.reason]}</a> <small>[{g.id}]</small></td><td class="n">{g.items.length}</td><td class="n">{g.inRepo}</td><td class="n">{mb(g.bytes)}</td></tr>
+        ))}</tbody>
+      </table></div>
+      {s.groups.map((g) => (
+        <details id={g.id}>
+          <summary>{unused.reasons[g.reason]} <small>[{g.id}] · {g.items.length} files · {g.inRepo} already in the repo</small></summary>
+          <ul class="grid">{g.items.map((u) => (
+            <li><figure>
+              {u.thumb
+                ? <img src={u.thumb} alt={nameOf(u)} loading="lazy" decoding="async" width="240" height="240">
+                : <div class="noimg">{u.former_name ? 'not shown here: carries the former surname' : nameOf(u).split('.').pop().toUpperCase()}</div>}
+              <figcaption>
+                {(u.in_repo || u.copy) && <span class="tag">in repo</span>}
+                <b>{u.file}</b>{u.width && <> · {u.width}×{u.height}</>}
+                {about(u) && <><br>{about(u)}</>}
+              </figcaption>
+            </figure></li>
+          ))}</ul>
+        </details>
+      ))}
+    </section>
+  ))}
+</main>
+</body>
+</html>

@@ -39,7 +39,67 @@
       "categories": [],
       "tags": [],
       "featured": null,
-      "media": []
+      "media": [],
+      "videos": [
+        {
+          "kind": "youtube",
+          "id": "ABovlJaj14w",
+          "url": "https://www.youtube.com/watch?v=ABovlJaj14w&t=17s",
+          "start": 17,
+          "status": "public",
+          "title": "Vrouwen Zijn OK - Achter Het Fornuis",
+          "channel": "bimbokiki",
+          "channel_url": "https://www.youtube.com/@bimbokiki",
+          "thumbnail": "/portfolio/images/vaguelyvulgar/film/ABovlJaj14w.jpg",
+          "checked": "2026-10-25"
+        },
+        {
+          "kind": "youtube",
+          "id": "9MCOo4FzCvQ",
+          "url": "https://www.youtube.com/watch?v=9MCOo4FzCvQ&t=208s",
+          "start": 208,
+          "status": "public",
+          "title": "Tom en Yuri Show - Aflevering 2",
+          "channel": "TomenYuriShow",
+          "channel_url": "https://www.youtube.com/@TomenYuriShow",
+          "thumbnail": "/portfolio/images/vaguelyvulgar/film/9MCOo4FzCvQ.jpg",
+          "checked": "2026-10-25"
+        },
+        {
+          "kind": "youtube",
+          "id": "4H_TdfzyOG4",
+          "url": "https://www.youtube.com/watch?v=4H_TdfzyOG4&t=152s",
+          "start": 152,
+          "status": "public",
+          "title": "Tom en Yuri Show - Aflevering 3",
+          "channel": "TomenYuriShow",
+          "channel_url": "https://www.youtube.com/@TomenYuriShow",
+          "thumbnail": "/portfolio/images/vaguelyvulgar/film/4H_TdfzyOG4.jpg",
+          "checked": "2026-10-25"
+        },
+        {
+          "kind": "youtube",
+          "id": "N7gOwUZK1tA",
+          "url": "https://www.youtube.com/watch?v=N7gOwUZK1tA",
+          "status": "public",
+          "title": "BBYQ",
+          "channel": "TomenYuriShow",
+          "channel_url": "https://www.youtube.com/@TomenYuriShow",
+          "thumbnail": "/portfolio/images/vaguelyvulgar/film/N7gOwUZK1tA.jpg",
+          "checked": "2026-10-25"
+        },
+        {
+          "kind": "youtube",
+          "id": "7w6ySPAXsDA",
+          "url": "https://www.youtube.com/watch?v=7w6ySPAXsDA",
+          "status": "public",
+          "title": "UNCENSORED VERSION - The One - Sander Kleinenberg",
+          "channel": "Eva Bartels",
+          "channel_url": "https://www.youtube.com/@evabartels7153",
+          "thumbnail": "/portfolio/images/vaguelyvulgar/film/7w6ySPAXsDA.jpg",
+          "checked": "2026-10-25"
+        }
+      ]
     },
     {
       "id": "13",
