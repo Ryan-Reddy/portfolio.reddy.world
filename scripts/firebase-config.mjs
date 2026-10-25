@@ -11,7 +11,7 @@
 //
 // Run `npm run build` first: the check at the end confirms each target exists in dist/.
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { isPublicArchivePost, KEPT_NOT_SHOWN } from '../src/lib/archive-curation.js';
+import { isPublicArchivePost, KEPT_NOT_SHOWN, MOVED } from '../src/lib/archive-curation.js';
 
 const KEYS = ['rmaekers', 'rrproductions', 'maup', 'vaguelyvulgar'];
 const FINAL = 'https://reddy.world/portfolio';
@@ -35,9 +35,12 @@ for (const key of KEYS) {
     const from = oldPath(post.old_url);
     // Maup is kept in the repo but is not Ryan's work (Ryan, 2026-10-24): its old
     // links land on reddy.world's home. Retired raw/archive pages land on their
-    // public collection, which hands the visitor to the wall.
+    // public collection, which hands the visitor to the wall; a post whose words moved
+    // onto another post lands there.
+    const moved = MOVED[key]?.[String(post.id)];
     const to = KEPT_NOT_SHOWN.includes(key)
       ? HOME
+      : moved ? `/${key}/${moved}/`
       : isPublicArchivePost(key, post) ? `/${key}/${post.slug}/` : `/${key}/`;
     if (from && !map.has(from)) map.set(from, to);
   }
