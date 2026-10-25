@@ -801,6 +801,13 @@ body {
   color: var(--fg-muted);
 }
 
+/* the photographer's credit under a picture */
+.photo-credit a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
 .post-hero {
   margin: 0 0 2rem;
 }

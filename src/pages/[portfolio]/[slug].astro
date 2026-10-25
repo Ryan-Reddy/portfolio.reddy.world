@@ -21,6 +21,9 @@ const description = `${(post.excerpt || name).replace(/[.!?…]?$/, (end) => end
 const pageUrl = `${SITE}${post.path}`;
 
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+// the photographer Ryan credited on the image desk: "Photo: Name", linked to their site when he gave one
+const creditHtml = (c) => c?.name ? `<span class="photo-credit">Photo: ${c.url ? `<a href="${esc(c.url)}" rel="noopener">${esc(c.name)}</a>` : esc(c.name)}</span>` : '';
+const captionHtml = (m) => (m.caption || m.credit?.name ? `<figcaption>${m.caption ? esc(m.caption) : ''}${m.caption && m.credit?.name ? ' · ' : ''}${creditHtml(m.credit)}</figcaption>` : '');
 
 // Every picture is one lightbox slide, numbered in reading order: the ones placed in the text first
 let slide = 0;
@@ -38,7 +41,7 @@ function item(i, sizes) {
     `<figure class="gallery-item"${ratio}>` +
     `<button type="button" class="gallery-thumb" data-index="${slide++}" data-full="${esc(m.url)}" aria-label="Enlarge: ${esc(alt)}">` +
     `<img src="${esc(pic.src)}"${set}${dims} alt="${esc(alt)}" loading="lazy" decoding="async"></button>` +
-    (m.caption ? `<figcaption>${esc(m.caption)}</figcaption>` : '') +
+    captionHtml(m) +
     `<a class="ask-link" href="${esc(contactUrl({ project: post.slug, image: m.id || String(i + 1) }))}">Ask about this picture</a>` +
     `</figure>`
   );
@@ -78,9 +81,9 @@ const imageObject = (m, i) => ({
   width: m.width || undefined,
   height: m.height || undefined,
   caption: m.alt || m.caption ? `${m.alt || m.caption} — ${name}, ${context}` : `${name}, photo ${i + 1} — ${context}`,
-  creator: { '@id': PERSON_ID },
+  creator: m.credit?.name ? { '@type': 'Person', name: m.credit.name, url: m.credit.url } : { '@id': PERSON_ID },
   keywords: m.keywords?.length ? m.keywords.join(', ') : undefined,
-  creditText: 'Ryan Reddy',
+  creditText: m.credit?.name || 'Ryan Reddy',
   copyrightNotice: '© Ryan Reddy',
 });
 
@@ -142,7 +145,7 @@ const article = isPost ? { published: post.published, modified: post.modified, s
     {hero && (
       <figure class="post-hero">
         <img src={hero.src} srcset={hero.srcset} sizes="(max-width: 900px) 100vw, 852px" width={hero.width} height={hero.height} alt={hero.alt} fetchpriority="high" decoding="async">
-        {featured.caption && <figcaption>{featured.caption}</figcaption>}
+        {(featured.caption || featured.credit?.name) && <Fragment set:html={captionHtml(featured)} />}
       </figure>
     )}
 

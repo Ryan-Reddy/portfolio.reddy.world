@@ -96,6 +96,9 @@ const projects = portfolios.flatMap((portfolio) => portfolio.posts.map((post) =>
 })).filter((project) => project.images.length);
 const count = projects.reduce((sum, project) => sum + project.images.length, 0);
 const queue = JSON.stringify({ projects, count }).replace(/</g, '\\u003c');
+// photographer credits the archive already has (written by the importer), by desk key
+const archiveCredits = JSON.stringify(Object.fromEntries(portfolios.flatMap((portfolio) => portfolio.posts.flatMap((post) => photos(post)
+  .filter((image) => image.credit?.name).map((image) => [`${portfolio.id}/${post.slug}::${image.url}`, image.credit]))))).replace(/</g, '\\u003c');
 ---
 <!doctype html>
 <html lang="en">
@@ -161,6 +164,10 @@ const queue = JSON.stringify({ projects, count }).replace(/</g, '\\u003c');
     details.description { border-block: 1px solid #292927; padding-block: .45rem; }
     details.description summary { cursor: pointer; color: #ddd; font-weight: 700; }
     details.description label { margin-top: .6rem; }
+    .credit-fields { margin: .6rem 0 0; padding: .45rem .6rem .6rem; border: 1px solid #3a3a38; display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: .5rem; }
+    .credit-fields legend { padding: 0 .3rem; color: #ddd; font-size: .8rem; font-weight: 700; }
+    details.credit .credit-fields label { margin-top: 0; }
+    details.credit .effective { margin: .5rem 0; }
     .controls { display: grid; grid-template-columns: 1fr 1fr 1.35fr; gap: .55rem; }
     .celebrate { min-height: 1.5rem; color: var(--gold); font-weight: 700; }
     kbd { border: 1px solid #555; padding: .1rem .3rem; font-size: .78rem; color: #bbb; }
@@ -235,6 +242,20 @@ const queue = JSON.stringify({ projects, count }).replace(/</g, '\\u003c');
           <div class="suggestions" id="image-suggestions"></div>
         </div>
       </details>
+      <details class="description credit" id="credit-panel">
+        <summary id="credit-summary">Photographer credit</summary>
+        <p class="hint" id="credit-open"></p>
+        <fieldset class="credit-fields"><legend>Every picture in this project by</legend>
+          <label>Photographer <input id="credit-project-name" autocomplete="off" placeholder="Name as it should appear"></label>
+          <label>Site <small>optional</small> <input id="credit-project-url" inputmode="url" autocomplete="off" placeholder="https://…"></label>
+        </fieldset>
+        <fieldset class="credit-fields"><legend>This picture by · instead of the project's</legend>
+          <label>Photographer <input id="credit-image-name" autocomplete="off" placeholder="Name as it should appear"></label>
+          <label>Site <small>optional</small> <input id="credit-image-url" inputmode="url" autocomplete="off" placeholder="https://…"></label>
+        </fieldset>
+        <p class="effective" id="credit-shown" aria-live="polite"></p>
+        <button id="next-uncredited" type="button">Next picture without a photographer →</button>
+      </details>
       <div class="effective" id="effective" aria-live="polite"></div>
 
       <div class="controls"><button id="previous" type="button">← Previous project</button><button id="skip" type="button">Skip project</button><button id="next" class="primary" type="submit">Project tagged + next →</button></div>
@@ -246,6 +267,7 @@ const queue = JSON.stringify({ projects, count }).replace(/</g, '\\u003c');
   <dialog id="keyword-map" class="map-dialog"><h2>Current keyword map</h2><p>Words already present in the archive plus anything saved in this browser. Counts show how many projects currently use each phrase.</p><div class="map-tools"><input id="map-filter" type="search" placeholder="Filter keywords…" aria-label="Filter keyword map"><button id="close-map" type="button">Close</button></div><div class="keyword-map" id="map-list"></div></dialog>
   <dialog id="keys"><h2>One clean pass</h2><p>Choose shared words for the whole project, then press <kbd>Enter</kbd> or <strong>Project tagged + next</strong>. Every image in that project inherits them.</p><p>Use the thumbnails to understand the full set. Individual descriptions and extra tags remain under <strong>Later round · star or outlier image</strong>; you can ignore those for now.</p><p>Suggestions are optional. A smaller accurate set is better than keyword stuffing.</p><p>The ★ marks the project's lead picture. Open another thumbnail and press <strong>Make this the lead picture</strong> to choose it; it heads the project page, its card and the wall after the next import.</p><button id="close-keys" class="primary" type="button">Got it</button></dialog>
   <script type="application/json" id="queue-data" set:html={queue}></script>
+  <script type="application/json" id="credit-data" set:html={archiveCredits}></script>
   <script is:inline>
     const DATA = JSON.parse(document.querySelector('#queue-data').textContent);
     const STORE = 'reddy-world-image-metadata-v4';
@@ -382,6 +404,7 @@ const queue = JSON.stringify({ projects, count }).replace(/</g, '\\u003c');
       $('make-hero').textContent = lead ? '★ Lead picture of this project' : '☆ Make this the lead picture';
       renderFilmstrip(project, projectIndex, imageIndex);
       refreshKeywords();
+      renderCredit();
       updateProgress();
       save();
       if (focus) $('project-tags').focus({preventScroll: true});
@@ -428,6 +451,58 @@ const queue = JSON.stringify({ projects, count }).replace(/</g, '\\u003c');
         return row;
       }));
     }
+    // Photographer credits (Ryan, 2026-10-25 on #44): a default for the project and one per picture
+    // that wins over it, saved next to the words as state.projects[id].credit and state.images[key].credit
+    const ARCHIVE_CREDITS = JSON.parse(document.querySelector('#credit-data').textContent);
+    const isModelling = (project) => project.id.startsWith('vaguelyvulgar/');
+    const creditFor = (project, image) => [recordFor(image).credit, state.projects[project.id]?.credit, ARCHIVE_CREDITS[image.key]].find((credit) => credit?.name?.trim());
+    const isWebAddress = (value) => { try { return ['http:', 'https:'].includes(new URL(value).protocol); } catch { return false; } };
+    const uncredited = () => flat.filter(({project, image}) => isModelling(project) && !creditFor(project, image));
+    function refreshCredit() {
+      const {project, image} = current();
+      const credit = creditFor(project, image);
+      const all = flat.filter(({project: other}) => isModelling(other)).length;
+      const open = uncredited().length;
+      $('credit-summary').textContent = open ? `Photographer credit · open tasks: ${open} of ${all} modelling pictures` : `Photographer credit · all ${all} modelling pictures credited`;
+      $('credit-open').textContent = open ? `${open} of ${all} modelling pictures still have no photographer. Leave a field empty when you do not know.` : 'Every modelling picture has a photographer.';
+      const site = credit?.url?.trim() ?? '';
+      $('credit-shown').textContent = credit ? `Caption: Photo: ${credit.name.trim()}${site && isWebAddress(site) ? `, linked to ${site}` : ''}` : 'No photographer for this picture yet.';
+      if (['credit-project-url', 'credit-image-url'].some((id) => $(id).value.trim() && !isWebAddress($(id).value.trim()))) $('credit-shown').textContent += ' · A site needs to start with https:// (or http://); otherwise the import leaves it out.';
+      $('next-uncredited').hidden = !open;
+    }
+    function renderCredit() {
+      const {project, image} = current();
+      const own = recordFor(image).credit ?? {};
+      const shared = state.projects[project.id]?.credit ?? {};
+      $('credit-project-name').value = shared.name ?? '';
+      $('credit-project-url').value = shared.url ?? '';
+      $('credit-image-name').value = own.name ?? '';
+      $('credit-image-url').value = own.url ?? '';
+      $('credit-image-name').placeholder = ARCHIVE_CREDITS[image.key]?.name || shared.name || 'Name as it should appear';
+      $('credit-panel').open = isModelling(project) || Boolean(creditFor(project, image));
+      refreshCredit();
+    }
+    $('credit-panel').addEventListener('input', (event) => {
+      const {project, image} = current();
+      const scope = event.target.id.startsWith('credit-project') ? 'project' : 'image';
+      const credit = {name: $(`credit-${scope}-name`).value.trim(), url: $(`credit-${scope}-url`).value.trim()};
+      if (scope === 'project') state.projects[project.id] = {...state.projects[project.id], credit};
+      else state.images[image.key] = {...recordFor(image), credit};
+      save();
+      refreshCredit();
+    });
+    // Enter in a credit field types, it does not finish the project
+    $('credit-panel').addEventListener('keydown', (event) => { if (event.key === 'Enter' && !event.ctrlKey && !event.metaKey && event.target.tagName === 'INPUT') event.preventDefault(); });
+    $('next-uncredited').addEventListener('click', () => {
+      collect();
+      const todo = new Set(uncredited().map(({image}) => image.key));
+      const after = flat.findIndex((item, index) => index > state.cursor && todo.has(item.image.key));
+      const next = after >= 0 ? after : flat.findIndex((item) => todo.has(item.image.key));
+      if (next < 0) return;
+      state.cursor = next;
+      render({focus: false});
+      $('credit-image-name').focus({preventScroll: true});
+    });
 
     $('editor').addEventListener('input', (event) => {
       collect();
@@ -462,6 +537,8 @@ const queue = JSON.stringify({ projects, count }).replace(/</g, '\\u003c');
           reviewed: Boolean(state.projects[project.id]?.reviewed || record.reviewed),
         }];
       }));
+      // photographer credits ride along additively; the project's default is in projects[id].credit
+      for (const {image} of flat) { const credit = recordFor(image).credit; if (credit) images[image.key].credit = {name: credit.name ?? '', url: credit.url ?? ''}; }
       const output = {version: 4, exportedAt: new Date().toISOString(), projects: state.projects, images};
       const blob = new Blob([JSON.stringify(output, null, 2) + '\n'], {type: 'application/json'});
       const link = Object.assign(document.createElement('a'), {href: URL.createObjectURL(blob), download: 'reddy-world-image-metadata.json'});
@@ -484,6 +561,9 @@ const queue = JSON.stringify({ projects, count }).replace(/</g, '\\u003c');
         for (const [key, entry] of Object.entries(loaded.images)) {
           if (!opened.includes(entry.projectId ?? key.split('::')[0])) continue;
           state.images[key] = {...state.images[key], description: entry.description ?? '', tags: (entry.imageKeywords ?? []).join(', '), reviewed: Boolean(entry.reviewed)};
+        }
+        for (const [key, entry] of Object.entries(loaded.images)) {
+          if (entry.credit && opened.includes(entry.projectId ?? key.split('::')[0])) state.images[key] = {...state.images[key], credit: {name: String(entry.credit.name ?? ''), url: String(entry.credit.url ?? '')}};
         }
         state.cursor = Math.max(0, firstIncomplete());
         save();
