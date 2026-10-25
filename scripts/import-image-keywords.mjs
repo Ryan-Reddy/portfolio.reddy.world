@@ -26,6 +26,7 @@
 // name (37737598_881…_o) or WordPress's "Enter a caption" never becomes alt text.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { httpUrl } from '../src/lib/safe-output.js';
 
 const KEYS = ['rmaekers', 'rrproductions', 'vaguelyvulgar'];
 const clean = (s) => String(s ?? '').replace(/\s+/g, ' ').trim();
@@ -47,11 +48,7 @@ export const isFileNameCaption = (description, url) => {
 export const creditOf = (value) => {
   const name = clean(value?.name);
   if (!name) return undefined;
-  let url;
-  try {
-    const parsed = new URL(clean(value.url));
-    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') url = parsed.href;
-  } catch {}
+  const url = httpUrl(clean(value.url));
   return url ? { name, url } : { name };
 };
 
@@ -111,11 +108,12 @@ export function applyKeywords(exported, data) {
         media.alt = `${clean(post.title)} — ${keywords.filter((word) => word.toLowerCase() !== clean(post.title).toLowerCase()).slice(0, 3).join(', ')}`;
       }
       if (keywords.length) media.keywords = list([...(media.keywords ?? []), ...keywords]);
+      // a credit alone counts as "credited", not as an updated picture
+      changed ||= JSON.stringify(media) !== before;
       if (credit && JSON.stringify(media.credit) !== JSON.stringify(credit)) {
         media.credit = credit;
         credited = true;
       }
-      changed ||= JSON.stringify(media) !== before;
     }
     if (changed) report.pictures++;
     if (credited) report.credits++;

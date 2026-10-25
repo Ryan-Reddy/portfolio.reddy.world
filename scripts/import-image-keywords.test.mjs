@@ -122,6 +122,8 @@ test('the photographer of a picture wins over the one of its project; both becom
   assert.deepEqual(media(data, 'vaguelyvulgar', 'photo-cv', FIRST).credit, { name: 'Own Photographer', url: 'https://own.example/work' });
   assert.deepEqual(media(data, 'vaguelyvulgar', 'photo-cv', SECOND).credit, { name: 'Project Photographer', url: 'https://project.example/' });
   assert.equal(report.credits, 2);
+  // a credit alone is counted as credited, not as an updated picture
+  assert.equal(report.pictures, 0);
   // the featured record of the same picture carries the same credit
   const post = data.vaguelyvulgar.posts.find((p) => p.slug === 'photo-cv');
   if (post.featured?.url === FIRST) assert.deepEqual(post.featured.credit, { name: 'Own Photographer', url: 'https://own.example/work' });
