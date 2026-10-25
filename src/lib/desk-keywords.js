@@ -18,6 +18,15 @@ const PROJECT_INTENT = {
   festivals: ['festival production Amsterdam', 'festival installations'],
   clubs: ['club decor Amsterdam', 'nightlife design'],
 };
+// The word bank: keyword lists Ryan gave for the desk (2026-10-25: "Heres a great toolword list to
+// use"), how studios like his describe their work. A studio's own name is the list's source, not a
+// word to use.
+export const WORD_BANK = [
+  { source: 'Studio Binnenstad · NL', words: ['merkactivatie', 'productoplossingen', 'scenografie', 'design', 'interieur', 'meubilair', 'decor', 'beursstands', 'kunstinstallaties', '3D-ontwerpen', 'technische tekeningen', 'productie', 'Amsterdam'] },
+  { source: 'Studio Binnenstad · EN', words: ['brand activation', 'scenography', 'interior design', 'furniture', 'decor', 'exhibition stands', 'art installations', '3D designs', 'technical drawings', 'production workshop'] },
+  { source: 'Main keywords (11)', words: ['Brand Activation', 'Signing', 'Photobooth', 'Interior Design', 'Light Installations', 'Product Design', 'Stickers', 'Mobility', 'Foodtrucks', 'Instagram', 'Workshop'] },
+  { source: 'Studio Piet Boon', words: ['interior design', 'architecture', 'luxury homes', 'corporate projects', 'private projects', 'bespoke total concepts', 'hospitality design', 'residential renovation', 'furniture design'] },
+];
 const IMAGE_VOCABULARY = ['wide view', 'close-up', 'detail', 'finished installation', 'work in progress', 'night', 'daylight', 'people', 'lighting', 'materials'];
 const NOISE = new Set(['project', 'projects', 'portfolio', 'uncategorized', 'geen categorie']);
 const STOPWORDS = new Set('the a an and or of in on at for with from by to is are was were this that these those our my we you your it its as into over under de het een en of van voor met op in bij door dit deze die dat mijn onze foto photo image picture'.split(' '));
@@ -105,5 +114,5 @@ export function deskProjects() {
 
 /** The words the third column rates for a project: its own words and the other two columns, once each. */
 export function ratingCandidates(project) {
-  return unique([...project.originalSuggestions, ...project.searchSuggestions, ...project.currentKeywords]);
+  return unique([...project.originalSuggestions, ...project.searchSuggestions, ...project.currentKeywords, ...WORD_BANK.flatMap((list) => list.words)]);
 }

@@ -1,5 +1,5 @@
 ---
-import { deskProjects, ratingCandidates } from '../lib/desk-keywords.js';
+import { deskProjects, ratingCandidates, WORD_BANK } from '../lib/desk-keywords.js';
 import { ratedFor, stems } from '../lib/keyword-ratings.js';
 import ratings from '../data/keyword-ratings.json';
 import { archiveCredits } from '../lib/desk-credits.js';
@@ -10,7 +10,7 @@ const vocabulary = new Set(deskList.flatMap((project) => ratingCandidates(projec
 const projects = deskList.map((project) => ({...project, rated: ratedFor(ratingCandidates(project), ratings, {vocabulary, relatedFrom: project.intent})}));
 const ratingsInfo = {updatedAt: ratings.updatedAt, bing: Object.keys(ratings.bing ?? {}).length > 0};
 const count = projects.reduce((sum, project) => sum + project.images.length, 0);
-const queue = JSON.stringify({ projects, count, ratingsInfo }).replace(/</g, '\\u003c');
+const queue = JSON.stringify({ projects, count, ratingsInfo, wordBank: WORD_BANK }).replace(/</g, '\\u003c');
 ---
 <!doctype html>
 <html lang="en">
@@ -74,6 +74,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo }).replace(/</g, '\\
     :global(.rating[data-level="none"]) { color: #888; }
     :global(.rating-empty) { color: #888; font-size: .78rem; }
     details.rated-ideas > summary { cursor: pointer; margin-bottom: .4rem; color: #aaa; font-size: .78rem; }
+    details.word-bank > summary { cursor: pointer; margin-bottom: .4rem; color: #aaa; font-size: .78rem; }
     details.how-to-pick { color: #bbb; font-size: .78rem; line-height: 1.4; }
     details.how-to-pick summary { cursor: pointer; color: var(--gold); }
     details.how-to-pick ul { margin: .4rem 0; padding-left: 1.1rem; display: grid; gap: .25rem; }
@@ -145,6 +146,10 @@ const queue = JSON.stringify({ projects, count, ratingsInfo }).replace(/</g, '\\
         <div class="suggestion-head"><span>Customer-search ideas for this project</span></div>
         <div class="suggestions" id="project-search-suggestions"></div>
       </div>
+      <details class="word-bank">
+        <summary>Word bank · how studios like yours describe their work</summary>
+        <div class="suggestion-block" id="word-bank"></div>
+      </details>
       <details class="rated-ideas" open>
         <summary>Search-rated ideas · ●●● = most read about</summary>
         <div class="suggestion-block">
@@ -325,6 +330,14 @@ const queue = JSON.stringify({ projects, count, ratingsInfo }).replace(/</g, '\\
       $('inherited').replaceChildren(...projectTags.map((tag) => Object.assign(document.createElement('span'), {className: 'chip', textContent: tag})));
       renderTagButtons('project-original-suggestions', project.originalSuggestions, 'project-tags');
       renderTagButtons('project-search-suggestions', project.searchSuggestions, 'project-tags');
+      // the word bank: one row per list, each word a toggle for the whole project
+      $('word-bank').replaceChildren(...DATA.wordBank.flatMap((list, index) => {
+        const head = Object.assign(document.createElement('div'), {className: 'suggestion-head'});
+        head.append(Object.assign(document.createElement('span'), {textContent: list.source}));
+        const row = Object.assign(document.createElement('div'), {className: 'suggestions', id: `word-bank-${index}`});
+        return [head, row];
+      }));
+      DATA.wordBank.forEach((list, index) => renderTagButtons(`word-bank-${index}`, list.words, 'project-tags'));
       renderRatedButtons('project-rated-suggestions', project.rated?.hasData ? project.rated.rated : [], 'No data yet: the ratings come with the next build.');
       renderRatedButtons('project-rated-related', project.rated?.related ?? [], project.rated?.hasData ? 'None that more people read about.' : 'No data yet.');
       renderTagButtons('image-suggestions', image.suggestions, 'image-tags');
