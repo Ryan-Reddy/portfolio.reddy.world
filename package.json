@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build && node scripts/firebase-config.mjs",
+    "build": "node --import ./scripts/lib/json-imports.mjs scripts/keyword-ratings.mjs && astro build && node scripts/firebase-config.mjs",
     "preview": "astro preview",
     "import": "python scripts/parse_wordpress.py",
     "media:self-host": "node scripts/self-host-wordpress.mjs",
@@ -14,6 +14,7 @@
     "keywords:import": "node scripts/import-image-keywords.mjs",
     "shots": "node scripts/shots.mjs",
     "test": "node --test \"scripts/**/*.test.mjs\"",
+    "keywords:rate": "node --import ./scripts/lib/json-imports.mjs scripts/keyword-ratings.mjs",
     "media:videos": "node scripts/wordpress-videos.mjs",
     "media:inventory": "node scripts/wordpress-inventory.mjs",
     "media:unused": "node scripts/wordpress-unused.mjs"
