@@ -31,7 +31,7 @@ async function get(url, { tries = 4, text = false } = {}) {
   }
 }
 
-const decode = (s) => String(s ?? '').replace(/&quot;/g, '"').replace(/&#0?38;|&amp;/g, '&').replace(/&#8217;/g, '’').replace(/&#8211;/g, '–');
+const decode = (s) => String(s ?? '').replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)));
 
 /** One attachment as WordPress describes it in its own attachment page content */
 function attachment(p) {

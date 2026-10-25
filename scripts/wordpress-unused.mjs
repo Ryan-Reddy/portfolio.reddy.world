@@ -186,7 +186,7 @@ for (const { key, site, inv, wxr, files, shown, theme, linked, visible, postById
       ...(f.notInExport ? { not_in_export: true } : {}),
       id: att?.id ?? fromWxr?.id ?? null,
       parent: parentId === null ? null : parentId,
-      ...(parent ? { parent_title: parent.title, parent_status: parent.status, ...(parent.url ? { parent_url: parent.url } : {}) } : {}),
+      ...(parent ? { parent_title: String(parent.title ?? '').replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n))).replace(/&amp;/g, '&'), parent_status: parent.status, ...(parent.url ? { parent_url: parent.url } : {}) } : {}),
       ...(att?.width ? { width: att.width, height: att.height } : {}),
       ...(att?.credit ? { credit: att.credit } : {}),
       ...(inRepo.has(`${site.split('.')[0]}/${f.rel}`) ? { in_repo: true } : {}),
