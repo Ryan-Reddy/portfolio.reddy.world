@@ -25,5 +25,11 @@
   },
   "allowScripts": {
     "esbuild@0.28.2": true
+  },
+  "dependencies": {
+    "firebase": "^13.1.0"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "^1.14.5"
   }
 }
