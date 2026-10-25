@@ -48,6 +48,14 @@ export function publicArchivePosts(portfolio, posts) {
 // Rule: "No meta copy on public pages" (Ryan, 2026-10-25).
 const COPY = {
   rrproductions: {
+    // The One and the NEPCO internship link each other (Ryan, 2026-10-25: "worked on via NEPCO"):
+    // links on his own words only, no new sentence
+    '566': {
+      swap: [['worked with Nepco on the costumes', 'worked with <a href="/portfolio/rrproductions/internship-at-studio-nepco/">Nepco</a> on the costumes']],
+    },
+    '662': {
+      swap: [['<a href="https://youtu.be/7w6ySPAXsDA" target="_blank">previous post</a>', '<a href="/portfolio/rrproductions/sander-kleinenberg-felix-leiter-the-one-official-music-video/">previous post</a>']],
+    },
     // its text: "De opdracht was dus, om een kastje te creeeren met bewegend en/of sluitend deel."
     '397': { title: 'A cabinet with a moving part (school project, second year)' },
     // decision 2 in PR #44 (Ryan, 2026-10-25, option a): the materialenmix PDF carries his former
@@ -59,23 +67,41 @@ const COPY = {
       ],
     },
   },
+  rmaekers: {
+    // Ryan, 2026-10-25: "it was a own brand activation joke for reddymaekers and my first testshop live,
+    // actually on reddymaekers.com/shop link to that bomber"
+    '2012': {
+      intro: '<p>An own brand activation joke for ReddyMaekers, and my first test shop live: <a href="https://reddymaekers.com/shop/">reddymaekers.com/shop</a></p>',
+      swap: [['First up, ReddyMaekers Bomber Jackets!', 'First up, <a href="https://reddymaekers.com/shop/">ReddyMaekers Bomber Jackets</a>!']],
+    },
+    // Ryan, 2026-10-25: "Meghan Sile Catherina", not her surname; the address
+    // /rmaekers/meghan-sile-catherina/ and its redirects stay as they are
+    '868': { title: 'Meghan Sile Catherina' },
+  },
   vaguelyvulgar: {
-    // one page: the photographs and the measurements (Ryan, 2026-10-25). Data only, no words
-    // about the page (Ryan, 2026-10-25: "this meta crap on the site has to stop").
+    // one page: the photographs and the measurements (Ryan, 2026-10-25). The weight was
+    // measured in October 2026; the rest is from his 2016 site, "pretty much right" still.
+    // No words about the page or its history (Ryan, 2026-10-25: "this meta crap on the site
+    // has to stop !!"): only the pictures and the measurements as plain data.
     '13': {
-      excerpt: 'Ryan Reddy, modelling: height 1.81 m, bust 86.5 cm, waist 70 cm, hips 86 cm, weight 69 kg, long blonde hair, blue eyes.',
-      intro: [
-        '<h2 id="measurements">Measurements</h2>',
-        '<dl class="measurements">',
-        '<dt>Height</dt><dd>1.81 m</dd>',
-        '<dt>Bust</dt><dd>86.5 cm</dd>',
-        '<dt>Waist</dt><dd>70 cm</dd>',
-        '<dt>Hips</dt><dd>86 cm</dd>',
-        '<dt>Weight</dt><dd>69 kg</dd>',
-        '<dt>Hair</dt><dd>Long, blonde</dd>',
-        '<dt>Eyes</dt><dd>Blue</dd>',
-        '</dl>',
-      ].join('\n'),
+      excerpt: 'Height 1.81 m, bust 86.5 cm, waist 70 cm, hips 86 cm, weight 69 kg, long blonde hair, blue eyes.',
+      // a comp card: the lead picture with the measurements beside it, the rest in a grid
+      layout: 'comp-card',
+      // the film page's videos, embedded here (Ryan, 2026-10-25: "lets embed the videos for now")
+      films: 61,
+      // age-restricted on YouTube, so it does not play embedded: its still links to YouTube instead
+      filmsLinkOnly: ['7w6ySPAXsDA'],
+      // the measurements are current: no year beside them (page date, descriptions)
+      undated: true,
+      measurements: [
+        ['Height', '1.81 m'],
+        ['Bust', '86.5 cm'],
+        ['Waist', '70 cm'],
+        ['Hips', '86 cm'],
+        ['Weight', '69 kg'],
+        ['Hair', 'Long, blonde'],
+        ['Eyes', 'Blue'],
+      ],
     },
   },
 };
@@ -84,8 +110,16 @@ const COPY = {
 export function curatedPost(portfolio, post) {
   const copy = COPY[portfolio]?.[String(post.id)];
   if (!copy) return post;
-  const { intro, cut = [], ...fields } = copy;
+  const { intro, cut = [], swap = [], ...fields } = copy;
   let content = fields.content ?? post.content;
-  for (const text of cut) content = content.replace(text, '');
+  for (const text of cut) {
+    // a cut that no longer matches would quietly put the words back on the page
+    if (!content.includes(text)) throw new Error(`archive-curation: ${portfolio}/${post.id}: text to cut not found: ${text.slice(0, 120)}`);
+    content = content.replace(text, '');
+  }
+  for (const [from, to] of swap) {
+    if (!content.includes(from)) throw new Error(`archive-curation: ${portfolio} ${post.id} no longer has "${from.slice(0, 60)}"`);
+    content = content.replace(from, to);
+  }
   return { ...post, ...fields, content: intro ? `${intro}\n\n${content}` : content };
 }

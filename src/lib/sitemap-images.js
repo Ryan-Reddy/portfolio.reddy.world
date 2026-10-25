@@ -27,7 +27,7 @@ for (const key of KEYS) {
     const shown = post.media.filter((m) => m.type === 'image' && m.duplicate_of === undefined);
     if (post.featured && !shown.some((m) => m.url === post.featured.url)) shown.unshift(post.featured);
     // the picture's own words, then the project, under which name and when
-    const about = `${post.title.trim()}, ${BRAND[key]}${post.date ? `, ${String(post.date).slice(0, 4)}` : ''}`;
+    const about = `${post.title.trim()}, ${BRAND[key]}${post.date && !post.undated ? `, ${String(post.date).slice(0, 4)}` : ''}`;
     const img = shown.map((m, i) => ({ url: absUrl(m.url), caption: m.alt || m.caption ? `${m.alt || m.caption} — ${about}` : `${about}, photo ${i + 1}` }));
     byPath.set(`${SITE}/${key}/${post.slug}/`, { img, lastmod: post.modified });
   }

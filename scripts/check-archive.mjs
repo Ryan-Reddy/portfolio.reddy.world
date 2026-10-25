@@ -8,6 +8,7 @@
 // - Retired addresses (hidden posts, Maup) are no-index; no no-index page (those,
 //   the wall hand-offs, the image desk) is in the sitemap.
 // - Maup, kept in the repo but not Ryan's work, is in no page, feed or list.
+// - No file anywhere in dist/ carries "ryanvanlil" (his former name, in the old WordPress addresses).
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { isRetired } from '../src/lib/sitemap-images.js';
 
@@ -56,12 +57,25 @@ for (const dir of pages) {
 }
 
 if (!existsSync(new URL('image-metadata/index.html', DIST))) problems.push('the image desk /portfolio/image-metadata/ was not built');
+if (!existsSync(new URL('image-metadata/unused/index.html', DIST))) problems.push('the review page /portfolio/image-metadata/unused/ was not built');
+else if (!/<meta name="robots" content="noindex/.test(read('image-metadata/unused/index.html'))) problems.push('/portfolio/image-metadata/unused/ is not no-index');
 for (const file of ['rss.xml', 'llms.txt', 'software.json', ...readdirSync(DIST).filter((f) => /^sitemap-.*\.xml$/.test(f))]) {
   if (/maup|kleermaeker/i.test(read(file))) problems.push(`${file} mentions Maup`);
 }
+
+let files = 0;
+(function walkAll(dir) {
+  for (const name of readdirSync(new URL(dir, DIST))) {
+    const rel = `${dir}${name}`;
+    if (statSync(new URL(rel, DIST)).isDirectory()) { walkAll(`${rel}/`); continue; }
+    files++;
+    // read as bytes, so pictures and PDFs are searched too
+    if (/ryanvanlil/i.test(readFileSync(new URL(rel, DIST)).toString('latin1'))) problems.push(`${rel} contains "ryanvanlil"`);
+  }
+})('');
 
 if (problems.length) {
   console.error(`check-archive: ${problems.length} problems\n${problems.join('\n')}`);
   process.exit(1);
 }
-console.log(`check-archive: ${pages.length} pages, ${titles.size} indexable titles all different, ${retired} retired addresses no-index and out of the sitemap, no WordPress pictures, no Maup`);
+console.log(`check-archive: ${pages.length} pages, ${titles.size} indexable titles all different, ${retired} retired addresses no-index and out of the sitemap, no WordPress pictures, no Maup, no "ryanvanlil" in ${files} files`);
