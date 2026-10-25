@@ -801,6 +801,17 @@ body {
   color: var(--fg-muted);
 }
 
+/* the photographer's credit under a picture; a long name wraps inside its column on a phone */
+.photo-credit {
+  overflow-wrap: anywhere;
+}
+
+.photo-credit a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
 .post-hero {
   margin: 0 0 2rem;
 }
@@ -863,13 +874,20 @@ body {
   gap: 0.35rem;
 }
 
+/* one quiet link, only in the enlarged view (Ryan, 2026-10-25: "can be waayyy more subtle or just gone") */
 .ask-link {
   font-size: 0.75rem;
-  color: var(--gold);
+  color: inherit;
+  opacity: 0.6;
   text-decoration: none;
 }
 
+.ask-link:focus-visible {
+  opacity: 1;
+}
+
 .ask-link:hover {
+  opacity: 1;
   text-decoration: underline;
 }
 

@@ -3,6 +3,7 @@ import Base from '../../layouts/Base.astro';
 import { renderContent } from '../../lib/content.js';
 import { absUrl } from '../../lib/media-url.js';
 import { subjectImageObject } from '../../lib/model-page.js';
+import { httpUrl } from '../../lib/safe-output.js';
 import { portfolios, formatDate, photos, altFor, contextOf, picture, contactUrl, titleCase, PERSON_ID, ORIGIN, SITE, BASE, themeByTag, KIND_LABEL, portfolioLabel } from '../../lib/portfolios.js';
 
 export function getStaticPaths() {
@@ -22,6 +23,14 @@ const description = `${(post.excerpt || name).replace(/[.!?…]?$/, (end) => end
 const pageUrl = `${SITE}${post.path}`;
 
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+// the photographer Ryan credited on the image desk: "Photo: Name", linked to their site when he gave one
+// (a site links only when it is an http(s) address)
+const creditHtml = (c) => c?.name ? `<span class="photo-credit">Photo: ${httpUrl(c.url) ? `<a href="${esc(httpUrl(c.url))}" rel="noopener">${esc(c.name)}</a>` : esc(c.name)}</span>` : '';
+const captionHtml = (m) => (m.caption || m.credit?.name ? `<figcaption>${m.caption ? esc(m.caption) : ''}${m.caption && m.credit?.name ? ' · ' : ''}${creditHtml(m.credit)}</figcaption>` : '');
+// in the structured data the credited photographer is the picture's creator, and Ryan claims no copyright on it
+const credited = (m, object) => (m.credit?.name
+  ? { ...object, creator: { '@type': 'Person', name: m.credit.name, url: httpUrl(m.credit.url) }, creditText: m.credit.name, copyrightNotice: undefined }
+  : object);
 
 // Every picture is one lightbox slide, numbered in reading order: the ones placed in the text first
 let slide = 0;
@@ -37,10 +46,9 @@ function item(i, sizes) {
   const ratio = pic.width && pic.height ? ` style="--r: ${(pic.width / pic.height).toFixed(3)}"` : '';
   return (
     `<figure class="gallery-item"${ratio}>` +
-    `<button type="button" class="gallery-thumb" data-index="${slide++}" data-full="${esc(m.url)}" aria-label="Enlarge: ${esc(alt)}">` +
+    `<button type="button" class="gallery-thumb" data-index="${slide++}" data-full="${esc(m.url)}" data-ask="${esc(contactUrl({ project: post.slug, image: m.id || String(i + 1) }))}" aria-label="Enlarge: ${esc(alt)}">` +
     `<img src="${esc(pic.src)}"${set}${dims} alt="${esc(alt)}" loading="lazy" decoding="async"></button>` +
-    (m.caption ? `<figcaption>${esc(m.caption)}</figcaption>` : '') +
-    `<a class="ask-link" href="${esc(contactUrl({ project: post.slug, image: m.id || String(i + 1) }))}">Ask about this picture</a>` +
+    captionHtml(m) +
     `</figure>`
   );
 }
@@ -81,7 +89,7 @@ const hero = featured && !comp && !shown.has(featured.url) ? { ...picture(featur
 
 const shareImage = featured && { url: absUrl(featured.url), width: featured.width, height: featured.height, alt: altFor(post, featured, 0) };
 const words = body.replace(/<[^>]+>/g, ' ').split(/\s+/).filter(Boolean).length;
-const imageObject = (m, i) => ({
+const imageObject = (m, i) => credited(m, {
   '@type': 'ImageObject',
   contentUrl: absUrl(m.url),
   url: absUrl(m.url),
@@ -169,7 +177,7 @@ const article = isPost ? { published: post.published, modified: post.modified, s
     {hero && (
       <figure class="post-hero">
         <img src={hero.src} srcset={hero.srcset} sizes="(max-width: 900px) 100vw, 852px" width={hero.width} height={hero.height} alt={hero.alt} fetchpriority="high" decoding="async">
-        {featured.caption && <figcaption>{featured.caption}</figcaption>}
+        {(featured.caption || featured.credit?.name) && <Fragment set:html={captionHtml(featured)} />}
       </figure>
     )}
 
@@ -241,7 +249,7 @@ const article = isPost ? { published: post.published, modified: post.modified, s
     img.src = thumb.dataset.full!;
     img.alt = thumb.querySelector('img')!.alt;
     count.textContent = `${index + 1} / ${items.length}`;
-    ask.href = items[index].querySelector<HTMLAnchorElement>('.ask-link')!.href;
+    ask.href = thumb.dataset.ask!;
   }
   function open(i: number, from: HTMLElement) {
     opener = from;

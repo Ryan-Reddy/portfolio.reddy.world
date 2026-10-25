@@ -43,9 +43,9 @@ export function publicArchivePosts(portfolio, posts) {
   return posts.filter((post) => isPublicArchivePost(portfolio, post));
 }
 
-// Words for pages whose WordPress text was missing or unclear. Every fact comes from the
-// post's own data (its text, date and pictures); nothing is added that the archive does
-// not say. These are proposals until Ryan OKs them in PR #44 ("Words for Ryan to OK").
+// Overrides for pages whose WordPress text was missing or unclear: data and Ryan's own
+// words only, never text about the page or the work (its history, what the page is).
+// Rule: "No meta copy on public pages" (Ryan, 2026-10-25).
 const COPY = {
   rrproductions: {
     // its text: "De opdracht was dus, om een kastje te creeeren met bewegend en/of sluitend deel."
@@ -58,6 +58,11 @@ const COPY = {
         '<p style="text-align:center;"><a href="https://ryanvanlil.wordpress.com/wp-content/uploads/2015/10/17-6-materialenmix-2.pdf" target="_blank">materialenmix onderzoek</a></p>\n',
       ],
     },
+  },
+  rmaekers: {
+    // Ryan, 2026-10-25: "Meghan Sile Catherina", not her surname; the address
+    // /rmaekers/meghan-sile-catherina/ and its redirects stay as they are
+    '868': { title: 'Meghan Sile Catherina' },
   },
   vaguelyvulgar: {
     // one page: the photographs and the measurements (Ryan, 2026-10-25). The weight was
@@ -89,6 +94,10 @@ export function curatedPost(portfolio, post) {
   if (!copy) return post;
   const { intro, cut = [], ...fields } = copy;
   let content = fields.content ?? post.content;
-  for (const text of cut) content = content.replace(text, '');
+  for (const text of cut) {
+    // a cut that no longer matches would quietly put the words back on the page
+    if (!content.includes(text)) throw new Error(`archive-curation: ${portfolio}/${post.id}: text to cut not found: ${text.slice(0, 120)}`);
+    content = content.replace(text, '');
+  }
   return { ...post, ...fields, content: intro ? `${intro}\n\n${content}` : content };
 }
