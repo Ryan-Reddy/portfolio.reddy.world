@@ -11,7 +11,7 @@
 // one); or "unknown" (a revision, a menu item, or nothing). Nothing on WordPress changes.
 import { writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { SITES, embedsIn, shownAndLinked, uploadKey, uploadsIn } from './wordpress-lib.mjs';
+import { SITES, embedsIn, resolveIds, shownAndLinked, uploadKey, uploadPath, uploadsIn } from './wordpress-lib.mjs';
 
 const API = 'https://public-api.wordpress.com/rest/v1.1/sites';
 const HEADERS = { 'User-Agent': 'reddy.world archive inventory' };
@@ -60,6 +60,32 @@ function themeUploads(html, own) {
   return [...keys];
 }
 
+/** One public post or page (an API post and its full page, { status, body }) as the inventory records it */
+export function postRecord(p, page) {
+  const { shown, linked, files, ids } = shownAndLinked(p.content);
+  const featuredFile = uploadPath(p.featured_image);
+  if (featuredFile && !files.includes(featuredFile)) files.push(featuredFile);
+  const own = new Set([...shown, ...linked, uploadKey(p.featured_image)].filter(Boolean));
+  // one full address per upload, the original size where the page names it (for copying)
+  const urls = {};
+  for (const u of [p.featured_image, ...uploadsIn(p.content), ...uploadsIn(page.body)].filter(Boolean)) {
+    const k = uploadKey(u);
+    const clean = u.split('?')[0].replace(/-\d+x\d+(?=\.[a-z0-9]+$)/i, '');
+    if (!urls[k] || clean.length < urls[k].length) urls[k] = clean;
+  }
+  return {
+    id: p.ID, type: p.type, status: p.status, slug: p.slug, title: decode(p.title), url: p.URL,
+    date: p.date, modified: p.modified, featured: p.featured_image || null, attachment_count: p.attachment_count,
+    // shown: one key per upload; files: the exact file shown (an edited copy, not its original);
+    // ids: the attachments its galleries and slideshows name (added to shown once known)
+    shown, linked, files, ids, embeds: embedsIn(p.content), urls,
+    page_status: page.status,
+    // what the full page adds to the post's text: the theme's pictures, and embeds the API text left out
+    theme: themeUploads(page.body, own),
+    page_embeds: embedsIn(page.body).filter((e) => !embedsIn(p.content).some((x) => x.kind === e.kind && x.id === e.id)),
+  };
+}
+
 export async function inventory({ site, max }, { log = () => {}, probe = true } = {}) {
   const posts = [];
   // "any" leaves out Jetpack's portfolio items (ryanvanlil has one: /portfolio/school-integral-project-8/)
@@ -72,27 +98,7 @@ export async function inventory({ site, max }, { log = () => {}, probe = true } 
     }
   }
   const records = [];
-  for (const p of posts) {
-    const { shown, linked } = shownAndLinked(p.content);
-    const page = await get(p.URL, { text: true });
-    const own = new Set([...shown, ...linked, uploadKey(p.featured_image)].filter(Boolean));
-    // one full address per upload, the original size where the page names it (for copying)
-    const urls = {};
-    for (const u of [p.featured_image, ...uploadsIn(p.content), ...uploadsIn(page.body)].filter(Boolean)) {
-      const k = uploadKey(u);
-      const clean = u.split('?')[0].replace(/-\d+x\d+(?=\.[a-z0-9]+$)/i, '');
-      if (!urls[k] || clean.length < urls[k].length) urls[k] = clean;
-    }
-    records.push({
-      id: p.ID, type: p.type, status: p.status, slug: p.slug, title: decode(p.title), url: p.URL,
-      date: p.date, modified: p.modified, featured: p.featured_image || null, attachment_count: p.attachment_count,
-      shown, linked, embeds: embedsIn(p.content), urls,
-      page_status: page.status,
-      // what the full page adds to the post's text: the theme's pictures, and embeds the API text left out
-      theme: themeUploads(page.body, own),
-      page_embeds: embedsIn(page.body).filter((e) => !embedsIn(p.content).some((x) => x.kind === e.kind && x.id === e.id)),
-    });
-  }
+  for (const p of posts) records.push(postRecord(p, await get(p.URL, { text: true })));
   const top = probe ? Math.max(max, ...posts.map((p) => p.ID)) + 50 : 0;
   const attachments = [];
   const unauthorized = [];
@@ -110,6 +116,7 @@ export async function inventory({ site, max }, { log = () => {}, probe = true } 
     }
   }
   await Promise.all(Array.from({ length: 6 }, worker));
+  resolveIds(records, attachments);
   const byId = (a, b) => (a.id ?? a) - (b.id ?? b);
   return {
     site,

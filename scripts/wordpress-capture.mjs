@@ -22,8 +22,9 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
+import path from 'node:path';
 import { inventory } from './wordpress-inventory.mjs';
-import { IMAGE, SITES, embedsIn, uploadKey, uploadPath } from './wordpress-lib.mjs';
+import { IMAGE, SITES, embedsIn, resolveIds, uploadKey, uploadPath } from './wordpress-lib.mjs';
 
 const ROOT = new URL('../', import.meta.url);
 const PROBE = process.argv.includes('--probe');
@@ -92,11 +93,14 @@ const table = [
   '|---|---|---|---|---|---|---|---|---|---|---|',
 ];
 const gaps = [];
-for (const s of SITES) {
+/** One site: what it publishes (live) against the repo. Returns its table row and its gaps. */
+export async function checkSite(s, live, attachments, ctx = { data, local, accounted, checked: saved.checked }) {
   const { key, site } = s;
-  const live = await inventory(s, { probe: PROBE });
-  const attachments = PROBE ? live.attachments : saved.sites[key]?.attachments ?? [];
-  const records = new Map(data[key].posts.map((p) => [String(p.id), p]));
+  const { local, accounted } = ctx;
+  const gaps = [];
+  // a gallery or slideshow that names its pictures by attachment id
+  resolveIds(live.posts, attachments);
+  const records = new Map(ctx.data[key].posts.map((p) => [String(p.id), p]));
   const gap = (msg) => gaps.push(`- \`${key}\`: ${msg}`);
   const pub = live.posts.filter((p) => p.status === 'publish');
 
@@ -129,7 +133,7 @@ for (const s of SITES) {
   }
 
   // records (hidden posts too) whose picture or file still lives only on WordPress
-  for (const post of data[key].posts) {
+  for (const post of ctx.data[key].posts) {
     for (const m of [post.featured, ...post.media].filter(Boolean)) {
       if (!/^https?:/.test(m.url) || local.has(uploadKey(m.url))) continue;
       if (!(await keep(key, uploadPath(m.url), m.url.split('?')[0]))) gap(`the ${m.type ?? 'image'} record in ${post.slug} still points at ${uploadPath(m.url)} on WordPress`);
@@ -168,14 +172,23 @@ for (const s of SITES) {
     if (accounted.has(`${key}:${rel}`) || local.has(uploadKey(a.file))) ok++;
     else gap(`upload ${a.id} ${rel} is shown nowhere and not in src/data/wordpress-unused.json (npm run media:unused)`);
   }
-  table.push(`| ${site} | ${pub.length} | ${inRepo} | ${shown.size} | ${shownCopied} | ${linked.size} | ${linkedOk} | ${embeds} | ${embedsOk} | ${notShown.length}${PROBE ? '' : ` (as of ${saved.checked})`} | ${ok} |`);
+  return { gaps, row: `| ${site} | ${pub.length} | ${inRepo} | ${shown.size} | ${shownCopied} | ${linked.size} | ${linkedOk} | ${embeds} | ${embedsOk} | ${notShown.length}${PROBE ? '' : ` (as of ${ctx.checked})`} | ${ok} |` };
 }
 
-console.log([
-  ...table,
-  '',
-  gaps.length ? `### Gaps: on WordPress, not in the repo (${gaps.length})` : '### Gaps: none',
-  '',
-  ...gaps,
-].join('\n'));
-if (gaps.length) process.exit(1);
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  for (const s of SITES) {
+    const live = await inventory(s, { probe: PROBE });
+    const attachments = PROBE ? live.attachments : saved.sites[s.key]?.attachments ?? [];
+    const r = await checkSite(s, live, attachments);
+    table.push(r.row);
+    gaps.push(...r.gaps);
+  }
+  console.log([
+    ...table,
+    '',
+    gaps.length ? `### Gaps: on WordPress, not in the repo (${gaps.length})` : '### Gaps: none',
+    '',
+    ...gaps,
+  ].join('\n'));
+  if (gaps.length) process.exit(1);
+}

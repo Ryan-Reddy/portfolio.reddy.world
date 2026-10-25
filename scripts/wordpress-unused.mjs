@@ -17,7 +17,7 @@ import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import sharp from 'sharp';
-import { IMAGE, SITES, uploadKey } from './wordpress-lib.mjs';
+import { IMAGE, SITES, uploadKey, uploadPath } from './wordpress-lib.mjs';
 import { KEPT_NOT_SHOWN } from '../src/lib/archive-curation.js';
 
 sharp.cache(false);
@@ -130,10 +130,14 @@ for (const { key, site } of SITES) {
   const wxr = args.wxr[key] ? readWxr(args.wxr[key]) : null;
   const publicPosts = inv.posts.filter((p) => p.status === 'publish');
   const shown = new Map(); // upload key -> the post showing it
+  // the exact files shown: a page that shows name-e1503570724129.jpg (WordPress's edited copy)
+  // shows that file, not its original name.jpg (and the other way round)
+  const shownFiles = new Map(); // exact file -> the post showing it
   const theme = new Set();
   const linked = new Map();
   for (const p of publicPosts) {
     for (const k of [...p.shown, uploadKey(p.featured)].filter(Boolean)) if (!shown.has(k)) shown.set(k, p);
+    for (const f of [...(p.files ?? []), uploadPath(p.featured)].filter(Boolean)) if (!shownFiles.has(f)) shownFiles.set(f, p);
     for (const k of p.theme) theme.add(k);
   }
   for (const p of publicPosts) for (const k of p.linked) if (!shown.has(k) && !linked.has(k)) linked.set(k, p);
@@ -163,12 +167,18 @@ for (const { key, site } of SITES) {
     if (isImage) { try { hash = await dhash(buffer); } catch { hash = null; } }
     files.push({ rel, name: rel, size: buffer.length, fetched: buffer, md5: createHash('md5').update(buffer).digest('hex'), hash, isImage, notInExport: true });
   }
-  const isShown = (f) => shown.has(f.rel) || shown.has(uploadKey(`/${f.rel}`)) && editedBase(f.rel) === f.rel;
+  // keys whose shown file is in the export as it is; for any other shown key (a page showing a
+  // size or host the export cannot match), the original counts as the one shown
+  const exact = new Map(); // upload key -> the exact file shown
+  for (const f of files) if (shownFiles.has(f.rel)) exact.set(uploadKey(`/${f.rel}`), f.rel);
+  const isShown = (f) => shownFiles.has(f.rel)
+    || (!exact.has(uploadKey(`/${f.rel}`)) && shown.has(uploadKey(`/${f.rel}`)) && editedBase(f.rel) === f.rel);
+  const shownAs = (k) => exact.get(k) ?? k;
   for (const f of files) if (f.isImage && isShown(f) && f.hash !== null) shownHashes.push({ site: key, file: f.rel, hash: f.hash, md5: f.md5 });
-  pending.push({ key, site, inv, wxr, files, shown, theme, linked, visible, postById, isShown });
+  pending.push({ key, site, inv, wxr, files, shown, theme, linked, visible, postById, isShown, shownAs });
 }
 
-for (const { key, site, inv, wxr, files, shown, theme, linked, visible, postById, isShown } of pending) {
+for (const { key, site, inv, wxr, files, shown, theme, linked, visible, postById, isShown, shownAs } of pending) {
   const host = `https://${site}/wp-content/uploads/`;
   const result = [];
   let shownCount = 0;
@@ -197,7 +207,8 @@ for (const { key, site, inv, wxr, files, shown, theme, linked, visible, postById
       const d = distance(s.hash, f.hash);
       return !best || d < best.d ? { ...s, d } : best;
     }, null);
-    if (shown.has(k) || shown.has(editedBase(f.rel))) { item.reason = 'edited-copy'; item.of = shown.has(editedBase(f.rel)) ? editedBase(f.rel) : k; }
+    if (theme.has(k) && !shown.has(k)) item.reason = 'theme-only';
+    else if (shown.has(k) || shown.has(editedBase(f.rel))) { item.reason = 'edited-copy'; item.of = shownAs(shown.has(k) ? k : editedBase(f.rel)); }
     else if (shown.has(reuploadBase(f.rel)) && (!f.isImage || closest?.d <= 10)) { item.reason = 'duplicate'; item.of = reuploadBase(f.rel); }
     else if (shownHashes.some((s) => s.md5 === f.md5) || (closest && closest.d <= 4)) {
       const s = shownHashes.find((x) => x.md5 === f.md5) ?? closest;

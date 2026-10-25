@@ -30,18 +30,75 @@ export function uploadPath(url) {
   return m ? `${m[1]}/${m[2]}/${decodeURIComponent(m[3]).toLowerCase().replace(/-\d+x\d+(?=\.[a-z0-9]+$)/, '')}` : null;
 }
 
-export const uploadsIn = (html) => [...String(html ?? '').matchAll(UPLOAD)].map((m) => m[0]);
+/**
+ * A page's HTML with the escapes that hide an address undone: Jetpack slideshows keep their
+ * pictures in data-gallery="[{&quot;src&quot;:&quot;https:\/\/…&quot;}]" (HTML entities around
+ * JSON-escaped slashes), and srcset and src carry &#038; and &amp;.
+ */
+export const unescapeHtml = (html) => String(html ?? '')
+  .replace(/&(?:quot|#0*34|#x0*22);/gi, '"')
+  .replace(/&(?:#0*39|#x0*27|apos);/gi, "'")
+  .replace(/&(?:#0*47|#x0*2f);/gi, '/')
+  .replace(/&(?:#0*38|#x0*26|amp);/gi, '&')
+  .replace(/\\u002f/gi, '/')
+  .replace(/\\\//g, '/');
+
+export const uploadsIn = (html) => [...unescapeHtml(html).matchAll(UPLOAD)].map((m) => m[0]);
+
+/**
+ * The attachment ids a page names for its galleries and slideshows, where the address may
+ * not be in the HTML at all: [gallery ids="1,2"], [slideshow ids=…], [tiled-gallery ids=…]
+ * (a shortcode the API left unrendered), a block's "ids":[1,2], and the "id" of every
+ * picture in a Jetpack slideshow's data-gallery.
+ */
+export function galleryIds(html) {
+  const text = unescapeHtml(html);
+  const ids = new Set();
+  for (const m of text.matchAll(/\[(?:gallery|slideshow|tiled-gallery|jetpack_slideshow)\b[^\]]*?\bids\s*=\s*["']?([\d,\s]+)/gi)) for (const id of m[1].split(/[,\s]+/)) if (id) ids.add(Number(id));
+  for (const m of text.matchAll(/"ids"\s*:\s*\[([\d,\s"]*)\]/g)) for (const id of m[1].replace(/"/g, '').split(/[,\s]+/)) if (id) ids.add(Number(id));
+  for (const g of text.matchAll(/data-gallery\s*=\s*'(\[[\s\S]*?\])'|data-gallery\s*=\s*"(\[[\s\S]*?\])"(?=[\s>])/g)) {
+    for (const m of (g[1] ?? g[2]).matchAll(/"id"\s*:\s*"?(\d+)/g)) ids.add(Number(m[1]));
+  }
+  return [...ids];
+}
 
 /**
  * Uploads a page shows (a picture, a player) apart from those it only links to as text
- * (an <a href> with no picture of the same upload, such as a PDF).
+ * (an <a href> with no picture of the same upload, such as a PDF). Every address counts:
+ * src, srcset, data-orig-file and the other data-*-file attributes, and the pictures in a
+ * Jetpack slideshow's data-gallery. `shown` and `linked` are upload keys (one per upload,
+ * whatever its size or edit); `files` are the exact files shown, so an edited copy
+ * (name-e1503570724129.jpg) is told apart from its original; `ids` are the attachment ids
+ * a gallery or slideshow names (resolve them with resolveIds).
  */
 export function shownAndLinked(html) {
-  const text = String(html ?? '');
-  const hrefs = [...text.matchAll(/href\s*=\s*["']([^"']+)["']/gi)].map((m) => m[1]);
-  const shown = new Set(uploadsIn(text.replace(/href\s*=\s*["'][^"']+["']/gi, '')).map(uploadKey));
+  const text = unescapeHtml(html);
+  const HREF = /href\s*=\s*["']([^"']+)["']/gi;
+  const hrefs = [...text.matchAll(HREF)].map((m) => m[1]);
+  const shownUrls = uploadsIn(text.replace(HREF, ''));
+  const shown = new Set(shownUrls.map(uploadKey));
+  const files = new Set(shownUrls.map(uploadPath));
   const linked = new Set(hrefs.flatMap(uploadsIn).map(uploadKey).filter((k) => !shown.has(k)));
-  return { shown: [...shown], linked: [...linked] };
+  return { shown: [...shown], linked: [...linked], files: [...files], ids: galleryIds(text) };
+}
+
+/**
+ * Add what a page's gallery and slideshow ids name to its shown uploads, from the list of
+ * attachments (wordpress-inventory.json's `attachments`). Changes the records in place.
+ */
+export function resolveIds(posts, attachments) {
+  const byId = new Map((attachments ?? []).map((a) => [a.id, a]));
+  for (const p of posts) {
+    for (const id of p.ids ?? []) {
+      const a = byId.get(id);
+      if (!a) continue;
+      const k = uploadKey(a.file);
+      const f = uploadPath(a.file);
+      if (k && !p.shown.includes(k)) p.shown.push(k);
+      if (f && p.files && !p.files.includes(f)) p.files.push(f);
+    }
+  }
+  return posts;
 }
 
 const ytStart = (q) => {
