@@ -1,6 +1,6 @@
 {
  "about": "Ratings for the image desk's third column. Written by scripts/keyword-ratings.mjs; read by src/lib/keyword-ratings.js.",
- "updatedAt": "2026-10-25T05:54:50.456Z",
+ "updatedAt": "2026-10-25T06:11:12.814Z",
  "sources": {
   "wikipedia": "Readers of the topic's Wikipedia page in 30 days, English + Dutch (Wikimedia API, CC0 data)",
   "datamuse": "Related words, means-like (Datamuse API, https://www.datamuse.com/api/)"
@@ -356,6 +356,129 @@
      "page": "Papulopustular",
      "views": 66,
      "source": "datamuse"
+    }
+   ]
+  },
+  "activation": {
+   "fetchedAt": "2026-10-25T06:11:12.814Z",
+   "wiki": {
+    "en": {
+     "title": "Activation",
+     "views": 327
+    },
+    "nl": null
+   },
+   "related": [
+    {
+     "tag": "energizing",
+     "page": "Energy",
+     "views": 29469,
+     "source": "datamuse"
+    },
+    {
+     "tag": "mast cell activation syndrome",
+     "page": "Mast cell activation syndrome",
+     "views": 17182,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "startup",
+     "page": "Startup company",
+     "views": 9456,
+     "source": "datamuse"
+    },
+    {
+     "tag": "activation function",
+     "page": "Activation function",
+     "views": 5739,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "commencement",
+     "page": "Graduation",
+     "views": 3837,
+     "source": "datamuse"
+    },
+    {
+     "tag": "activation energy",
+     "page": "Activation energy",
+     "views": 3113,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "activity",
+     "page": "Activity",
+     "views": 1237,
+     "source": "datamuse"
+    },
+    {
+     "tag": "neutron activation",
+     "page": "Neutron activation",
+     "views": 1224,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "entropy of activation",
+     "page": "Entropy of activation",
+     "views": 166,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "incoming",
+     "page": "Incoming",
+     "views": 94,
+     "source": "datamuse"
+    },
+    {
+     "tag": "actuation",
+     "page": "Actuation",
+     "views": 37,
+     "source": "datamuse"
+    }
+   ]
+  },
+  "activation fun": {
+   "fetchedAt": "2026-10-25T06:11:12.814Z",
+   "wiki": {
+    "en": null,
+    "nl": null
+   },
+   "related": [
+    {
+     "tag": "Wharfie Time",
+     "page": "Wharfie Time",
+     "views": 10508,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "List of Ssshhhh...Koi Hai episodes",
+     "page": "List of Ssshhhh...Koi Hai episodes",
+     "views": 2025,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "funhouse",
+     "page": "Funhouse",
+     "views": 1906,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "List of Star Wars: Young Jedi Adventures episodes",
+     "page": "List of Star Wars: Young Jedi Adventures episodes",
+     "views": 1414,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "Bondi Sands",
+     "page": "Bondi Sands",
+     "views": 349,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "List of Ax Men episodes",
+     "page": "List of Ax Men episodes",
+     "views": 187,
+     "source": "wikipedia"
     }
    ]
   },
@@ -716,6 +839,51 @@
      "page": "Capital of the Netherlands",
      "views": 4720,
      "source": "datamuse"
+    }
+   ]
+  },
+  "angle positioning": {
+   "fetchedAt": "2026-10-25T06:11:12.814Z",
+   "wiki": {
+    "en": null,
+    "nl": null
+   },
+   "related": [
+    {
+     "tag": "euler angles",
+     "page": "Euler angles",
+     "views": 10377,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "angle",
+     "page": "Angle",
+     "views": 8159,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "dynamic positioning",
+     "page": "Dynamic positioning",
+     "views": 1584,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "low-angle shot",
+     "page": "Low-angle shot",
+     "views": 1075,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "positioning system",
+     "page": "Positioning system",
+     "views": 440,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "position angle",
+     "page": "Position angle",
+     "views": 214,
+     "source": "wikipedia"
     }
    ]
   },
@@ -1534,6 +1702,72 @@
     }
    ]
   },
+  "battant": {
+   "fetchedAt": "2026-10-25T06:11:12.814Z",
+   "wiki": {
+    "en": null,
+    "nl": null
+   },
+   "related": [
+    {
+     "tag": "Kylian Mbappé",
+     "page": "Kylian Mbappé",
+     "views": 245424,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "rugby union",
+     "page": "Rugby union",
+     "views": 36023,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "French Navy",
+     "page": "French Navy",
+     "views": 19462,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "Le Battant",
+     "page": "Le Battant",
+     "views": 277,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "Battant Bridge",
+     "page": "Battant Bridge",
+     "views": 16,
+     "source": "wikipedia"
+    }
+   ]
+  },
+  "battant spinning": {
+   "fetchedAt": "2026-10-25T06:11:12.814Z",
+   "wiki": {
+    "en": null,
+    "nl": null
+   },
+   "related": [
+    {
+     "tag": "Sleeping Beauty",
+     "page": "Sleeping Beauty",
+     "views": 19893,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "list of sports rivalries",
+     "page": "List of sports rivalries",
+     "views": 3725,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "domestic violence against men",
+     "page": "Domestic violence against men",
+     "views": 2807,
+     "source": "wikipedia"
+    }
+   ]
+  },
   "baywatch": {
    "fetchedAt": "2026-10-25T05:54:50.456Z",
    "wiki": {
@@ -1833,6 +2067,87 @@
      "tag": "balls",
      "page": "Ball (disambiguation)",
      "views": 769,
+     "source": "datamuse"
+    }
+   ]
+  },
+  "beau": {
+   "fetchedAt": "2026-10-25T06:11:12.814Z",
+   "wiki": {
+    "en": {
+     "title": "Beau",
+     "views": 373
+    },
+    "nl": {
+     "title": "Beau",
+     "views": 4
+    }
+   },
+   "related": [
+    {
+     "tag": "Beau Bridges",
+     "page": "Beau Bridges",
+     "views": 90044,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "Beau Is Afraid",
+     "page": "Beau Is Afraid",
+     "views": 48764,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "Beau Biden",
+     "page": "Beau Biden",
+     "views": 30513,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "Beau Knapp",
+     "page": "Beau Knapp",
+     "views": 24863,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "dandy",
+     "page": "Dandy",
+     "views": 19240,
+     "source": "datamuse"
+    },
+    {
+     "tag": "Beau Mirchoff",
+     "page": "Beau Mirchoff",
+     "views": 8441,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "fop",
+     "page": "Fop",
+     "views": 7810,
+     "source": "datamuse"
+    },
+    {
+     "tag": "dude",
+     "page": "Dude",
+     "views": 5150,
+     "source": "datamuse"
+    },
+    {
+     "tag": "boyfriend",
+     "page": "Boyfriend",
+     "views": 4906,
+     "source": "datamuse"
+    },
+    {
+     "tag": "fashion plate",
+     "page": "Fashion plate",
+     "views": 591,
+     "source": "datamuse"
+    },
+    {
+     "tag": "gallant",
+     "page": "Gallant",
+     "views": 180,
      "source": "datamuse"
     }
    ]
@@ -2175,6 +2490,51 @@
      "page": "Stain",
      "views": 843,
      "source": "datamuse"
+    }
+   ]
+  },
+  "brand activation": {
+   "fetchedAt": "2026-10-25T06:11:12.814Z",
+   "wiki": {
+    "en": null,
+    "nl": null
+   },
+   "related": [
+    {
+     "tag": "brand",
+     "page": "Brand",
+     "views": 17119,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "South by Southwest",
+     "page": "South by Southwest",
+     "views": 16506,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "Bai Lu",
+     "page": "Bai Lu (actress)",
+     "views": 15338,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "Miami Swim Week",
+     "page": "Miami Swim Week",
+     "views": 593,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "marketing activation",
+     "page": "Marketing activation",
+     "views": 350,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "Pico Far East Holdings Limited",
+     "page": "Pico Far East Holdings Limited",
+     "views": 303,
+     "source": "wikipedia"
     }
    ]
   },
@@ -5671,6 +6031,117 @@
     }
    ]
   },
+  "disc": {
+   "fetchedAt": "2026-10-25T06:11:12.814Z",
+   "wiki": {
+    "en": {
+     "title": "Disc",
+     "views": 552
+    },
+    "nl": null
+   },
+   "related": [
+    {
+     "tag": "blu-ray",
+     "page": "Blu-ray",
+     "views": 29956,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "compact disc",
+     "page": "Compact disc",
+     "views": 27388,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "disc jockey",
+     "page": "Disc jockey",
+     "views": 20377,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "phonograph record",
+     "page": "Phonograph record",
+     "views": 13457,
+     "source": "datamuse"
+    },
+    {
+     "tag": "disc herniation",
+     "page": "Disc herniation",
+     "views": 7949,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "DISC assessment",
+     "page": "DISC assessment",
+     "views": 7728,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "record",
+     "page": "Record",
+     "views": 1547,
+     "source": "datamuse"
+    },
+    {
+     "tag": "saucer",
+     "page": "Saucer",
+     "views": 1323,
+     "source": "datamuse"
+    },
+    {
+     "tag": "platter",
+     "page": "Platter",
+     "views": 92,
+     "source": "datamuse"
+    }
+   ]
+  },
+  "disc stage": {
+   "fetchedAt": "2026-10-25T06:11:12.814Z",
+   "wiki": {
+    "en": null,
+    "nl": null
+   },
+   "related": [
+    {
+     "tag": "compact disc",
+     "page": "Compact disc",
+     "views": 27388,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "disc jockey",
+     "page": "Disc jockey",
+     "views": 20377,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "LaserDisc",
+     "page": "LaserDisc",
+     "views": 16914,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "David Grisman",
+     "page": "David Grisman",
+     "views": 10586,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "imaginal disc",
+     "page": "Imaginal disc",
+     "views": 4024,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "circumstellar disc",
+     "page": "Circumstellar disc",
+     "views": 1125,
+     "source": "wikipedia"
+    }
+   ]
+  },
   "dixiland": {
    "fetchedAt": "2026-10-25T05:54:50.456Z",
    "wiki": {
@@ -7474,6 +7945,75 @@
     }
    ]
   },
+  "fun shop": {
+   "fetchedAt": "2026-10-25T06:11:12.814Z",
+   "wiki": {
+    "en": null,
+    "nl": null
+   },
+   "related": [
+    {
+     "tag": "kite",
+     "page": "Kite",
+     "views": 8902,
+     "source": "datamuse"
+    },
+    {
+     "tag": "Humongous Entertainment",
+     "page": "Humongous Entertainment",
+     "views": 6242,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "Putt-Putt",
+     "page": "Putt-Putt (series)",
+     "views": 4537,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "Freddi Fish",
+     "page": "Freddi Fish",
+     "views": 3962,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "Pajama Sam",
+     "page": "Pajama Sam",
+     "views": 3953,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "Fun, Fun, Fun",
+     "page": "Fun, Fun, Fun",
+     "views": 2969,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "toy store",
+     "page": "Toy store",
+     "views": 574,
+     "source": "datamuse"
+    },
+    {
+     "tag": "gig",
+     "page": "Gig",
+     "views": 503,
+     "source": "datamuse"
+    },
+    {
+     "tag": "stalls",
+     "page": "Stall",
+     "views": 346,
+     "source": "datamuse"
+    },
+    {
+     "tag": "Fun in a Bakery Shop",
+     "page": "Fun in a Bakery Shop",
+     "views": 143,
+     "source": "wikipedia"
+    }
+   ]
+  },
   "functional design": {
    "fetchedAt": "2026-10-25T05:54:50.456Z",
    "wiki": {
@@ -8040,6 +8580,51 @@
      "page": "Glaze",
      "views": 498,
      "source": "datamuse"
+    }
+   ]
+  },
+  "group swing": {
+   "fetchedAt": "2026-10-25T06:11:12.814Z",
+   "wiki": {
+    "en": null,
+    "nl": null
+   },
+   "related": [
+    {
+     "tag": "JLS",
+     "page": "JLS",
+     "views": 9897,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "swing music",
+     "page": "Swing music",
+     "views": 7487,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "swing",
+     "page": "Swing (dance)",
+     "views": 4020,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "Swing Mob",
+     "page": "Swing Mob",
+     "views": 2288,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "Swing Out Sister discography",
+     "page": "Swing Out Sister discography",
+     "views": 1332,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "swing",
+     "page": "Swing",
+     "views": 804,
+     "source": "wikipedia"
     }
    ]
   },
@@ -11020,6 +11605,51 @@
     }
    ]
   },
+  "merchandise brand": {
+   "fetchedAt": "2026-10-25T06:11:12.814Z",
+   "wiki": {
+    "en": null,
+    "nl": null
+   },
+   "related": [
+    {
+     "tag": "Mat Armstrong",
+     "page": "Mat Armstrong (YouTuber)",
+     "views": 24224,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "Game Science",
+     "page": "Game Science",
+     "views": 5355,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "List of Walmart brands",
+     "page": "List of Walmart brands",
+     "views": 4488,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "merchandising",
+     "page": "Merchandising",
+     "views": 2925,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "visual merchandising",
+     "page": "Visual merchandising",
+     "views": 1305,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "promotional merchandise",
+     "page": "Promotional merchandise",
+     "views": 1171,
+     "source": "wikipedia"
+    }
+   ]
+  },
   "miami": {
    "fetchedAt": "2026-10-25T05:54:50.456Z",
    "wiki": {
@@ -12289,6 +12919,75 @@
      "page": "Knock",
      "views": 164,
      "source": "datamuse"
+    }
+   ]
+  },
+  "platform": {
+   "fetchedAt": "2026-10-25T06:11:12.814Z",
+   "wiki": {
+    "en": {
+     "title": "Platform",
+     "views": 3494
+    },
+    "nl": {
+     "title": "Platform",
+     "views": 14
+    }
+   },
+   "related": [
+    {
+     "tag": "computing platform",
+     "page": "Computing platform",
+     "views": 8413,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "platformer",
+     "page": "Platformer",
+     "views": 8107,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "platformism",
+     "page": "Platformism",
+     "views": 2214,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "program",
+     "page": "Program",
+     "views": 1869,
+     "source": "datamuse"
+    },
+    {
+     "tag": "political platform",
+     "page": "Political platform",
+     "views": 1449,
+     "source": "datamuse"
+    },
+    {
+     "tag": "chopine",
+     "page": "Chopine",
+     "views": 1397,
+     "source": "datamuse"
+    },
+    {
+     "tag": "weapons platform",
+     "page": "Weapons platform",
+     "views": 371,
+     "source": "datamuse"
+    },
+    {
+     "tag": "The Platform",
+     "page": "The Platform",
+     "views": 109,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "striking platform",
+     "page": "Striking platform",
+     "views": 89,
+     "source": "wikipedia"
     }
    ]
   },
@@ -13588,6 +14287,72 @@
     }
    ]
   },
+  "shop": {
+   "fetchedAt": "2026-10-25T06:11:12.814Z",
+   "wiki": {
+    "en": {
+     "title": "Shop",
+     "views": 789
+    },
+    "nl": null
+   },
+   "related": [
+    {
+     "tag": "A Shop for Killers",
+     "page": "A Shop for Killers",
+     "views": 25337,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "Light Shop",
+     "page": "Light Shop",
+     "views": 13079,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "sex shop",
+     "page": "Sex shop",
+     "views": 6027,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "chop shop",
+     "page": "Chop shop",
+     "views": 3724,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "Shop Pay",
+     "page": "Shop Pay",
+     "views": 2486,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "workshop",
+     "page": "Workshop",
+     "views": 2324,
+     "source": "datamuse"
+    },
+    {
+     "tag": "browse",
+     "page": "Browsing",
+     "views": 1478,
+     "source": "datamuse"
+    },
+    {
+     "tag": "store",
+     "page": "Store",
+     "views": 1230,
+     "source": "datamuse"
+    },
+    {
+     "tag": "sponsor",
+     "page": "Sponsor",
+     "views": 272,
+     "source": "datamuse"
+    }
+   ]
+  },
   "sight": {
    "fetchedAt": "2026-10-25T05:54:50.456Z",
    "wiki": {
@@ -14227,6 +14992,153 @@
     }
    ]
   },
+  "social swingers": {
+   "fetchedAt": "2026-10-25T06:11:12.814Z",
+   "wiki": {
+    "en": null,
+    "nl": null
+   },
+   "related": [
+    {
+     "tag": "group sex",
+     "page": "Group sex",
+     "views": 44102,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "swinging",
+     "page": "Swinging (sexual practice)",
+     "views": 41382,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "swingers",
+     "page": "Swingers (1996 film)",
+     "views": 18740,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "casual sex",
+     "page": "Casual sex",
+     "views": 15943,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "sex club",
+     "page": "Sex club",
+     "views": 12644,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "FabSwingers",
+     "page": "FabSwingers",
+     "views": 4835,
+     "source": "wikipedia"
+    }
+   ]
+  },
+  "spinning": {
+   "fetchedAt": "2026-10-25T06:11:12.814Z",
+   "wiki": {
+    "en": {
+     "title": "Spin",
+     "views": 966
+    },
+    "nl": {
+     "title": "Spinning",
+     "views": 14
+    }
+   },
+   "related": [
+    {
+     "tag": "spinning jenny",
+     "page": "Spinning jenny",
+     "views": 8577,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "spinning wheel",
+     "page": "Spinning wheel",
+     "views": 6883,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "whirling",
+     "page": "Sufi whirling",
+     "views": 6355,
+     "source": "datamuse"
+    },
+    {
+     "tag": "Spinning Out",
+     "page": "Spinning Out",
+     "views": 5917,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "rotate",
+     "page": "Rotation",
+     "views": 3714,
+     "source": "datamuse"
+    },
+    {
+     "tag": "moving",
+     "page": "Moving",
+     "views": 429,
+     "source": "datamuse"
+    },
+    {
+     "tag": "whirl",
+     "page": "Whirl",
+     "views": 58,
+     "source": "datamuse"
+    }
+   ]
+  },
+  "spinning disc": {
+   "fetchedAt": "2026-10-25T06:11:12.814Z",
+   "wiki": {
+    "en": null,
+    "nl": null
+   },
+   "related": [
+    {
+     "tag": "disc jockey",
+     "page": "Disc jockey",
+     "views": 20377,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "frisbee",
+     "page": "Frisbee",
+     "views": 7106,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "Sudarshana Chakra",
+     "page": "Sudarshana Chakra",
+     "views": 6833,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "spinning pinwheel",
+     "page": "Spinning pinwheel",
+     "views": 1745,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "rotary disc shutter",
+     "page": "Rotary disc shutter",
+     "views": 612,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "No Good Gofers",
+     "page": "No Good Gofers",
+     "views": 192,
+     "source": "wikipedia"
+    }
+   ]
+  },
   "stage": {
    "fetchedAt": "2026-10-25T05:54:50.456Z",
    "wiki": {
@@ -14299,6 +15211,75 @@
      "page": "Arrange",
      "views": 69,
      "source": "datamuse"
+    }
+   ]
+  },
+  "stage platform": {
+   "fetchedAt": "2026-10-25T06:11:12.814Z",
+   "wiki": {
+    "en": null,
+    "nl": null
+   },
+   "related": [
+    {
+     "tag": "Long March 10",
+     "page": "Long March 10",
+     "views": 4186,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "dais",
+     "page": "Dais",
+     "views": 3791,
+     "source": "datamuse"
+    },
+    {
+     "tag": "alley",
+     "page": "Alley",
+     "views": 2117,
+     "source": "datamuse"
+    },
+    {
+     "tag": "desk",
+     "page": "Desk",
+     "views": 1990,
+     "source": "datamuse"
+    },
+    {
+     "tag": "lectern",
+     "page": "Lectern",
+     "views": 1981,
+     "source": "datamuse"
+    },
+    {
+     "tag": "thrust stage",
+     "page": "Thrust stage",
+     "views": 1769,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "backstage",
+     "page": "Backstage (publication)",
+     "views": 771,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "apron stage",
+     "page": "Apron stage",
+     "views": 302,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "linear stage",
+     "page": "Linear stage",
+     "views": 111,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "rotary stage",
+     "page": "Rotary stage",
+     "views": 58,
+     "source": "wikipedia"
     }
    ]
   },
@@ -14649,6 +15630,171 @@
     }
    ]
   },
+  "swing": {
+   "fetchedAt": "2026-10-25T06:11:12.814Z",
+   "wiki": {
+    "en": {
+     "title": "Swing",
+     "views": 804
+    },
+    "nl": {
+     "title": "Swing",
+     "views": 7
+    }
+   },
+   "related": [
+    {
+     "tag": "swing state",
+     "page": "Swing state",
+     "views": 19482,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "swing music",
+     "page": "Swing music",
+     "views": 7487,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "sway",
+     "page": "Sway",
+     "views": 2425,
+     "source": "datamuse"
+    },
+    {
+     "tag": "Swing, Swing",
+     "page": "Swing, Swing",
+     "views": 1065,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "cut",
+     "page": "Cut",
+     "views": 585,
+     "source": "datamuse"
+    },
+    {
+     "tag": "jive",
+     "page": "Jive",
+     "views": 433,
+     "source": "datamuse"
+    },
+    {
+     "tag": "sweep",
+     "page": "Sweep",
+     "views": 334,
+     "source": "datamuse"
+    },
+    {
+     "tag": "dangle",
+     "page": "Dangle",
+     "views": 139,
+     "source": "datamuse"
+    },
+    {
+     "tag": "The Swing",
+     "page": "The Swing",
+     "views": 101,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "Swing Time",
+     "page": "Swing Time",
+     "views": 77,
+     "source": "wikipedia"
+    }
+   ]
+  },
+  "swing group": {
+   "fetchedAt": "2026-10-25T06:11:12.814Z",
+   "wiki": {
+    "en": null,
+    "nl": null
+   },
+   "related": [
+    {
+     "tag": "JLS",
+     "page": "JLS",
+     "views": 9897,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "swing music",
+     "page": "Swing music",
+     "views": 7487,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "swing",
+     "page": "Swing (dance)",
+     "views": 4020,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "electro swing",
+     "page": "Electro swing",
+     "views": 2479,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "Swing Mob",
+     "page": "Swing Mob",
+     "views": 2288,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "swing",
+     "page": "Swing",
+     "views": 804,
+     "source": "wikipedia"
+    }
+   ]
+  },
+  "swing social": {
+   "fetchedAt": "2026-10-25T06:11:12.814Z",
+   "wiki": {
+    "en": null,
+    "nl": null
+   },
+   "related": [
+    {
+     "tag": "swing",
+     "page": "Swing (dance)",
+     "views": 4020,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "West Coast Swing",
+     "page": "West Coast Swing",
+     "views": 2561,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "Swing Riots",
+     "page": "Swing Riots",
+     "views": 2442,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "swingjugend",
+     "page": "Swingjugend",
+     "views": 2281,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "East Coast Swing",
+     "page": "East Coast Swing",
+     "views": 606,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "Swing Phi Swing",
+     "page": "Swing Phi Swing",
+     "views": 241,
+     "source": "wikipedia"
+    }
+   ]
+  },
   "swingers": {
    "fetchedAt": "2026-10-25T05:54:50.456Z",
    "wiki": {
@@ -14770,6 +15916,51 @@
     "nl": null
    },
    "related": []
+  },
+  "swings swing": {
+   "fetchedAt": "2026-10-25T06:11:12.814Z",
+   "wiki": {
+    "en": null,
+    "nl": null
+   },
+   "related": [
+    {
+     "tag": "swing music",
+     "page": "Swing music",
+     "views": 7487,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "swing",
+     "page": "Swing (Java)",
+     "views": 2364,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "swing ride",
+     "page": "Swing ride",
+     "views": 1922,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "swing time",
+     "page": "Swing time",
+     "views": 1820,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "swing",
+     "page": "Swing (seat)",
+     "views": 1695,
+     "source": "wikipedia"
+    },
+    {
+     "tag": "Swing, Swing",
+     "page": "Swing, Swing",
+     "views": 1065,
+     "source": "wikipedia"
+    }
+   ]
   },
   "tables": {
    "fetchedAt": "2026-10-25T05:54:50.456Z",
