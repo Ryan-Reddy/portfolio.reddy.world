@@ -65,22 +65,25 @@ const COPY = {
     '868': { title: 'Meghan Sile Catherina' },
   },
   vaguelyvulgar: {
-    // one page: the photographs and the measurements (Ryan, 2026-10-25). Data only, no words
-    // about the page (Ryan, 2026-10-25: "this meta crap on the site has to stop").
+    // one page: the photographs and the measurements (Ryan, 2026-10-25). The weight was
+    // measured in October 2026; the rest is from his 2016 site, "pretty much right" still.
+    // No words about the page or its history (Ryan, 2026-10-25: "this meta crap on the site
+    // has to stop !!"): only the pictures and the measurements as plain data.
     '13': {
-      excerpt: 'Ryan Reddy, modelling: height 1.81 m, bust 86.5 cm, waist 70 cm, hips 86 cm, weight 69 kg, long blonde hair, blue eyes.',
-      intro: [
-        '<h2 id="measurements">Measurements</h2>',
-        '<dl class="measurements">',
-        '<dt>Height</dt><dd>1.81 m</dd>',
-        '<dt>Bust</dt><dd>86.5 cm</dd>',
-        '<dt>Waist</dt><dd>70 cm</dd>',
-        '<dt>Hips</dt><dd>86 cm</dd>',
-        '<dt>Weight</dt><dd>69 kg</dd>',
-        '<dt>Hair</dt><dd>Long, blonde</dd>',
-        '<dt>Eyes</dt><dd>Blue</dd>',
-        '</dl>',
-      ].join('\n'),
+      excerpt: 'Height 1.81 m, bust 86.5 cm, waist 70 cm, hips 86 cm, weight 69 kg, long blonde hair, blue eyes.',
+      // a comp card: the lead picture with the measurements beside it, the rest in a grid
+      layout: 'comp-card',
+      // the measurements are current: no year beside them (page date, descriptions)
+      undated: true,
+      measurements: [
+        ['Height', '1.81 m'],
+        ['Bust', '86.5 cm'],
+        ['Waist', '70 cm'],
+        ['Hips', '86 cm'],
+        ['Weight', '69 kg'],
+        ['Hair', 'Long, blonde'],
+        ['Eyes', 'Blue'],
+      ],
     },
   },
 };
