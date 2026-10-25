@@ -1523,17 +1523,17 @@
         },
         {
           "source": "/sizes",
-          "destination": "https://reddy.world/portfolio/vaguelyvulgar/sizes/",
+          "destination": "https://reddy.world/portfolio/vaguelyvulgar/",
           "type": 301
         },
         {
           "source": "/sizes/",
-          "destination": "https://reddy.world/portfolio/vaguelyvulgar/sizes/",
+          "destination": "https://reddy.world/portfolio/vaguelyvulgar/",
           "type": 301
         },
         {
           "source": "/sizes/**",
-          "destination": "https://reddy.world/portfolio/vaguelyvulgar/sizes/",
+          "destination": "https://reddy.world/portfolio/vaguelyvulgar/",
           "type": 301
         },
         {
@@ -3086,17 +3086,17 @@
         },
         {
           "source": "/sizes",
-          "destination": "https://reddy.world/portfolio/vaguelyvulgar/sizes/",
+          "destination": "https://reddy.world/portfolio/vaguelyvulgar/",
           "type": 301
         },
         {
           "source": "/sizes/",
-          "destination": "https://reddy.world/portfolio/vaguelyvulgar/sizes/",
+          "destination": "https://reddy.world/portfolio/vaguelyvulgar/",
           "type": 301
         },
         {
           "source": "/sizes/**",
-          "destination": "https://reddy.world/portfolio/vaguelyvulgar/sizes/",
+          "destination": "https://reddy.world/portfolio/vaguelyvulgar/",
           "type": 301
         },
         {
