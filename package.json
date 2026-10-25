@@ -10,7 +10,10 @@
     "preview": "astro preview",
     "import": "python scripts/parse_wordpress.py",
     "media:self-host": "node scripts/self-host-wordpress.mjs",
-    "shots": "node scripts/shots.mjs"
+    "media:capture": "node scripts/wordpress-capture.mjs",
+    "keywords:import": "node scripts/import-image-keywords.mjs",
+    "shots": "node scripts/shots.mjs",
+    "test": "node --test \"scripts/**/*.test.mjs\""
   },
   "devDependencies": {
     "@astrojs/sitemap": "^3.7.4",
