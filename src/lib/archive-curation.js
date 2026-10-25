@@ -59,6 +59,11 @@ const COPY = {
       ],
     },
   },
+  rmaekers: {
+    // Ryan, 2026-10-25: "Meghan Sile Catherina", not her surname; the address
+    // /rmaekers/meghan-sile-catherina/ and its redirects stay as they are
+    '868': { title: 'Meghan Sile Catherina' },
+  },
   vaguelyvulgar: {
     // one page: the photographs and the measurements (Ryan, 2026-10-25). Data only, no words
     // about the page (Ryan, 2026-10-25: "this meta crap on the site has to stop").
@@ -86,6 +91,10 @@ export function curatedPost(portfolio, post) {
   if (!copy) return post;
   const { intro, cut = [], ...fields } = copy;
   let content = fields.content ?? post.content;
-  for (const text of cut) content = content.replace(text, '');
+  for (const text of cut) {
+    // a cut that no longer matches would quietly put the words back on the page
+    if (!content.includes(text)) throw new Error(`archive-curation: ${portfolio}/${post.id}: text to cut not found: ${text.slice(0, 120)}`);
+    content = content.replace(text, '');
+  }
   return { ...post, ...fields, content: intro ? `${intro}\n\n${content}` : content };
 }
