@@ -70,7 +70,9 @@ for (const file of walk(DIST).filter((f) => f.endsWith('.html'))) {
       const has = Boolean(o.creator && o.creditText === CREDIT && o.copyrightNotice === COPYRIGHT);
       const page = `/${path.relative(DIST, file).split(path.sep).join('/')}`;
       if (ryans && !has) problems.push(`${page}: ImageObject ${o.contentUrl} lacks creator, creditText or copyrightNotice`);
-      if (!ryans && (o.creator || o.copyrightNotice)) problems.push(`${page}: ImageObject ${o.contentUrl} is not Ryan's picture but names him`);
+      // a photographer may be the creator of a picture that is not Ryan's (desk credits); it may not name Ryan
+      const namesRyan = JSON.stringify(o.creator ?? "").includes("https://reddy.world/#ryan") || o.copyrightNotice === COPYRIGHT || o.creditText === CREDIT;
+      if (!ryans && namesRyan) problems.push(`${page}: ImageObject ${o.contentUrl} is not Ryan's picture but names him`);
     }
   }
 }
