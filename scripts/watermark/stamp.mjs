@@ -7,9 +7,11 @@ import { CREATOR, CREDIT, COPYRIGHT, WEB_STATEMENT } from '../../src/lib/image-r
 // With reddy.world under the unicorn the mark is a little taller than the unicorn alone was.
 // From qrMin px tall it carries a QR code for https://reddy.world/ beside it: its 27 modules are
 // then 3.5 px or more, enough for a phone camera.
-export const MARK = { share: 0.13, min: 48, max: 190, margin: 0.025, minMargin: 6, opacity: 0.85, qrMin: 96 };
+// From badgeMin px tall it is Ryan's gold unicorn badge instead (mark-badge.png, his own design,
+// 2026-10-25: "a+b"): its QR code scans on pictures from about 800 px wide up.
+export const MARK = { share: 0.13, min: 48, max: 190, margin: 0.025, minMargin: 6, opacity: 0.85, qrMin: 96, badgeMin: 120 };
 // Bump when the mark or the metadata change, so cached stamped files are made again
-export const STAMP = 'unicorn-ascii-2';
+export const STAMP = 'unicorn-ascii-3';
 
 /** Where the mark goes in a width x height picture: { height, margin } in px */
 export function markBox(width, height, markAspect) {
@@ -21,8 +23,8 @@ export function markBox(width, height, markAspect) {
   return { height: h, width: Math.round(h * markAspect), margin };
 }
 
-/** Which mark: with the QR code when the mark is tall enough for it to scan */
-export const markVariant = (height) => (height >= MARK.qrMin ? 'qr' : 'plain');
+/** Which mark: the badge on large pictures, the ASCII mark with a QR code on medium ones, the ASCII mark alone on small ones */
+export const markVariant = (height) => (height >= MARK.badgeMin ? 'badge' : height >= MARK.qrMin ? 'qr' : 'plain');
 
 /** Light corner (mean luminance over half): the black mark; dark corner: the white one */
 export const markColour = (luminance) => (luminance > 0.5 ? 'black' : 'white');

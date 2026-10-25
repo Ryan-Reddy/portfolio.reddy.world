@@ -41,9 +41,9 @@ sharp.concurrency(1);
 mkdirSync(CACHE, { recursive: true });
 
 // mark-white.png, mark-black.png and their -qr versions (scripts/watermark/make-mark.mjs)
-const MARKS = Object.fromEntries(['white', 'black', 'white-qr', 'black-qr'].map((c) => [c, readFileSync(path.join(ROOT, 'scripts', 'watermark', `mark-${c}.png`))]));
+const MARKS = Object.fromEntries(['white', 'black', 'white-qr', 'black-qr', 'badge'].map((c) => [c, readFileSync(path.join(ROOT, 'scripts', 'watermark', `mark-${c}.png`))]));
 const aspectOf = async (buf) => { const { width, height } = await sharp(buf).metadata(); return width / height; };
-const ASPECT = { plain: await aspectOf(MARKS.white), qr: await aspectOf(MARKS['white-qr']) };
+const ASPECT = { plain: await aspectOf(MARKS.white), qr: await aspectOf(MARKS['white-qr']), badge: await aspectOf(MARKS.badge) };
 // the stamp's own fingerprint: the mark pictures, its size rules and the metadata
 const STAMP_KEY = Object.values(MARKS).reduce((h, buf) => h.update(buf), createHash('sha1'))
   .update(JSON.stringify(MARK)).update(STAMP).update(xmpFor('mark')).update(xmpFor('stamp')).digest('hex');
@@ -51,7 +51,9 @@ const STAMP_KEY = Object.values(MARKS).reduce((h, buf) => h.update(buf), createH
 const sized = new Map();
 /** The mark in one colour at one height (with the QR code when tall enough), already see-through */
 function markAt(colour, height) {
-  const name = markVariant(height) === 'qr' ? `${colour}-qr` : colour;
+  const variant = markVariant(height);
+  // the badge has its own gold frame: one version for light and dark corners
+  const name = variant === 'badge' ? 'badge' : variant === 'qr' ? `${colour}-qr` : colour;
   const key = `${name}${height}`;
   if (!sized.has(key)) {
     sized.set(key, sharp(MARKS[name]).resize({ height, kernel: 'lanczos3' }).ensureAlpha()
@@ -68,7 +70,8 @@ const walk = (dir) => readdirSync(dir).flatMap((name) => {
 /** Where the mark goes on a width x height picture (one frame), and in which colour */
 function place(width, height, luminanceOf) {
   const plain = markBox(width, height, ASPECT.plain);
-  const box = markVariant(plain.height) === 'qr' ? markBox(width, height, ASPECT.qr) : plain;
+  const variant = markVariant(plain.height);
+  const box = variant === 'plain' ? plain : markBox(width, height, ASPECT[variant]);
   const left = Math.max(0, width - box.width - box.margin);
   const top = Math.max(0, height - box.height - box.margin);
   return { ...box, left, top, colour: markColour(luminanceOf({ left, top, w: Math.min(box.width, width - left), h: Math.min(box.height, height - top) })) };

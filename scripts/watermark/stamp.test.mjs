@@ -51,6 +51,8 @@ test('the metadata sharp writes reads back as Ryan\'s', async () => {
 test('a mark tall enough for a phone to read it carries the QR code', () => {
   assert.equal(markVariant(MARK.qrMin - 1), 'plain');
   assert.equal(markVariant(MARK.qrMin), 'qr');
-  assert.equal(markVariant(markBox(4000, 3000, 1).height), 'qr');
+  assert.equal(markVariant(MARK.badgeMin - 1), 'qr');
+  assert.equal(markVariant(MARK.badgeMin), 'badge');
+  assert.equal(markVariant(markBox(4000, 3000, 1).height), 'badge');
   assert.equal(markVariant(markBox(480, 320, 1).height), 'plain');
 });
