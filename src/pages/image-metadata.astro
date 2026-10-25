@@ -197,8 +197,8 @@ import { archiveCredits } from '../lib/desk-credits.js';
 <body>
   <header class="top">
     <div class="brand"><strong>Project SEO pass</strong><small id="score">One set of words per project</small></div>
-    <div class="progress"><span id="progress-label">0 of {projects.length} projects</span><span id="remaining">{projects.length} to go</span><div class="bar"><span id="bar"></span></div></div>
-    <div class="top-actions"><button id="map" type="button">Keyword map</button><button id="help" type="button">Keys</button><button id="load" type="button">Load export</button><input id="load-file" type="file" accept=".json,application/json" hidden><button id="export" class="primary" type="button">Export</button></div>
+    <div class="progress"><span id="progress-label">0 of {projects.length} projects</span><span id="remaining">{projects.length} to go</span><div class="bar"><span id="bar"></span></div><span class="saved-line"><span data-desk-saved aria-live="polite">Saved in this browser</span><button data-desk-signin type="button" hidden>Sign in</button></span></div>
+    <div class="top-actions"><button id="open-overview" type="button">Overview</button><button id="map" type="button">Keyword map</button><button id="help" type="button">Keys</button><button id="load" type="button">Load export</button><input id="load-file" type="file" accept=".json,application/json" hidden><button id="export" class="primary" type="button">Export</button></div>
   </header>
 
   <main class="workbench">
@@ -290,7 +290,8 @@ import { archiveCredits } from '../lib/desk-credits.js';
     const $ = (id) => document.querySelector(`#${id}`);
     const tags = (value = '') => [...new Map(value.split(',').map((tag) => tag.trim()).filter(Boolean).map((tag) => [tag.toLowerCase(), tag])).values()];
     const putTags = (id, values) => { $(id).value = tags(values.join(', ')).join(', '); };
-    const save = () => localStorage.setItem(STORE, JSON.stringify(state));
+    // desk-sync.js (below) stamps each change and copies it to Ryan's account when he is signed in
+    const save = () => { window.deskSync?.stamp(state); localStorage.setItem(STORE, JSON.stringify(state)); window.deskSync?.saved(); };
     const current = () => flat[state.cursor] ?? flat[0];
     const recordFor = (image) => state.images[image.key] ?? state.images[image.url] ?? {};
     // the lead picture: Ryan's choice on this desk, else the one the post has today
@@ -306,6 +307,7 @@ import { archiveCredits } from '../lib/desk-credits.js';
       return projectIndex < 0 ? 0 : flat.findIndex((item) => item.projectIndex === projectIndex);
     };
     if (!Number.isInteger(state.cursor) || !flat[state.cursor]) state.cursor = Math.max(0, firstIncomplete());
+    window.imageDesk = {DATA, STORE, state, flat, render: (options) => render(options)};
 
     for (const [index, project] of DATA.projects.entries()) $('project-picker').add(new Option(`${project.title} · ${project.images.length}`, String(index)));
 
@@ -555,17 +557,10 @@ import { archiveCredits } from '../lib/desk-credits.js';
       if (!file) return;
       try {
         const loaded = JSON.parse(await file.text());
-        if (loaded.version !== 4 || typeof loaded.images !== 'object') throw new Error('not a version 4 export');
+        if (!window.deskSync) throw new Error('the desk is still starting, try again in a moment');
         collect();
-        const opened = Object.keys(loaded.projects ?? {});
-        for (const id of opened) state.projects[id] = {...state.projects[id], ...loaded.projects[id]};
-        for (const [key, entry] of Object.entries(loaded.images)) {
-          if (!opened.includes(entry.projectId ?? key.split('::')[0])) continue;
-          state.images[key] = {...state.images[key], description: entry.description ?? '', tags: (entry.imageKeywords ?? []).join(', '), reviewed: Boolean(entry.reviewed)};
-        }
-        for (const [key, entry] of Object.entries(loaded.images)) {
-          if (entry.credit && opened.includes(entry.projectId ?? key.split('::')[0])) state.images[key] = {...state.images[key], credit: {name: String(entry.credit.name ?? ''), url: String(entry.credit.url ?? '')}};
-        }
+        // whole records, nothing of the old ones kept (no stale lead picture), stamped so they win the merge
+        const opened = window.deskSync.load(state, loaded);
         state.cursor = Math.max(0, firstIncomplete());
         save();
         render();
@@ -589,5 +584,44 @@ import { archiveCredits } from '../lib/desk-credits.js';
     $('close-map').addEventListener('click', () => $('keyword-map').close());
     render();
   </script>
+  <section id="overview" class="overview" hidden aria-labelledby="ov-title">
+    <div class="ov-wrap">
+      <header class="ov-head"><h2 id="ov-title">Where you are</h2><button id="ov-close" type="button">Back to the desk</button></header>
+      <button id="ov-next" class="primary ov-next" type="button">Next up</button>
+      <p class="ov-big" id="ov-total"></p>
+      <div id="ov-total-bar"></div>
+      <p class="ov-line" id="ov-legend"></p>
+      <p class="ov-line"><span data-desk-saved></span> <button data-desk-signin type="button" hidden>Sign in</button></p>
+      <p class="ov-line" id="ov-days"></p>
+      <div id="ov-portfolios"></div>
+    </div>
+  </section>
+  <style is:global>
+    .top .progress { row-gap: .25rem; }
+    .top .saved-line { grid-column: 1 / -1; display: flex; gap: .5rem; align-items: center; color: #aaa; font-size: .72rem; line-height: 1.1; }
+    .top .saved-line button { min-height: 0; padding: .05rem .4rem; font-size: .72rem; }
+    .overview { position: fixed; inset: 0; z-index: 10; overflow-y: auto; background: #0f0f0f; }
+    .overview[hidden] { display: none; }
+    .ov-wrap { max-width: 44rem; margin: 0 auto; padding: 1.5rem 1rem 4rem; display: grid; gap: .9rem; }
+    .ov-head { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+    .ov-head h2 { margin: 0; font-family: Georgia, serif; font-size: 1.8rem; }
+    .ov-next { min-height: 4rem; font-size: 1.25rem; text-align: left; }
+    .ov-big { margin: .5rem 0 0; font-size: 1.15rem; font-weight: 700; }
+    .ov-line { margin: 0; color: #ccc; line-height: 1.45; }
+    .ov-bar { display: flex; height: .7rem; background: #2a2a28; }
+    .ov-bar .ov-done { background: var(--gold); }
+    .ov-bar .ov-started { background: #7a6a48; }
+    .ov-portfolio { border-top: 1px solid var(--line); padding: .7rem 0; }
+    .ov-portfolio summary { cursor: pointer; display: grid; gap: .45rem; }
+    .ov-portfolio summary span { display: flex; justify-content: space-between; gap: 1rem; }
+    .ov-portfolio summary small { color: #aaa; }
+    .ov-portfolio ul { list-style: none; margin: .6rem 0 0; padding: 0; display: grid; gap: .3rem; }
+    .ov-row { width: 100%; min-height: 0; display: grid; grid-template-columns: .8rem 1fr; gap: .1rem .6rem; text-align: left; border-color: #3a3a38; color: #f5f5f0; }
+    .ov-row small { grid-column: 2; color: #aaa; }
+    .ov-dot { width: .7rem; height: .7rem; margin-top: .3rem; border: 1px solid var(--gold); border-radius: 50%; }
+    .ov-dot.ov-done { background: var(--gold); }
+    .ov-dot.ov-started { background: #7a6a48; }
+  </style>
+  <script>import '../lib/desk-sync.js';</script>
 </body>
 </html>
