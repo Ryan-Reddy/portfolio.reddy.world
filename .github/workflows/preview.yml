@@ -37,7 +37,16 @@ jobs:
 
       - run: npm ci
 
-      # Builds the pages, writes firebase.json, and fails if a redirect target is missing
+      # Pictures stamped with Ryan's mark in earlier runs (scripts/watermark.mjs, #47), so the
+      # build only stamps new or changed ones; after npm ci, which empties node_modules
+      - uses: actions/cache@v4
+        with:
+          path: node_modules/.cache/watermark
+          key: watermark-${{ hashFiles('public/images/**', 'scripts/watermark.mjs', 'scripts/watermark/**', 'src/lib/image-rights.js') }}
+          restore-keys: watermark-
+
+      # Builds the pages, stamps and checks the pictures (#47), writes firebase.json, and fails
+      # if a redirect target is missing
       - run: npm run build
 
       # The software case studies as crawlers read them: title, description, one h1, alt, srcset, JSON-LD, sitemap
