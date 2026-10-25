@@ -14,7 +14,10 @@
     "media:capture": "node scripts/wordpress-capture.mjs",
     "keywords:import": "node scripts/import-image-keywords.mjs",
     "shots": "node scripts/shots.mjs",
-    "test": "node --test \"scripts/**/*.test.mjs\""
+    "test": "node --test \"scripts/**/*.test.mjs\"",
+    "media:videos": "node scripts/wordpress-videos.mjs",
+    "media:inventory": "node scripts/wordpress-inventory.mjs",
+    "media:unused": "node scripts/wordpress-unused.mjs"
   },
   "devDependencies": {
     "@astrojs/sitemap": "^3.7.4",
@@ -23,5 +26,11 @@
   },
   "allowScripts": {
     "esbuild@0.28.2": true
+  },
+  "dependencies": {
+    "firebase": "^13.1.0"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "^1.14.5"
   }
 }

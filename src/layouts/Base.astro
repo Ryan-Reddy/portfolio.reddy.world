@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import { contactUrl, ORIGIN, SITE } from '../lib/portfolios.js';
+import { jsonLdText } from '../lib/safe-output.js';
 
 interface Props {
   title: string;
@@ -51,7 +52,7 @@ const canonical = new URL(Astro.url.pathname, ORIGIN).href;
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
+  {jsonLd && <script type="application/ld+json" set:html={jsonLdText(jsonLd)} />}
   <!-- Google Analytics, the same property as the reddy.world app, so archive visits count as reddy.world's
        (Ryan, 2026-10-19). Only on reddy.world itself: previews and local builds are not counted. No ads. -->
   <script is:inline>

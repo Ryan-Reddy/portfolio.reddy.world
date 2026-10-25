@@ -22,9 +22,9 @@ export function getStaticPaths() {
       return {
         params: { portfolio: data.id, retired: post.slug },
         props: to
-          ? { moved: { target: `https://reddy.world/portfolio/${data.id}/${to.slug}/`, title: `${titleCase(post.title)}: now on ${titleCase(to.title)}`, text: `This page is now part of ${titleCase(to.title)}.`, link: `Go to ${titleCase(to.title)}` } }
-          // each old page keeps a title of its own
-          : { label: name[data.id], title: `${titleCase(post.title.replace(/^\(untitled\)$/i, '') || post.slug)}: an old ${name[data.id]} page, now on Ryan Reddy’s wall` },
+          ? { moved: { target: `https://reddy.world/portfolio/${data.id}/${to.slug}/`, title: `${titleCase(to.title)} — Ryan Reddy`, link: titleCase(to.title) } }
+          // each old page keeps a title of its own; no words about the page itself (Ryan, 2026-10-25)
+          : { label: name[data.id], title: `${titleCase(post.title.replace(/^\(untitled\)$/i, '') || post.slug)} — Ryan Reddy` },
       };
     }));
   const kept = [maup].filter((data) => KEPT_NOT_SHOWN.includes(data.id)).flatMap((data) => [undefined, ...data.posts.map((post) => post.slug)]
@@ -37,5 +37,5 @@ const { label, title, home, moved } = Astro.props;
 {moved
   ? <WallRedirect {...moved} canonical={moved.target} />
   : home
-  ? <WallRedirect target="https://reddy.world/" title="This page is no longer here — reddy.world" text="This page is no longer here." link="Go to reddy.world" />
+  ? <WallRedirect target="https://reddy.world/" title="reddy.world" />
   : <WallRedirect label={label} title={title} />}

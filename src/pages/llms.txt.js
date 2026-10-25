@@ -1,5 +1,5 @@
 import { getCollection } from 'astro:content';
-import { portfolios, SITE, CONTACT, formatDate } from '../lib/portfolios.js';
+import { portfolios, portfolioLabel, SITE, CONTACT, formatDate } from '../lib/portfolios.js';
 
 // https://llmstxt.org — a plain map of the archive for AI search tools
 export async function GET() {
@@ -13,11 +13,11 @@ export async function GET() {
     '',
   ];
   for (const p of portfolios) {
-    lines.push(`## ${p.name}: ${p.subtitle}`, '');
+    lines.push(`## ${portfolioLabel(p)}`, '');
     for (const post of p.posts) {
-      const when = formatDate(post.date);
+      const when = post.undated ? '' : ` (${formatDate(post.date)})`;
       const summary = post.excerpt ? `: ${post.excerpt}` : '';
-      lines.push(`- [${post.title.trim()}](${SITE}${post.path}) (${when})${summary}`);
+      lines.push(`- [${post.title.trim()}](${SITE}${post.path})${when}${summary}`);
     }
     lines.push('');
   }
