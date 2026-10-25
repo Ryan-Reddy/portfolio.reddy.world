@@ -36,10 +36,9 @@ function item(i, sizes) {
   const ratio = pic.width && pic.height ? ` style="--r: ${(pic.width / pic.height).toFixed(3)}"` : '';
   return (
     `<figure class="gallery-item"${ratio}>` +
-    `<button type="button" class="gallery-thumb" data-index="${slide++}" data-full="${esc(m.url)}" aria-label="Enlarge: ${esc(alt)}">` +
+    `<button type="button" class="gallery-thumb" data-index="${slide++}" data-full="${esc(m.url)}" data-ask="${esc(contactUrl({ project: post.slug, image: m.id || String(i + 1) }))}" aria-label="Enlarge: ${esc(alt)}">` +
     `<img src="${esc(pic.src)}"${set}${dims} alt="${esc(alt)}" loading="lazy" decoding="async"></button>` +
     (m.caption ? `<figcaption>${esc(m.caption)}</figcaption>` : '') +
-    `<a class="ask-link" href="${esc(contactUrl({ project: post.slug, image: m.id || String(i + 1) }))}">Ask about this picture</a>` +
     `</figure>`
   );
 }
@@ -214,7 +213,7 @@ const article = isPost ? { published: post.published, modified: post.modified, s
     img.src = thumb.dataset.full!;
     img.alt = thumb.querySelector('img')!.alt;
     count.textContent = `${index + 1} / ${items.length}`;
-    ask.href = items[index].querySelector<HTMLAnchorElement>('.ask-link')!.href;
+    ask.href = thumb.dataset.ask!;
   }
   function open(i: number, from: HTMLElement) {
     opener = from;

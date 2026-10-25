@@ -14,9 +14,9 @@ interface Props {
 const {
   label = 'the work',
   target = 'https://reddy.world/?at=work',
-  title = `${label} now lives on Ryan Reddy’s wall`,
-  text = 'The archive now opens through the wall.',
-  link = `Browse ${label} on Ryan Reddy’s wall`,
+  title = `${label} — Ryan Reddy`,
+  text = '',
+  link = 'reddy.world',
   canonical = 'https://reddy.world/',
 } = Astro.props;
 ---
@@ -27,14 +27,13 @@ const {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{title}</title>
   <meta name="robots" content="noindex, follow">
-  <meta name="description" content="Browse Ryan Reddy’s work on the wall at reddy.world.">
   <link rel="canonical" href={canonical}>
   <meta http-equiv="refresh" content={`0; url=${target}`}>
   <script is:inline define:vars={{ target }}>location.replace(target);</script>
 </head>
 <body>
   <main>
-    <p>{text}</p>
+    {text && <p>{text}</p>}
     <a href={target}>{link}</a>
   </main>
 </body>

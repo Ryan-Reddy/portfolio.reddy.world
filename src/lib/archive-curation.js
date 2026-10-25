@@ -43,9 +43,9 @@ export function publicArchivePosts(portfolio, posts) {
   return posts.filter((post) => isPublicArchivePost(portfolio, post));
 }
 
-// Words for pages whose WordPress text was missing or unclear. Every fact comes from the
-// post's own data (its text, date and pictures); nothing is added that the archive does
-// not say. These are proposals until Ryan OKs them in PR #44 ("Words for Ryan to OK").
+// Overrides for pages whose WordPress text was missing or unclear: data and Ryan's own
+// words only, never text about the page or the work (its history, what the page is).
+// Rule: "No meta copy on public pages" (Ryan, 2026-10-25).
 const COPY = {
   rrproductions: {
     // its text: "De opdracht was dus, om een kastje te creeeren met bewegend en/of sluitend deel."
@@ -65,12 +65,11 @@ const COPY = {
     '868': { title: 'Meghan Sile Catherina' },
   },
   vaguelyvulgar: {
-    // one page: the photographs and the measurements (Ryan, 2026-10-25). The weight was
-    // measured in October 2026; the rest is from his 2016 site, "pretty much right" still.
+    // one page: the photographs and the measurements (Ryan, 2026-10-25). Data only, no words
+    // about the page (Ryan, 2026-10-25: "this meta crap on the site has to stop").
     '13': {
-      excerpt: 'Fourteen photographs of Ryan Reddy as a model, with his measurements: height 1.81 m, bust 86.5 cm, waist 70 cm, hips 86 cm, weight 69 kg, long blonde hair, blue eyes.',
+      excerpt: 'Ryan Reddy, modelling: height 1.81 m, bust 86.5 cm, waist 70 cm, hips 86 cm, weight 69 kg, long blonde hair, blue eyes.',
       intro: [
-        '<p>Fourteen photographs of Ryan Reddy as a model, first shown on his Vaguely Vulgar site in August 2016.</p>',
         '<h2 id="measurements">Measurements</h2>',
         '<dl class="measurements">',
         '<dt>Height</dt><dd>1.81 m</dd>',
@@ -81,7 +80,6 @@ const COPY = {
         '<dt>Hair</dt><dd>Long, blonde</dd>',
         '<dt>Eyes</dt><dd>Blue</dd>',
         '</dl>',
-        '<p>Weight measured in October 2026; the other measurements are from 2016.</p>',
       ].join('\n'),
     },
   },
