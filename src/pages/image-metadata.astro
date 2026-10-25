@@ -479,14 +479,10 @@ const queue = JSON.stringify({ projects, count }).replace(/</g, '\\u003c');
       if (!file) return;
       try {
         const loaded = JSON.parse(await file.text());
-        if (loaded.version !== 4 || typeof loaded.images !== 'object') throw new Error('not a version 4 export');
+        if (!window.deskSync) throw new Error('the desk is still starting, try again in a moment');
         collect();
-        const opened = Object.keys(loaded.projects ?? {});
-        for (const id of opened) state.projects[id] = {...state.projects[id], ...loaded.projects[id]};
-        for (const [key, entry] of Object.entries(loaded.images)) {
-          if (!opened.includes(entry.projectId ?? key.split('::')[0])) continue;
-          state.images[key] = {...state.images[key], description: entry.description ?? '', tags: (entry.imageKeywords ?? []).join(', '), reviewed: Boolean(entry.reviewed)};
-        }
+        // whole records, nothing of the old ones kept (no stale lead picture), stamped so they win the merge
+        const opened = window.deskSync.load(state, loaded);
         state.cursor = Math.max(0, firstIncomplete());
         save();
         render();

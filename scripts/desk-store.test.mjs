@@ -1,7 +1,7 @@
 // npm test  (node --test "scripts/**/*.test.mjs"): the image desk's saved work (src/lib/desk-store.js)
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { stamp, snapshotOf, mergeStates, sameWork, summarize, isPristine, dayOf } from '../src/lib/desk-store.js';
+import { stamp, snapshotOf, mergeStates, sameWork, summarize, isPristine, dayOf, applyExport } from '../src/lib/desk-store.js';
 
 const T0 = Date.parse('2026-10-25T08:00:00');
 const T1 = T0 + 60_000;
@@ -171,4 +171,46 @@ test('a loaded export marks many projects done at once: they were done before, n
   assert.equal(state.projects[A].doneAt, undefined);
   assert.equal(state.projects[B].doneAt, undefined);
   assert.equal(state.projects[A].at, T1, 'still stamped, so the loaded work is saved');
+});
+
+const exportOf = (projects, images) => ({ version: 4, exportedAt: '2026-10-25T08:00:00Z', projects, images });
+
+test('load export replaces the loaded projects whole: no stale lead picture, credit or words survive', () => {
+  const state = fresh();
+  state.projects[A] = { tags: 'old', hero: 'a2', reviewed: false, at: T0 };
+  state.projects[B] = { tags: 'kept', hero: 'b1', at: T0 };
+  state.images[img(A, 1)] = { description: 'Stale words', tags: 'stale', credit: { name: 'Someone' }, at: T0 };
+  state.images[img(A, 2)] = { description: 'Not in the export', tags: '', at: T0 };
+  const loaded = exportOf({ [A]: { tags: 'stage, light', reviewed: true, at: 1, doneAt: 1 } }, {
+    [img(A, 1)]: { projectId: A, description: 'Old caption', imageKeywords: ['dmx'], reviewed: true },
+    [img(B, 1)]: { projectId: B, description: 'Not loaded: B is not in the projects', imageKeywords: [] },
+  });
+  assert.deepEqual(applyExport(state, loaded, T2), [A]);
+  assert.deepEqual(state.projects[A], { tags: 'stage, light', reviewed: true, at: T2 }, 'the hero and the old stamps are gone');
+  assert.deepEqual(state.images[img(A, 1)], { description: 'Old caption', tags: 'dmx', reviewed: true, at: T2 });
+  assert.deepEqual(state.images[img(A, 2)], { at: T2 }, 'a picture the export does not list is cleared');
+  assert.deepEqual(state.projects[B], { tags: 'kept', hero: 'b1', at: T0 }, 'a project not in the export is untouched');
+  assert.equal(state.images[img(B, 1)], undefined);
+});
+
+test('a loaded export wins over the account copy, even where the account had a newer lead picture', () => {
+  const remote = { ...fresh(), projects: { [A]: { tags: 'old', hero: 'a2', at: T1 } }, images: { [img(A, 1)]: { description: 'Remote', at: T1 } }, savedAt: T1 };
+  const local = mergeStates(fresh(), remote);
+  applyExport(local, exportOf({ [A]: { tags: 'stage' } }, { [img(A, 1)]: { projectId: A, description: '', imageKeywords: [] } }), T2);
+  const merged = mergeStates(remote, local);
+  assert.equal(merged.projects[A].hero, undefined);
+  assert.equal(merged.projects[A].tags, 'stage');
+  assert.equal(merged.images[img(A, 1)].description, '');
+  // and stamping afterwards (save()) keeps it the newest
+  const snap = snapshotOf(remote);
+  stamp(local, snap, T2 + 1, existing);
+  assert.ok(mergeStates(remote, local).projects[A].at >= T2);
+});
+
+test('load export refuses anything that is not a version 4 export, and changes nothing', () => {
+  const state = fresh();
+  state.projects[A] = { tags: 'x', at: T0 };
+  assert.throws(() => applyExport(state, { version: 3, images: {} }, T2), /version 4/);
+  assert.throws(() => applyExport(state, { version: 4 }, T2), /version 4/);
+  assert.deepEqual(state.projects[A], { tags: 'x', at: T0 });
 });

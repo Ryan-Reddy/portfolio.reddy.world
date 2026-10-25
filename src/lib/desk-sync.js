@@ -8,7 +8,7 @@
 //
 // The page's own script (src/pages/image-metadata.astro) exposes window.imageDesk and calls
 // window.deskSync.stamp / .saved from its save(); everything else lives here.
-import { stamp, snapshotOf, mergeStates, sameWork, summarize } from './desk-store.js';
+import { stamp, snapshotOf, mergeStates, sameWork, summarize, applyExport } from './desk-store.js';
 
 const desk = window.imageDesk;
 const $ = (id) => document.getElementById(id);
@@ -69,6 +69,8 @@ function push() {
 window.deskSync = {
   stamp: (state) => stamp(state, snap, Date.now(), existing),
   saved: () => { renderOverview(); push(); },
+  // Load export: replaces the loaded projects' records (the page then calls save(), which writes through)
+  load: (state, loaded) => applyExport(state, loaded, Date.now()),
 };
 addEventListener('online', push);
 

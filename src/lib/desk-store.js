@@ -138,6 +138,32 @@ export function mergeStates(local, remote) {
   return merged;
 }
 
+const withoutStamps = (entry) => Object.fromEntries(Object.entries(entry ?? {}).filter(([key]) => !STAMPS.has(key)));
+
+/**
+ * Load export: the projects in a version 4 export, and their pictures, REPLACE what this copy has for them.
+ * Nothing of the old record survives (a lead picture, a credit or words the export does not have are gone),
+ * and every replaced entry is stamped `now`, so it also wins over the account copy when the two merge.
+ * Projects not in the export are left alone. Mutates `state`; returns the ids of the projects loaded.
+ */
+export function applyExport(state, loaded, now) {
+  if (loaded?.version !== 4 || !loaded.images || typeof loaded.images !== 'object') throw new Error('not a version 4 export');
+  const opened = Object.keys(loaded.projects ?? {});
+  const isOpened = new Set(opened);
+  state.projects ??= {};
+  state.images ??= {};
+  for (const id of opened) state.projects[id] = { ...withoutStamps(loaded.projects[id]), at: now };
+  // pictures of a loaded project that the export does not list are cleared too
+  for (const key of Object.keys(state.images)) if (isOpened.has(key.split('::')[0])) state.images[key] = { at: now };
+  for (const [key, entry] of Object.entries(loaded.images)) {
+    if (!isOpened.has(entry?.projectId ?? key.split('::')[0])) continue;
+    const record = { description: entry.description ?? '', tags: (entry.imageKeywords ?? []).join(', '), reviewed: Boolean(entry.reviewed) };
+    if (entry.credit !== undefined) record.credit = entry.credit;
+    state.images[key] = { ...record, at: now };
+  }
+  return opened;
+}
+
 /** Same work in both? (Ignores the place and the session counter, which are per browser.) */
 export function sameWork(a, b) {
   const keyed = (state) => JSON.stringify(['projects', 'images'].map((kind) => Object.entries(state?.[kind] ?? {})

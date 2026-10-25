@@ -63,8 +63,16 @@ try {
   const { page, errors } = await open(contextOut);
   check('signed out: starts with nothing done', /^0 of \d+ projects$/.test(await progress(page)), await progress(page));
   check('signed out: says so plainly', await waitFor(page, () => document.querySelector('.top [data-desk-saved]').textContent === 'Not signed in: saved in this browser only'), await saved(page));
+  // a lead picture chosen here, on a project the export has without one: Load export must not keep it
+  const exported = JSON.parse(await readFile(exportFile, 'utf8'));
+  const plain = Object.keys(exported.projects).find((id) => !exported.projects[id].hero);
+  const plainIndex = await page.evaluate((id) => window.imageDesk.DATA.projects.findIndex((project) => project.id === id), plain);
+  await page.locator('#project-picker').selectOption(String(plainIndex));
+  await page.locator('#make-hero').click();
+  check('before loading: a lead picture chosen on the desk', await page.evaluate((id) => Boolean(window.imageDesk.state.projects[id]?.hero), plain), plain);
   await page.setInputFiles('#load-file', exportFile);
   await page.waitForFunction(() => /^Loaded \d+ projects/.test(document.querySelector('#celebrate').textContent));
+  check('Load export replaces the project: the stale lead picture is gone', await page.evaluate((id) => !window.imageDesk.state.projects[id]?.hero && window.imageDesk.state.projects[id]?.at > 0, plain), plain);
   const loaded = await progress(page);
   check('Load export: the progress follows the export', !/^0 of/.test(loaded), loaded);
   const total = Number(loaded.match(/of (\d+)/)[1]);
@@ -79,7 +87,7 @@ try {
   await page.locator('#open-overview').click();
   const overview = await page.locator('#overview').innerText();
   check('overview: total done', overview.includes(`${doneLoaded} of ${total} projects done`), overview.split('\n').slice(0, 6).join(' | '));
-  check('overview: one next step', /Next up: .+/.test(overview));
+  check('overview: one next step', /Next up: .+/.test(overview), (overview.match(/Next up: .+/) ?? [''])[0]);
   check('overview: done, started, not started', /\d+ done · \d+ started · \d+ not started/.test(overview));
   check('overview: one row per portfolio', (await page.locator('.ov-portfolio').count()) >= 2, String(await page.locator('.ov-portfolio').count()));
   await shoot(page, 'overview');
