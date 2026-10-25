@@ -43,6 +43,12 @@ jobs:
       # The software case studies as crawlers read them: title, description, one h1, alt, srcset, JSON-LD, sitemap
       - run: node scripts/check-software.mjs
 
+      # No WordPress pictures, a title per indexable page, retired addresses no-index, no Maup
+      - run: node scripts/check-archive.mjs
+
+      # The image desk importer on a sample export
+      - run: npm test
+
       - name: Lay out the preview (the build under /portfolio/, / follows the wall handoff)
         run: |
           mkdir -p preview/public

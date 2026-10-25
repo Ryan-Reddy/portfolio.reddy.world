@@ -1,0 +1,47 @@
+{
+  "version": 4,
+  "exportedAt": "2026-10-25T08:00:00.000Z",
+  "projects": {
+    "vaguelyvulgar/photo-cv": { "tags": "sample project word, Sample Project Word, second sample", "reviewed": true },
+    "rrproductions/water-filtering": { "tags": "", "reviewed": false },
+    "rrproductions/no-such-project": { "tags": "", "reviewed": false }
+  },
+  "images": {
+    "vaguelyvulgar/photo-cv::/portfolio/images/vaguelyvulgar/2016/08/854b8538485967-57631dbc24357.jpg": {
+      "projectId": "vaguelyvulgar/photo-cv",
+      "url": "/portfolio/images/vaguelyvulgar/2016/08/854b8538485967-57631dbc24357.jpg",
+      "description": "A sample description typed on the desk",
+      "projectKeywords": ["sample project word", "second sample"],
+      "imageKeywords": ["sample picture word"],
+      "keywords": ["sample project word", "second sample", "sample picture word"],
+      "reviewed": true
+    },
+    "vaguelyvulgar/photo-cv::/portfolio/images/vaguelyvulgar/2016/08/10150002_776022152408873_59738154_n.jpg": {
+      "projectId": "vaguelyvulgar/photo-cv",
+      "url": "/portfolio/images/vaguelyvulgar/2016/08/10150002_776022152408873_59738154_n.jpg",
+      "description": "",
+      "projectKeywords": ["sample project word", "second sample"],
+      "imageKeywords": [],
+      "keywords": ["sample project word", "second sample"],
+      "reviewed": true
+    },
+    "rrproductions/water-filtering::/portfolio/images/rrproductions/2019/04/img_8865-1.jpg": {
+      "projectId": "rrproductions/water-filtering",
+      "url": "/portfolio/images/rrproductions/2019/04/img_8865-1.jpg",
+      "description": "",
+      "projectKeywords": [],
+      "imageKeywords": [],
+      "keywords": [],
+      "reviewed": false
+    },
+    "rrproductions/no-such-project::/portfolio/images/rrproductions/2019/04/gone.jpg": {
+      "projectId": "rrproductions/no-such-project",
+      "url": "/portfolio/images/rrproductions/2019/04/gone.jpg",
+      "description": "Should be reported, not written",
+      "projectKeywords": [],
+      "imageKeywords": [],
+      "keywords": [],
+      "reviewed": true
+    }
+  }
+}

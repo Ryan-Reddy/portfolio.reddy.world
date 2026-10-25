@@ -1028,3 +1028,19 @@ html.paper .footer-links a, html.paper .breadcrumb a { color: var(--fg); }
     right: 0.5rem;
   }
 }
+
+/* Modelling measurements: label and value side by side, stacked on narrow screens */
+.measurements {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.35rem 1.5rem;
+  margin: 1rem 0 1.5rem;
+}
+
+.measurements dt {
+  font-weight: 600;
+}
+
+.measurements dd {
+  margin: 0;
+}

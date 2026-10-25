@@ -38,6 +38,13 @@ const software = defineCollection({
     when: z.string().optional(),
     // the overview's order, low first
     order: z.number().default(99),
+    // where reddy.world's wall places it, by its branch ids (reddy.world src/data/branches.ts);
+    // left out, it sits under "Software & web". "art" is "Inventions & art" (Ryan, 2026-10-25)
+    branch: z.enum(['software', 'decor', 'signs', 'furniture', 'art', 'performance', 'work']).optional(),
+    // the work it is built on, credited in the facts rail and as schema.org isBasedOn
+    credit: z.object({ name: z.string(), url: z.url() }).optional(),
+    // a line the page must carry, e.g. that it is not affiliated with the names it uses
+    disclaimer: z.string().optional(),
     // the sitemap's lastmod
     updated: z.coerce.date(),
     // files in public/images/software/<slug>/, in reading order; the first heads the page

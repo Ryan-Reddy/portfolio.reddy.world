@@ -3,5 +3,5 @@
 export const BRAND = {
   rmaekers: 'ReddyMaekers',
   rrproductions: 'Ryan Reddy Productions',
-  vaguelyvulgar: 'Ryan Reddy — modelling',
+  vaguelyvulgar: 'Ryan Reddy, model',
 };

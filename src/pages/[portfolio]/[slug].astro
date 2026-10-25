@@ -79,6 +79,7 @@ const imageObject = (m, i) => ({
   height: m.height || undefined,
   caption: m.alt || m.caption ? `${m.alt || m.caption} — ${name}, ${context}` : `${name}, photo ${i + 1} — ${context}`,
   creator: { '@id': PERSON_ID },
+  keywords: m.keywords?.length ? m.keywords.join(', ') : undefined,
   creditText: 'Ryan Reddy',
   copyrightNotice: '© Ryan Reddy',
 });
@@ -102,7 +103,7 @@ const jsonLd = [
     author: { '@type': 'Person', '@id': PERSON_ID, name: 'Ryan Reddy', url: `${ORIGIN}/` },
     publisher: { '@type': 'Person', '@id': PERSON_ID, name: 'Ryan Reddy', url: `${ORIGIN}/` },
     articleSection: post.categories[0] || p.name,
-    keywords: [...post.categories, ...post.tags].join(', ') || undefined,
+    keywords: [...new Set([...post.categories, ...post.tags, ...(post.keywords ?? [])])].join(', ') || undefined,
     wordCount: words,
     isPartOf: { '@type': 'Blog', name: `${p.name}: ${p.subtitle}`, url: `${SITE}/${p.id}/` },
     image: images.length ? images.map((m) => imageObject(m, Math.max(0, post.media.indexOf(m)))) : undefined,
@@ -155,9 +156,9 @@ const article = isPost ? { published: post.published, modified: post.modified, s
     )}
 
     <aside class="cta">
-      <p>Want something like this for your event, venue or home?</p>
+      <p>{p.cta.line}</p>
       <div class="cta-links">
-        <a class="btn-cta" href={contactUrl({ project: post.slug })}>Plan a free 30-minute talk</a>
+        <a class="btn-cta" href={contactUrl({ project: post.slug })}>{p.cta.button}</a>
         <a class="door" href="/">See all my work →</a>
       </div>
     </aside>
