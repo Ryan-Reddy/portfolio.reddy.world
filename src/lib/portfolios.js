@@ -13,7 +13,8 @@ export const CONTACT = 'https://reddy.world/contact';
 export const PERSON_ID = 'https://reddy.world/#ryan';
 
 // cta: the line and button under each project page. Modelling asks for a booking, not an event.
-const CTA = { line: 'Want something like this for your event, venue or home?', button: 'Plan a free 30-minute talk' };
+// Ryan, 2026-10-25: "perhaps that should be a contact me about this project, any questions or advice !"
+const CTA = { line: 'Contact me about this project: any questions or advice!', button: 'Get in touch' };
 // Modelling has no subtitle: "Modelling" says it (Ryan, 2026-10-25: no words about the work)
 const EXTRA = {
   rmaekers: { cta: CTA },
@@ -53,7 +54,9 @@ export const portfolios = [rmaekers, rrproductions, vaguelyvulgar].map((p) => ({
   brand: BRAND[p.id],
   posts: publicArchivePosts(p.id, p.posts).map((post) => {
     const full = { ...curatedPost(p.id, post), portfolio: p.id, path: `/${p.id}/${post.slug}/` };
-    return { ...full, kinds: kindsOf(full) };
+    // videos another (hidden) post of the same site recorded, shown on this one: public YouTube videos only
+    const films = full.films ? (p.posts.find((x) => String(x.id) === String(full.films))?.videos ?? []).filter((v) => v.kind === 'youtube' && v.status === 'public') : [];
+    return { ...full, films, kinds: kindsOf(full) };
   }),
 }));
 

@@ -46,7 +46,7 @@ function item(i, sizes) {
   const ratio = pic.width && pic.height ? ` style="--r: ${(pic.width / pic.height).toFixed(3)}"` : '';
   return (
     `<figure class="gallery-item"${ratio}>` +
-    `<button type="button" class="gallery-thumb" data-index="${slide++}" data-full="${esc(m.url)}" data-ask="${esc(contactUrl({ project: post.slug, image: m.id || String(i + 1) }))}" aria-label="Enlarge: ${esc(alt)}">` +
+    `<button type="button" class="gallery-thumb" data-index="${slide++}" data-full="${esc(m.url)}" aria-label="Enlarge: ${esc(alt)}">` +
     `<img src="${esc(pic.src)}"${set}${dims} alt="${esc(alt)}" loading="lazy" decoding="async"></button>` +
     captionHtml(m) +
     `</figure>`
@@ -190,6 +190,24 @@ const article = isPost ? { published: post.published, modified: post.modified, s
       </section>
     )}
 
+    {post.films.length > 0 && (
+      <section class="modal-gallery-section film" aria-labelledby="film-title">
+        <h2 class="modal-gallery-title" id="film-title">Film</h2>
+        <div class="film-grid">
+          {post.films.map((v) => (
+            <figure class="video-embed">
+              <div class="video-frame">
+                {post.filmsLinkOnly?.includes(v.id)
+                  ? <a href={v.url} rel="noopener"><img src={v.thumbnail} alt={v.title} loading="lazy" decoding="async"></a>
+                  : <iframe src={`https://www.youtube-nocookie.com/embed/${v.id}${v.start ? `?start=${v.start}` : ''}`} title={v.title} loading="lazy" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>}
+              </div>
+              <figcaption><a href={v.url} rel="noopener">{v.title}</a> · {v.channel}</figcaption>
+            </figure>
+          ))}
+        </div>
+      </section>
+    )}
+
     <aside class="cta">
       <p>{p.cta.line}</p>
       <div class="cta-links">
@@ -228,7 +246,6 @@ const article = isPost ? { published: post.published, modified: post.modified, s
       <img id="lightbox-img" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" alt="">
       <div class="lightbox-caption">
         <span id="lightbox-count"></span>
-        <a id="lightbox-ask" class="ask-link" href="#">Ask about this picture</a>
       </div>
     </div>
   </div>
@@ -238,7 +255,6 @@ const article = isPost ? { published: post.published, modified: post.modified, s
   const box = document.getElementById('lightbox')!;
   const img = document.getElementById('lightbox-img') as HTMLImageElement;
   const count = document.getElementById('lightbox-count')!;
-  const ask = document.getElementById('lightbox-ask') as HTMLAnchorElement;
   const items = [...document.querySelectorAll<HTMLElement>('.gallery-item')];
   let index = 0;
   let opener: HTMLElement | null = null;
@@ -249,7 +265,6 @@ const article = isPost ? { published: post.published, modified: post.modified, s
     img.src = thumb.dataset.full!;
     img.alt = thumb.querySelector('img')!.alt;
     count.textContent = `${index + 1} / ${items.length}`;
-    ask.href = thumb.dataset.ask!;
   }
   function open(i: number, from: HTMLElement) {
     opener = from;

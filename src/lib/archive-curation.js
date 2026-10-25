@@ -68,6 +68,12 @@ const COPY = {
     },
   },
   rmaekers: {
+    // Ryan, 2026-10-25: "it was a own brand activation joke for reddymaekers and my first testshop live,
+    // actually on reddymaekers.com/shop link to that bomber"
+    '2012': {
+      intro: '<p>An own brand activation joke for ReddyMaekers, and my first test shop live: <a href="https://reddymaekers.com/shop/">reddymaekers.com/shop</a></p>',
+      swap: [['First up, ReddyMaekers Bomber Jackets!', 'First up, <a href="https://reddymaekers.com/shop/">ReddyMaekers Bomber Jackets</a>!']],
+    },
     // Ryan, 2026-10-25: "Meghan Sile Catherina", not her surname; the address
     // /rmaekers/meghan-sile-catherina/ and its redirects stay as they are
     '868': { title: 'Meghan Sile Catherina' },
@@ -81,6 +87,10 @@ const COPY = {
       excerpt: 'Height 1.81 m, bust 86.5 cm, waist 70 cm, hips 86 cm, weight 69 kg, long blonde hair, blue eyes.',
       // a comp card: the lead picture with the measurements beside it, the rest in a grid
       layout: 'comp-card',
+      // the film page's videos, embedded here (Ryan, 2026-10-25: "lets embed the videos for now")
+      films: 61,
+      // age-restricted on YouTube, so it does not play embedded: its still links to YouTube instead
+      filmsLinkOnly: ['7w6ySPAXsDA'],
       // the measurements are current: no year beside them (page date, descriptions)
       undated: true,
       measurements: [

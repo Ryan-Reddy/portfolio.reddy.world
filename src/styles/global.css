@@ -874,21 +874,23 @@ body {
   gap: 0.35rem;
 }
 
-/* one quiet link, only in the enlarged view (Ryan, 2026-10-25: "can be waayyy more subtle or just gone") */
-.ask-link {
-  font-size: 0.75rem;
-  color: inherit;
-  opacity: 0.6;
-  text-decoration: none;
+/* the film videos on the modelling page: two side by side on wide screens, one under the other on a phone */
+.film-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr));
+  gap: 1.5rem;
 }
 
-.ask-link:focus-visible {
-  opacity: 1;
+.film-grid .video-embed {
+  margin: 0;
 }
 
-.ask-link:hover {
-  opacity: 1;
-  text-decoration: underline;
+.video-frame img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .lightbox-caption {
