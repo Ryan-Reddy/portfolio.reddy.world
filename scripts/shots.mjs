@@ -4,7 +4,9 @@
 //
 //   npm run shots -- reddy-neuro
 //   npm run shots -- focus-desk
-//   npm run shots -- reddy-mail  (also ral-contrast-checker, archive-trawler, password-reddy-world)
+//   npm run shots -- reddy-mail  (also ral-contrast-checker, archive-trawler, password-reddy-world,
+//                                 faces-of-hugging-face)
+//   SHOTS_BROWSER=edge npm run shots -- <slug>  shoots with the installed Microsoft Edge
 //
 // Needs Playwright's Chromium once: npx playwright install chromium
 // Example data typed into a live app is fine (agreed with Ryan, 2026-10-17); nothing is saved
@@ -266,6 +268,29 @@ const RECIPES = {
       'password-way-in.webp': (b) => step(b, 3),
     };
   })(),
+  // The live pages only, no Hugging Face logo in any picture. The exhibition is dark in either
+  // colour scheme; the codec and the Lab follow the system, so they get a dark twin (#40).
+  'faces-of-hugging-face': (() => {
+    const SITE = 'https://faces-of-hugging-face.web.app';
+    async function view(b, where, { colorScheme = 'light', at, shades } = {}) {
+      const p = await page(b, DESKTOP, { colorScheme });
+      await open(p, `${SITE}${where}`);
+      if (shades) { await p.locator('select').first().selectOption(shades); await p.waitForTimeout(600); }
+      if (at) { await p.locator(at).first().evaluate((el) => el.scrollIntoView({ block: 'start' })); await p.waitForTimeout(2500); }
+      await p.waitForTimeout(800);
+      const png = await p.screenshot();
+      await done(p);
+      return png;
+    }
+    return {
+      'faces-hello.webp': (b) => view(b, '/hello'),
+      'faces-hello-graph.webp': (b) => view(b, '/hello', { at: 'xpath=//*[normalize-space(text())="Who touched what."]/ancestor::section[1]' }),
+      'faces-codec.webp': (b) => view(b, '/codec'),
+      'faces-codec-dark.webp': (b) => view(b, '/codec', { colorScheme: 'dark' }),
+      'faces-lab.webp': (b) => view(b, '/lab', { shades: '4' }),
+      'faces-lab-dark.webp': (b) => view(b, '/lab', { colorScheme: 'dark', shades: '4' }),
+    };
+  })(),
 };
 
 const slug = process.argv[2];
@@ -277,7 +302,7 @@ if (!recipe) {
 const dir = path.join(import.meta.dirname, '..', 'public', 'images', 'software', slug);
 fs.mkdirSync(dir, { recursive: true });
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), `shots-${slug}-`));
-const browser = await chromium.launch();
+const browser = await chromium.launch(process.env.SHOTS_BROWSER === 'edge' ? { channel: 'msedge' } : {});
 try {
   for (const [file, shoot] of Object.entries(recipe)) {
     const png = await shoot(browser);

@@ -55,6 +55,7 @@ const work = d.kind === 'app'
     screenshot: shots.length ? shots.map(imageObject) : undefined,
   }
   : { '@type': 'CreativeWork', url: pageUrl, image: shots.length ? shots.map(imageObject) : undefined };
+if (d.credit) work.isBasedOn = { '@type': 'CreativeWork', name: d.credit.name, url: d.credit.url };
 const jsonLd = [
   {
     '@context': 'https://schema.org',
@@ -131,6 +132,8 @@ const facts = [
         {stores.length > 0 && <div><dt>Get it</dt><dd>{stores.map((st, i) => <>{i > 0 && ', '}<a href={st.url}>{st.name}</a></>)}</dd></div>}
         {d.live && stores.length > 0 && <div><dt>Website</dt><dd><a href={d.live}>{host(d.live)}</a></dd></div>}
         {d.repo && <div><dt>Code</dt><dd><a href={d.repo}>{host(d.repo)}{new URL(d.repo).pathname}</a></dd></div>}
+        {d.credit && <div><dt>Based on</dt><dd><a href={d.credit.url}>{d.credit.name}</a></dd></div>}
+        {d.disclaimer && <div><dt>Note</dt><dd>{d.disclaimer}</dd></div>}
       </dl>
       {button && <a class="live" href={button.url}>{button.label} →</a>}
     </aside>

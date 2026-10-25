@@ -32,6 +32,10 @@ export async function GET() {
       code: data.repo ?? null,
       stores,
       button,
+      // the wall's branch; null means "Software & web"
+      branch: data.branch ?? null,
+      credit: data.credit ?? null,
+      disclaimer: data.disclaimer ?? null,
       page: `${SITE}/software/${id}/`,
       pageUpdated: data.updated.toISOString().slice(0, 10),
       hero: pictures[0] ?? null,
