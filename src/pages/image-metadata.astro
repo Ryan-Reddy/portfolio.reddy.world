@@ -96,9 +96,7 @@ const projects = portfolios.flatMap((portfolio) => portfolio.posts.map((post) =>
 })).filter((project) => project.images.length);
 const count = projects.reduce((sum, project) => sum + project.images.length, 0);
 const queue = JSON.stringify({ projects, count }).replace(/</g, '\\u003c');
-// photographer credits the archive already has (written by the importer), by desk key
-const archiveCredits = JSON.stringify(Object.fromEntries(portfolios.flatMap((portfolio) => portfolio.posts.flatMap((post) => photos(post)
-  .filter((image) => image.credit?.name).map((image) => [`${portfolio.id}/${post.slug}::${image.url}`, image.credit]))))).replace(/</g, '\\u003c');
+import { archiveCredits } from '../lib/desk-credits.js';
 ---
 <!doctype html>
 <html lang="en">
@@ -268,7 +266,7 @@ const archiveCredits = JSON.stringify(Object.fromEntries(portfolios.flatMap((por
   <dialog id="keyword-map" class="map-dialog"><h2>Current keyword map</h2><p>Words already present in the archive plus anything saved in this browser. Counts show how many projects currently use each phrase.</p><div class="map-tools"><input id="map-filter" type="search" placeholder="Filter keywords…" aria-label="Filter keyword map"><button id="close-map" type="button">Close</button></div><div class="keyword-map" id="map-list"></div></dialog>
   <dialog id="keys"><h2>One clean pass</h2><p>Choose shared words for the whole project, then press <kbd>Enter</kbd> or <strong>Project tagged + next</strong>. Every image in that project inherits them.</p><p>Use the thumbnails to understand the full set. Individual descriptions and extra tags remain under <strong>Later round · star or outlier image</strong>; you can ignore those for now.</p><p>Suggestions are optional. A smaller accurate set is better than keyword stuffing.</p><p>The ★ marks the project's lead picture. Open another thumbnail and press <strong>Make this the lead picture</strong> to choose it; it heads the project page, its card and the wall after the next import.</p><button id="close-keys" class="primary" type="button">Got it</button></dialog>
   <script type="application/json" id="queue-data" set:html={queue}></script>
-  <script type="application/json" id="credit-data" set:html={archiveCredits}></script>
+  <script type="application/json" id="credit-data" set:html={archiveCredits()}></script>
   <script is:inline>
     const DATA = JSON.parse(document.querySelector('#queue-data').textContent);
     const STORE = 'reddy-world-image-metadata-v4';

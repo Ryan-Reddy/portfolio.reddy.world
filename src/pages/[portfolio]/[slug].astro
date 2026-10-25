@@ -24,6 +24,10 @@ const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').repl
 // the photographer Ryan credited on the image desk: "Photo: Name", linked to their site when he gave one
 const creditHtml = (c) => c?.name ? `<span class="photo-credit">Photo: ${c.url ? `<a href="${esc(c.url)}" rel="noopener">${esc(c.name)}</a>` : esc(c.name)}</span>` : '';
 const captionHtml = (m) => (m.caption || m.credit?.name ? `<figcaption>${m.caption ? esc(m.caption) : ''}${m.caption && m.credit?.name ? ' · ' : ''}${creditHtml(m.credit)}</figcaption>` : '');
+// in the structured data the credited photographer is the picture's creator, and Ryan claims no copyright on it
+const credited = (m, object) => (m.credit?.name
+  ? { ...object, creator: { '@type': 'Person', name: m.credit.name, url: m.credit.url }, creditText: m.credit.name, copyrightNotice: undefined }
+  : object);
 
 // Every picture is one lightbox slide, numbered in reading order: the ones placed in the text first
 let slide = 0;
@@ -74,16 +78,16 @@ const hero = featured && !shown.has(featured.url) ? { ...picture(featured), alt:
 
 const shareImage = featured && { url: absUrl(featured.url), width: featured.width, height: featured.height, alt: altFor(post, featured, 0) };
 const words = body.replace(/<[^>]+>/g, ' ').split(/\s+/).filter(Boolean).length;
-const imageObject = (m, i) => ({
+const imageObject = (m, i) => credited(m, {
   '@type': 'ImageObject',
   contentUrl: absUrl(m.url),
   url: absUrl(m.url),
   width: m.width || undefined,
   height: m.height || undefined,
   caption: m.alt || m.caption ? `${m.alt || m.caption} — ${name}, ${context}` : `${name}, photo ${i + 1} — ${context}`,
-  creator: m.credit?.name ? { '@type': 'Person', name: m.credit.name, url: m.credit.url } : { '@id': PERSON_ID },
+  creator: { '@id': PERSON_ID },
   keywords: m.keywords?.length ? m.keywords.join(', ') : undefined,
-  creditText: m.credit?.name || 'Ryan Reddy',
+  creditText: 'Ryan Reddy',
   copyrightNotice: '© Ryan Reddy',
 });
 
