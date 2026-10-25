@@ -46,8 +46,12 @@ jobs:
           restore-keys: watermark-
 
       # Builds the pages, stamps and checks the pictures (#47), writes firebase.json, and fails
-      # if a redirect target is missing
+      # if a redirect target is missing. Before it, scripts/keyword-ratings.mjs refreshes the image
+      # desk's ratings (never fails the build); with the optional secret BING_WEBMASTER_API_KEY it
+      # adds Bing's search counts.
       - run: npm run build
+        env:
+          BING_WEBMASTER_API_KEY: ${{ secrets.BING_WEBMASTER_API_KEY }}
 
       # The software case studies as crawlers read them: title, description, one h1, alt, srcset, JSON-LD, sitemap
       - run: node scripts/check-software.mjs
