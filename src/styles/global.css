@@ -801,7 +801,11 @@ body {
   color: var(--fg-muted);
 }
 
-/* the photographer's credit under a picture */
+/* the photographer's credit under a picture; a long name wraps inside its column on a phone */
+.photo-credit {
+  overflow-wrap: anywhere;
+}
+
 .photo-credit a {
   color: inherit;
   text-decoration: underline;

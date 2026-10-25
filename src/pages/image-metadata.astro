@@ -166,7 +166,8 @@ const archiveCredits = JSON.stringify(Object.fromEntries(portfolios.flatMap((por
     details.description label { margin-top: .6rem; }
     .credit-fields { margin: .6rem 0 0; padding: .45rem .6rem .6rem; border: 1px solid #3a3a38; display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: .5rem; }
     .credit-fields legend { padding: 0 .3rem; color: #ddd; font-size: .8rem; font-weight: 700; }
-    details.credit .credit-fields label { margin-top: 0; }
+    details.credit .credit-fields label { margin-top: 0; align-content: end; }
+    details.credit input { font-weight: 400; }
     details.credit .effective { margin: .5rem 0; }
     .controls { display: grid; grid-template-columns: 1fr 1fr 1.35fr; gap: .55rem; }
     .celebrate { min-height: 1.5rem; color: var(--gold); font-weight: 700; }
@@ -246,12 +247,12 @@ const archiveCredits = JSON.stringify(Object.fromEntries(portfolios.flatMap((por
         <summary id="credit-summary">Photographer credit</summary>
         <p class="hint" id="credit-open"></p>
         <fieldset class="credit-fields"><legend>Every picture in this project by</legend>
-          <label>Photographer <input id="credit-project-name" autocomplete="off" placeholder="Name as it should appear"></label>
-          <label>Site <small>optional</small> <input id="credit-project-url" inputmode="url" autocomplete="off" placeholder="https://…"></label>
+          <label><span>Photographer</span><input id="credit-project-name" autocomplete="off" placeholder="Name as it should appear"></label>
+          <label><span>Site <small>· optional</small></span><input id="credit-project-url" inputmode="url" autocomplete="off" placeholder="https://…"></label>
         </fieldset>
         <fieldset class="credit-fields"><legend>This picture by · instead of the project's</legend>
-          <label>Photographer <input id="credit-image-name" autocomplete="off" placeholder="Name as it should appear"></label>
-          <label>Site <small>optional</small> <input id="credit-image-url" inputmode="url" autocomplete="off" placeholder="https://…"></label>
+          <label><span>Photographer</span><input id="credit-image-name" autocomplete="off" placeholder="Name as it should appear"></label>
+          <label><span>Site <small>· optional</small></span><input id="credit-image-url" inputmode="url" autocomplete="off" placeholder="https://…"></label>
         </fieldset>
         <p class="effective" id="credit-shown" aria-live="polite"></p>
         <button id="next-uncredited" type="button">Next picture without a photographer →</button>
