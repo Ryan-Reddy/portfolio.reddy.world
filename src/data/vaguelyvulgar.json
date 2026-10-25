@@ -39,7 +39,67 @@
       "categories": [],
       "tags": [],
       "featured": null,
-      "media": []
+      "media": [],
+      "videos": [
+        {
+          "kind": "youtube",
+          "id": "ABovlJaj14w",
+          "url": "https://www.youtube.com/watch?v=ABovlJaj14w&t=17s",
+          "start": 17,
+          "status": "public",
+          "title": "Vrouwen Zijn OK - Achter Het Fornuis",
+          "channel": "bimbokiki",
+          "channel_url": "https://www.youtube.com/@bimbokiki",
+          "thumbnail": "/portfolio/images/vaguelyvulgar/film/ABovlJaj14w.jpg",
+          "checked": "2026-10-25"
+        },
+        {
+          "kind": "youtube",
+          "id": "9MCOo4FzCvQ",
+          "url": "https://www.youtube.com/watch?v=9MCOo4FzCvQ&t=208s",
+          "start": 208,
+          "status": "public",
+          "title": "Tom en Yuri Show - Aflevering 2",
+          "channel": "TomenYuriShow",
+          "channel_url": "https://www.youtube.com/@TomenYuriShow",
+          "thumbnail": "/portfolio/images/vaguelyvulgar/film/9MCOo4FzCvQ.jpg",
+          "checked": "2026-10-25"
+        },
+        {
+          "kind": "youtube",
+          "id": "4H_TdfzyOG4",
+          "url": "https://www.youtube.com/watch?v=4H_TdfzyOG4&t=152s",
+          "start": 152,
+          "status": "public",
+          "title": "Tom en Yuri Show - Aflevering 3",
+          "channel": "TomenYuriShow",
+          "channel_url": "https://www.youtube.com/@TomenYuriShow",
+          "thumbnail": "/portfolio/images/vaguelyvulgar/film/4H_TdfzyOG4.jpg",
+          "checked": "2026-10-25"
+        },
+        {
+          "kind": "youtube",
+          "id": "N7gOwUZK1tA",
+          "url": "https://www.youtube.com/watch?v=N7gOwUZK1tA",
+          "status": "public",
+          "title": "BBYQ",
+          "channel": "TomenYuriShow",
+          "channel_url": "https://www.youtube.com/@TomenYuriShow",
+          "thumbnail": "/portfolio/images/vaguelyvulgar/film/N7gOwUZK1tA.jpg",
+          "checked": "2026-10-25"
+        },
+        {
+          "kind": "youtube",
+          "id": "7w6ySPAXsDA",
+          "url": "https://www.youtube.com/watch?v=7w6ySPAXsDA",
+          "status": "public",
+          "title": "UNCENSORED VERSION - The One - Sander Kleinenberg",
+          "channel": "Eva Bartels",
+          "channel_url": "https://www.youtube.com/@evabartels7153",
+          "thumbnail": "/portfolio/images/vaguelyvulgar/film/7w6ySPAXsDA.jpg",
+          "checked": "2026-10-25"
+        }
+      ]
     },
     {
       "id": "13",
@@ -58,180 +118,309 @@
       "featured": {
         "id": "14",
         "url": "/portfolio/images/vaguelyvulgar/2016/08/854b8538485967-57631dbc24357.jpg",
-        "alt": "",
+        "alt": "Ryan Reddy with large grey curled horns, a tousled ginger wig and face paint, in a suede waistcoat over a floral shirt and paisley trousers, in front of dark green trees.",
         "caption": "",
         "width": 1200,
         "height": 1798,
-        "wp_url": "https://vaguelyvulgar.wordpress.com/wp-content/uploads/2016/08/854b8538485967-57631dbc24357.jpg"
+        "wp_url": "https://vaguelyvulgar.wordpress.com/wp-content/uploads/2016/08/854b8538485967-57631dbc24357.jpg",
+        "description": "Ryan Reddy with large grey curled horns, a tousled ginger wig and face paint, in a suede waistcoat over a floral shirt and paisley trousers, in front of dark green trees.",
+        "keywords": [
+          "Ryan Reddy",
+          "model",
+          "horns",
+          "costume",
+          "face paint",
+          "wig",
+          "waistcoat"
+        ]
       },
       "media": [
         {
           "id": "14",
           "url": "/portfolio/images/vaguelyvulgar/2016/08/854b8538485967-57631dbc24357.jpg",
           "title": "854b8538485967.57631dbc24357",
-          "alt": "",
+          "alt": "Ryan Reddy with large grey curled horns, a tousled ginger wig and face paint, in a suede waistcoat over a floral shirt and paisley trousers, in front of dark green trees.",
           "caption": "",
-          "description": "",
+          "description": "Ryan Reddy with large grey curled horns, a tousled ginger wig and face paint, in a suede waistcoat over a floral shirt and paisley trousers, in front of dark green trees.",
           "width": 1200,
           "height": 1798,
           "type": "image",
-          "wp_url": "https://vaguelyvulgar.wordpress.com/wp-content/uploads/2016/08/854b8538485967-57631dbc24357.jpg"
+          "wp_url": "https://vaguelyvulgar.wordpress.com/wp-content/uploads/2016/08/854b8538485967-57631dbc24357.jpg",
+          "keywords": [
+            "Ryan Reddy",
+            "model",
+            "horns",
+            "costume",
+            "face paint",
+            "wig",
+            "waistcoat"
+          ]
         },
         {
           "id": "27",
           "url": "/portfolio/images/vaguelyvulgar/2016/08/10150002_776022152408873_59738154_n.jpg",
           "title": "10150002_776022152408873_59738154_n",
-          "alt": "",
+          "alt": "Ryan Reddy kneeling on a patterned rug in a long brown fur coat, a peacock feather in his hair and a moka pot beside him, against a white backdrop.",
           "caption": "",
-          "description": "",
+          "description": "Ryan Reddy kneeling on a patterned rug in a long brown fur coat, a peacock feather in his hair and a moka pot beside him, against a white backdrop.",
           "width": 626,
           "height": 960,
           "type": "image",
-          "wp_url": "https://vaguelyvulgar.wordpress.com/wp-content/uploads/2016/08/10150002_776022152408873_59738154_n.jpg"
+          "wp_url": "https://vaguelyvulgar.wordpress.com/wp-content/uploads/2016/08/10150002_776022152408873_59738154_n.jpg",
+          "keywords": [
+            "Ryan Reddy",
+            "model",
+            "fur coat",
+            "peacock feather",
+            "studio",
+            "rug"
+          ]
         },
         {
           "id": "31",
           "url": "/portfolio/images/vaguelyvulgar/2016/08/10151676_10152324841734120_644555137_n.jpg",
           "title": "10151676_10152324841734120_644555137_n",
-          "alt": "",
+          "alt": "Ryan Reddy seated in a cane chair in a brown fur coat and a turquoise pendant, holding a metal machine part in each hand, against a white backdrop.",
           "caption": "",
-          "description": "",
+          "description": "Ryan Reddy seated in a cane chair in a brown fur coat and a turquoise pendant, holding a metal machine part in each hand, against a white backdrop.",
           "width": 960,
           "height": 637,
           "type": "image",
-          "wp_url": "https://vaguelyvulgar.wordpress.com/wp-content/uploads/2016/08/10151676_10152324841734120_644555137_n.jpg"
+          "wp_url": "https://vaguelyvulgar.wordpress.com/wp-content/uploads/2016/08/10151676_10152324841734120_644555137_n.jpg",
+          "keywords": [
+            "Ryan Reddy",
+            "model",
+            "fur coat",
+            "turquoise necklace",
+            "cane chair",
+            "studio",
+            "long hair"
+          ]
         },
         {
           "id": "35",
           "url": "/portfolio/images/vaguelyvulgar/2016/08/10268660_10206237184343304_8121248915010979515_n.jpg",
           "title": "10268660_10206237184343304_8121248915010979515_n",
-          "alt": "",
+          "alt": "Ryan Reddy at a café table in a brown felt hat and a red velvet jacket over a green waistcoat, stirring a tall glass of coffee.",
           "caption": "",
-          "description": "",
+          "description": "Ryan Reddy at a café table in a brown felt hat and a red velvet jacket over a green waistcoat, stirring a tall glass of coffee.",
           "width": 720,
           "height": 960,
           "type": "image",
-          "wp_url": "https://vaguelyvulgar.wordpress.com/wp-content/uploads/2016/08/10268660_10206237184343304_8121248915010979515_n.jpg"
+          "wp_url": "https://vaguelyvulgar.wordpress.com/wp-content/uploads/2016/08/10268660_10206237184343304_8121248915010979515_n.jpg",
+          "keywords": [
+            "Ryan Reddy",
+            "model",
+            "velvet jacket",
+            "felt hat",
+            "waistcoat",
+            "café"
+          ]
         },
         {
           "id": "36",
           "url": "/portfolio/images/vaguelyvulgar/2016/08/10269811_790538890957199_1681585507_o.jpg",
           "title": "10269811_790538890957199_1681585507_o",
-          "alt": "",
+          "alt": "Black-and-white close-up of Ryan Reddy's face: long hair, stubble, a beaded ring in his septum and a slight smile.",
           "caption": "",
-          "description": "",
+          "description": "Black-and-white close-up of Ryan Reddy's face: long hair, stubble, a beaded ring in his septum and a slight smile.",
           "width": 2000,
           "height": 1328,
           "type": "image",
-          "wp_url": "https://vaguelyvulgar.wordpress.com/wp-content/uploads/2016/08/10269811_790538890957199_1681585507_o.jpg"
+          "wp_url": "https://vaguelyvulgar.wordpress.com/wp-content/uploads/2016/08/10269811_790538890957199_1681585507_o.jpg",
+          "keywords": [
+            "Ryan Reddy",
+            "model",
+            "black and white",
+            "close-up",
+            "septum piercing",
+            "stubble",
+            "long hair"
+          ]
         },
         {
           "id": "37",
           "url": "/portfolio/images/vaguelyvulgar/2016/08/10752266_896674723676948_1137962287_o.jpg",
           "title": "10752266_896674723676948_1137962287_o",
-          "alt": "",
+          "alt": "Ryan Reddy in a fur coat leaning back in a cane chair, legs crossed, holding out a fan of peacock feathers, lit pink and red.",
           "caption": "",
-          "description": "",
+          "description": "Ryan Reddy in a fur coat leaning back in a cane chair, legs crossed, holding out a fan of peacock feathers, lit pink and red.",
           "width": 2000,
           "height": 1328,
           "type": "image",
-          "wp_url": "https://vaguelyvulgar.wordpress.com/wp-content/uploads/2016/08/10752266_896674723676948_1137962287_o.jpg"
+          "wp_url": "https://vaguelyvulgar.wordpress.com/wp-content/uploads/2016/08/10752266_896674723676948_1137962287_o.jpg",
+          "keywords": [
+            "Ryan Reddy",
+            "model",
+            "fur coat",
+            "peacock feathers",
+            "pink light",
+            "cane chair",
+            "studio"
+          ]
         },
         {
           "id": "40",
           "url": "/portfolio/images/vaguelyvulgar/2016/08/10866656_10152947360054120_1268752690_n.jpg",
           "title": "10866656_10152947360054120_1268752690_n",
-          "alt": "",
+          "alt": "Ryan Reddy smiling and raising a stemmed glass, in a red velvet jacket and a dark blue floral shirt, his nails painted.",
           "caption": "",
-          "description": "",
+          "description": "Ryan Reddy smiling and raising a stemmed glass, in a red velvet jacket and a dark blue floral shirt, his nails painted.",
           "width": 480,
           "height": 640,
           "type": "image",
-          "wp_url": "https://vaguelyvulgar.wordpress.com/wp-content/uploads/2016/08/10866656_10152947360054120_1268752690_n.jpg"
+          "wp_url": "https://vaguelyvulgar.wordpress.com/wp-content/uploads/2016/08/10866656_10152947360054120_1268752690_n.jpg",
+          "keywords": [
+            "Ryan Reddy",
+            "model",
+            "velvet jacket",
+            "beard",
+            "smile",
+            "nail polish"
+          ]
         },
         {
           "id": "43",
           "url": "/portfolio/images/vaguelyvulgar/2016/08/11653274_10153392598169120_1528223826_n.jpg",
           "title": "11653274_10153392598169120_1528223826_n",
-          "alt": "",
+          "alt": "Ryan Reddy in blue-grey face paint and orange lipstick, a beaded headdress, a turquoise necklace and a patterned shirt, outdoors by trees.",
           "caption": "",
-          "description": "",
+          "description": "Ryan Reddy in blue-grey face paint and orange lipstick, a beaded headdress, a turquoise necklace and a patterned shirt, outdoors by trees.",
           "width": 640,
           "height": 480,
           "type": "image",
-          "wp_url": "https://vaguelyvulgar.wordpress.com/wp-content/uploads/2016/08/11653274_10153392598169120_1528223826_n.jpg"
+          "wp_url": "https://vaguelyvulgar.wordpress.com/wp-content/uploads/2016/08/11653274_10153392598169120_1528223826_n.jpg",
+          "keywords": [
+            "Ryan Reddy",
+            "model",
+            "face paint",
+            "headdress",
+            "costume",
+            "beard"
+          ]
         },
         {
           "id": "46",
           "url": "/portfolio/images/vaguelyvulgar/2016/08/12053176_10153613406069120_135239195_n.jpg",
           "title": "12053176_10153613406069120_135239195_n",
-          "alt": "",
+          "alt": "Ryan Reddy seen from below in sunglasses, a dark cap and an open denim shirt, a cigarette between his lips.",
           "caption": "",
-          "description": "",
+          "description": "Ryan Reddy seen from below in sunglasses, a dark cap and an open denim shirt, a cigarette between his lips.",
           "width": 480,
           "height": 640,
           "type": "image",
-          "wp_url": "https://vaguelyvulgar.wordpress.com/wp-content/uploads/2016/08/12053176_10153613406069120_135239195_n.jpg"
+          "wp_url": "https://vaguelyvulgar.wordpress.com/wp-content/uploads/2016/08/12053176_10153613406069120_135239195_n.jpg",
+          "keywords": [
+            "Ryan Reddy",
+            "model",
+            "sunglasses",
+            "denim shirt",
+            "cap",
+            "moustache"
+          ]
         },
         {
           "id": "47",
           "url": "/portfolio/images/vaguelyvulgar/2016/08/12053306_10153613576399120_2053553017_n.jpg",
           "title": "12053306_10153613576399120_2053553017_n",
-          "alt": "",
+          "alt": "Ryan Reddy in a backwards blue cap, large headphones, a denim shirt and a black leather jacket, looking out of a window on public transport.",
           "caption": "",
-          "description": "",
+          "description": "Ryan Reddy in a backwards blue cap, large headphones, a denim shirt and a black leather jacket, looking out of a window on public transport.",
           "width": 480,
           "height": 640,
           "type": "image",
-          "wp_url": "https://vaguelyvulgar.wordpress.com/wp-content/uploads/2016/08/12053306_10153613576399120_2053553017_n.jpg"
+          "wp_url": "https://vaguelyvulgar.wordpress.com/wp-content/uploads/2016/08/12053306_10153613576399120_2053553017_n.jpg",
+          "keywords": [
+            "Ryan Reddy",
+            "model",
+            "headphones",
+            "cap",
+            "denim shirt",
+            "leather jacket",
+            "moustache"
+          ]
         },
         {
           "id": "51",
           "url": "/portfolio/images/vaguelyvulgar/2016/08/13339513_10154168622239120_3893485588793839304_n.jpg",
           "title": "13339513_10154168622239120_3893485588793839304_n",
-          "alt": "",
+          "alt": "Ryan Reddy smiling over his shoulder, his hair braided back, in a coat with a sheepskin collar, reeds and a lake behind him.",
           "caption": "",
-          "description": "",
+          "description": "Ryan Reddy smiling over his shoulder, his hair braided back, in a coat with a sheepskin collar, reeds and a lake behind him.",
           "width": 960,
           "height": 960,
           "type": "image",
-          "wp_url": "https://vaguelyvulgar.wordpress.com/wp-content/uploads/2016/08/13339513_10154168622239120_3893485588793839304_n.jpg"
+          "wp_url": "https://vaguelyvulgar.wordpress.com/wp-content/uploads/2016/08/13339513_10154168622239120_3893485588793839304_n.jpg",
+          "keywords": [
+            "Ryan Reddy",
+            "model",
+            "lake",
+            "sheepskin coat",
+            "braids",
+            "outdoors"
+          ]
         },
         {
           "id": "55",
           "url": "/portfolio/images/vaguelyvulgar/2016/08/13728949_10207389860479487_7685997615777298629_n.jpg",
           "title": "13728949_10207389860479487_7685997615777298629_n",
-          "alt": "",
+          "alt": "Ryan Reddy at dusk with long grass stems in his hair, in front of a field of tents under a cloudy sky.",
           "caption": "",
-          "description": "",
+          "description": "Ryan Reddy at dusk with long grass stems in his hair, in front of a field of tents under a cloudy sky.",
           "width": 960,
           "height": 648,
           "type": "image",
-          "wp_url": "https://vaguelyvulgar.wordpress.com/wp-content/uploads/2016/08/13728949_10207389860479487_7685997615777298629_n.jpg"
+          "wp_url": "https://vaguelyvulgar.wordpress.com/wp-content/uploads/2016/08/13728949_10207389860479487_7685997615777298629_n.jpg",
+          "keywords": [
+            "Ryan Reddy",
+            "model",
+            "dusk",
+            "tents",
+            "film photo",
+            "silhouette"
+          ]
         },
         {
           "id": "56",
           "url": "/portfolio/images/vaguelyvulgar/2016/08/b05d0838485967-57631dbc23670.jpg",
           "title": "b05d0838485967.57631dbc23670",
-          "alt": "",
+          "alt": "Ryan Reddy in a ginger wig and brown face paint beside another model in a white fur hat with a curved horn and painted brows, by a tree trunk.",
           "caption": "",
-          "description": "",
+          "description": "Ryan Reddy in a ginger wig and brown face paint beside another model in a white fur hat with a curved horn and painted brows, by a tree trunk.",
           "width": 1200,
           "height": 801,
           "type": "image",
-          "wp_url": "https://vaguelyvulgar.wordpress.com/wp-content/uploads/2016/08/b05d0838485967-57631dbc23670.jpg"
+          "wp_url": "https://vaguelyvulgar.wordpress.com/wp-content/uploads/2016/08/b05d0838485967-57631dbc23670.jpg",
+          "keywords": [
+            "Ryan Reddy",
+            "model",
+            "costume",
+            "face paint",
+            "horns",
+            "wig",
+            "fur hat"
+          ]
         },
         {
           "id": "28",
           "url": "/portfolio/images/vaguelyvulgar/2016/08/10151556_776022145742207_448130160_n-1.jpg",
           "title": "10151556_776022145742207_448130160_n (1)",
-          "alt": "",
+          "alt": "Ryan Reddy lying on a patterned rug in a fur coat, grey trousers and black boots, holding peacock feathers, a moka pot by his feet, against a white backdrop.",
           "caption": "",
-          "description": "",
+          "description": "Ryan Reddy lying on a patterned rug in a fur coat, grey trousers and black boots, holding peacock feathers, a moka pot by his feet, against a white backdrop.",
           "width": 960,
           "height": 438,
           "type": "image",
-          "wp_url": "https://vaguelyvulgar.wordpress.com/wp-content/uploads/2016/08/10151556_776022145742207_448130160_n-1.jpg"
+          "wp_url": "https://vaguelyvulgar.wordpress.com/wp-content/uploads/2016/08/10151556_776022145742207_448130160_n-1.jpg",
+          "keywords": [
+            "Ryan Reddy",
+            "model",
+            "fur coat",
+            "peacock feathers",
+            "boots",
+            "rug",
+            "studio"
+          ]
         }
       ]
     },

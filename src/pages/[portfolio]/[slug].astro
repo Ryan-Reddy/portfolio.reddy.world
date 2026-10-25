@@ -2,7 +2,9 @@
 import Base from '../../layouts/Base.astro';
 import { renderContent } from '../../lib/content.js';
 import { absUrl } from '../../lib/media-url.js';
-import { portfolios, formatDate, photos, altFor, contextOf, picture, contactUrl, titleCase, PERSON_ID, ORIGIN, SITE, BASE, themeByTag, KIND_LABEL } from '../../lib/portfolios.js';
+import { subjectImageObject } from '../../lib/model-page.js';
+import { httpUrl } from '../../lib/safe-output.js';
+import { portfolios, formatDate, photos, altFor, contextOf, picture, contactUrl, titleCase, PERSON_ID, ORIGIN, SITE, BASE, themeByTag, KIND_LABEL, portfolioLabel } from '../../lib/portfolios.js';
 
 export function getStaticPaths() {
   return portfolios.flatMap((p) =>
@@ -21,6 +23,14 @@ const description = `${(post.excerpt || name).replace(/[.!?…]?$/, (end) => end
 const pageUrl = `${SITE}${post.path}`;
 
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+// the photographer Ryan credited on the image desk: "Photo: Name", linked to their site when he gave one
+// (a site links only when it is an http(s) address)
+const creditHtml = (c) => c?.name ? `<span class="photo-credit">Photo: ${httpUrl(c.url) ? `<a href="${esc(httpUrl(c.url))}" rel="noopener">${esc(c.name)}</a>` : esc(c.name)}</span>` : '';
+const captionHtml = (m) => (m.caption || m.credit?.name ? `<figcaption>${m.caption ? esc(m.caption) : ''}${m.caption && m.credit?.name ? ' · ' : ''}${creditHtml(m.credit)}</figcaption>` : '');
+// in the structured data the credited photographer is the picture's creator, and Ryan claims no copyright on it
+const credited = (m, object) => (m.credit?.name
+  ? { ...object, creator: { '@type': 'Person', name: m.credit.name, url: httpUrl(m.credit.url) }, creditText: m.credit.name, copyrightNotice: undefined }
+  : object);
 
 // Every picture is one lightbox slide, numbered in reading order: the ones placed in the text first
 let slide = 0;
@@ -38,8 +48,7 @@ function item(i, sizes) {
     `<figure class="gallery-item"${ratio}>` +
     `<button type="button" class="gallery-thumb" data-index="${slide++}" data-full="${esc(m.url)}" aria-label="Enlarge: ${esc(alt)}">` +
     `<img src="${esc(pic.src)}"${set}${dims} alt="${esc(alt)}" loading="lazy" decoding="async"></button>` +
-    (m.caption ? `<figcaption>${esc(m.caption)}</figcaption>` : '') +
-    `<a class="ask-link" href="${esc(contactUrl({ project: post.slug, image: m.id || String(i + 1) }))}">Ask about this picture</a>` +
+    captionHtml(m) +
     `</figure>`
   );
 }
@@ -60,18 +69,27 @@ function figure(indices) {
   return ids.length ? `<div class="post-figure">${rows(ids)}</div>` : '';
 }
 
-const body = renderContent(post.content, { title: name, figure });
+// The modelling page is a comp card: the lead picture large with the measurements beside it,
+// the other pictures in a grid at their own shape. Its text only placed the pictures.
+const comp = post.layout === 'comp-card';
+const lead = comp ? (imgs.find((m) => m.url === post.featured?.url) ?? imgs[0]) : null;
+// the lead is the page's largest picture: loaded first, not lazily
+const leadHtml = lead ? item(post.media.indexOf(lead), '(max-width: 720px) 100vw, 640px').replace(' loading="lazy"', ' fetchpriority="high"') : '';
+const gridHtml = comp ? imgs.filter((m) => m !== lead).map((m) => item(post.media.indexOf(m), '(max-width: 720px) 50vw, 360px')).join('') : '';
+const leadRatio = lead?.width && lead?.height ? (lead.width / lead.height).toFixed(3) : '0.667';
+
+const body = comp ? '' : renderContent(post.content, { title: name, figure });
 // Pictures the text did not place: only posts that never placed any keep their uploads here
-const rest = imgs.filter((m) => !shown.has(m.url));
+const rest = comp ? [] : imgs.filter((m) => !shown.has(m.url));
 const restHtml = rows(rest.map((m) => post.media.indexOf(m)));
 
 // The chosen featured image heads the page, unless the post already shows it
 const featured = post.featured;
-const hero = featured && !shown.has(featured.url) ? { ...picture(featured), alt: altFor(post, featured, 0) } : null;
+const hero = featured && !comp && !shown.has(featured.url) ? { ...picture(featured), alt: altFor(post, featured, 0) } : null;
 
 const shareImage = featured && { url: absUrl(featured.url), width: featured.width, height: featured.height, alt: altFor(post, featured, 0) };
 const words = body.replace(/<[^>]+>/g, ' ').split(/\s+/).filter(Boolean).length;
-const imageObject = (m, i) => ({
+const imageObject = (m, i) => credited(m, {
   '@type': 'ImageObject',
   contentUrl: absUrl(m.url),
   url: absUrl(m.url),
@@ -89,6 +107,9 @@ const isPost = post.type === 'post';
 // the featured image first: search engines take the first as the post's picture
 const images = [featured, ...imgs.filter((m) => m.url !== featured?.url)].filter(Boolean);
 
+// on the modelling page Ryan is in the pictures: what they are about, not who took them
+const pictureObject = (m, i) => (p.subject ? subjectImageObject(imageObject(m, i), m, PERSON_ID) : imageObject(m, i));
+
 const jsonLd = [
   {
     '@context': 'https://schema.org',
@@ -104,9 +125,9 @@ const jsonLd = [
     publisher: { '@type': 'Person', '@id': PERSON_ID, name: 'Ryan Reddy', url: `${ORIGIN}/` },
     articleSection: post.categories[0] || p.name,
     keywords: [...new Set([...post.categories, ...post.tags, ...(post.keywords ?? [])])].join(', ') || undefined,
-    wordCount: words,
-    isPartOf: { '@type': 'Blog', name: `${p.name}: ${p.subtitle}`, url: `${SITE}/${p.id}/` },
-    image: images.length ? images.map((m) => imageObject(m, Math.max(0, post.media.indexOf(m)))) : undefined,
+    wordCount: words || undefined,
+    isPartOf: { '@type': 'Blog', name: portfolioLabel(p), url: `${SITE}/${p.id}/` },
+    image: images.length ? images.map((m) => pictureObject(m, Math.max(0, post.media.indexOf(m)))) : undefined,
   },
   {
     '@context': 'https://schema.org',
@@ -121,12 +142,26 @@ const jsonLd = [
 const article = isPost ? { published: post.published, modified: post.modified, section: post.categories[0] || p.name, tags: post.tags } : undefined;
 ---
 <Base title={`${name} — ${p.brand} | Ryan Reddy`} description={description} image={shareImage} active={p.id} jsonLd={jsonLd} type={isPost ? 'article' : 'website'} article={article}>
-  <article class="project-page">
+  <article class:list={['project-page', { 'comp-card': comp }]}>
     <nav class="breadcrumb" aria-label="Breadcrumb">
       <a href={`${BASE}/`}>Portfolio</a> <span aria-hidden="true">/</span> <a href={`${BASE}/${p.id}/`}>{p.name}</a>
     </nav>
 
-    <header class="modal-header">
+    {comp && (
+      <div class="comp-lead" style={`--lead-r: ${leadRatio}`}>
+        <header class="comp-title"><h1 class="modal-title">{post.title.trim()}</h1></header>
+        <div class="comp-photo" set:html={leadHtml} />
+        {post.measurements?.length > 0 && (
+          <section class="comp-facts" aria-labelledby="measurements">
+            <h2 class="modal-gallery-title" id="measurements">Measurements</h2>
+            <dl class="measurements">{post.measurements.map(([label, value]) => <Fragment><dt>{label}</dt><dd>{value}</dd></Fragment>)}</dl>
+          </section>
+        )}
+      </div>
+    )}
+    {comp && gridHtml && <div class="comp-grid" set:html={gridHtml} />}
+
+    {!comp && <header class="modal-header">
       <div class="modal-meta">
         <time datetime={post.published}>{formatDate(post.date)}</time>
         {post.kinds.length > 0 && <span>&bull; {post.kinds.map((k) => KIND_LABEL[k]).join(', ')}</span>}
@@ -137,12 +172,12 @@ const article = isPost ? { published: post.published, modified: post.modified, s
           ? <a class="card-tag" href={`${BASE}/theme/${t}/`}>#{themeByTag[t].label}</a>
           : <span class="card-tag">#{t}</span>)}</div>
       )}
-    </header>
+    </header>}
 
     {hero && (
       <figure class="post-hero">
         <img src={hero.src} srcset={hero.srcset} sizes="(max-width: 900px) 100vw, 852px" width={hero.width} height={hero.height} alt={hero.alt} fetchpriority="high" decoding="async">
-        {featured.caption && <figcaption>{featured.caption}</figcaption>}
+        {(featured.caption || featured.credit?.name) && <Fragment set:html={captionHtml(featured)} />}
       </figure>
     )}
 
@@ -152,6 +187,24 @@ const article = isPost ? { published: post.published, modified: post.modified, s
       <section class="modal-gallery-section" aria-labelledby="gallery-title">
         <h2 class="modal-gallery-title" id="gallery-title">Photographs ({rest.length})</h2>
         <div class="post-figure" set:html={restHtml} />
+      </section>
+    )}
+
+    {post.films.length > 0 && (
+      <section class="modal-gallery-section film" aria-labelledby="film-title">
+        <h2 class="modal-gallery-title" id="film-title">Film</h2>
+        <div class="film-grid">
+          {post.films.map((v) => (
+            <figure class="video-embed">
+              <div class="video-frame">
+                {post.filmsLinkOnly?.includes(v.id)
+                  ? <a href={v.url} rel="noopener"><img src={v.thumbnail} alt={v.title} loading="lazy" decoding="async"></a>
+                  : <iframe src={`https://www.youtube-nocookie.com/embed/${v.id}${v.start ? `?start=${v.start}` : ''}`} title={v.title} loading="lazy" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>}
+              </div>
+              <figcaption><a href={v.url} rel="noopener">{v.title}</a> · {v.channel}</figcaption>
+            </figure>
+          ))}
+        </div>
       </section>
     )}
 
@@ -193,7 +246,6 @@ const article = isPost ? { published: post.published, modified: post.modified, s
       <img id="lightbox-img" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" alt="">
       <div class="lightbox-caption">
         <span id="lightbox-count"></span>
-        <a id="lightbox-ask" class="ask-link" href="#">Ask about this picture</a>
       </div>
     </div>
   </div>
@@ -203,7 +255,6 @@ const article = isPost ? { published: post.published, modified: post.modified, s
   const box = document.getElementById('lightbox')!;
   const img = document.getElementById('lightbox-img') as HTMLImageElement;
   const count = document.getElementById('lightbox-count')!;
-  const ask = document.getElementById('lightbox-ask') as HTMLAnchorElement;
   const items = [...document.querySelectorAll<HTMLElement>('.gallery-item')];
   let index = 0;
   let opener: HTMLElement | null = null;
@@ -214,7 +265,6 @@ const article = isPost ? { published: post.published, modified: post.modified, s
     img.src = thumb.dataset.full!;
     img.alt = thumb.querySelector('img')!.alt;
     count.textContent = `${index + 1} / ${items.length}`;
-    ask.href = items[index].querySelector<HTMLAnchorElement>('.ask-link')!.href;
   }
   function open(i: number, from: HTMLElement) {
     opener = from;

@@ -1,6 +1,7 @@
 // The image desk's projects and its first two suggestion columns (/portfolio/image-metadata/).
 // Shared by the page and by scripts/keyword-ratings.mjs, which rates the same words at build time.
 import { portfolios, photos, picture, SITE, KIND_LABEL } from './portfolios.js';
+import { isMachineAlt } from './alt-text.js';
 
 const SEARCH_INTENT = {
   rmaekers: ['production studio Amsterdam', 'experiential design studio Amsterdam', 'creative fabrication Amsterdam', 'brand activations Amsterdam', 'exhibition stand design Amsterdam'],
@@ -30,6 +31,7 @@ const handwrittenDescription = (image, projectTitle) => {
   const text = useful(image.caption) || useful(image.alt);
   if (!text || /^[\da-f]{8}-[\da-f-]{20,}$/i.test(text) || /^(img|dsc|fullsizeoutput)[_ -]?\w+$/i.test(text) || /\.(jpe?g|png|gif|webp)$/i.test(text)) return '';
   if (text.toLowerCase() === useful(projectTitle).toLowerCase() || /,\s*(photo|image|picture)\s+\d+$/i.test(text)) return '';
+  if (isMachineAlt(text, image.url, projectTitle)) return '';
   return text;
 };
 const suggestionsFor = (portfolio, post) => unique([

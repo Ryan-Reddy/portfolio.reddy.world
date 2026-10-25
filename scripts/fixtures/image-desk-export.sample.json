@@ -4,7 +4,7 @@
   "projects": {
     "vaguelyvulgar/photo-cv": { "tags": "sample project word, Sample Project Word, second sample", "reviewed": true },
     "rrproductions/water-filtering": { "tags": "", "reviewed": false },
-    "rrproductions/no-such-project": { "tags": "", "reviewed": false }
+    "rrproductions/no-such-project": { "tags": "", "reviewed": true }
   },
   "images": {
     "vaguelyvulgar/photo-cv::/portfolio/images/vaguelyvulgar/2016/08/854b8538485967-57631dbc24357.jpg": {
