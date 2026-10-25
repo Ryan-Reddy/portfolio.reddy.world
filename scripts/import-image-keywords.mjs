@@ -16,6 +16,10 @@
 // Per project: its shared keywords become the post's `keywords` (the page's JSON-LD),
 // and the lead picture Ryan chose (`hero`, a picture url) becomes the post's `featured`
 // picture: it heads the page and the card, and the reddy.world wall takes it from rss.xml.
+// Credits: the photographer Ryan typed for a picture (`credit: { name, url }`), or else the
+// one he typed for its whole project, becomes the picture's `credit` (its caption reads
+// "Photo: <name>", and the page's ImageObject gets the photographer as its creator). The
+// site goes in only when it is an http(s) address; a credit without a name is ignored.
 //
 // Only words from the export are written; nothing is made up. An empty field in the
 // export never clears what the data already has. Running it twice changes nothing.
@@ -26,6 +30,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { isFileNameCaption, isMachineAlt, fallbackAlt } from '../src/lib/alt-text.js';
+import { httpUrl } from '../src/lib/safe-output.js';
 
 export { isFileNameCaption };
 
@@ -42,17 +47,24 @@ const tagsOf = (value, dropped = []) => list(Array.isArray(value) ? value : Stri
   .filter((tag) => !tag.includes('://') || (dropped.includes(tag) || dropped.push(tag), false));
 // the pictures a page shows, in order (src/lib/portfolios.js photos())
 const shownOf = (post) => post.media.filter((m) => m.type === 'image' && m.duplicate_of === undefined);
+// a photographer's credit from the export: the name as typed, the site only when it parses as http(s)
+export const creditOf = (value) => {
+  const name = clean(value?.name);
+  if (!name) return undefined;
+  const url = httpUrl(clean(value.url));
+  return url ? { name, url } : { name };
+};
 
 /**
  * Applies a desk export to the archive data, in place.
  * @param {object} exported the parsed export (version 4: { projects, images })
  * @param {Record<string, object>} data the parsed src/data/<key>.json files, by key
- * @returns {{ pictures: number, projects: number, heroes: number, skipped: number, unmatched: string[], dropped: string[], alts: {key: string, before: string, after: string}[] }}
+ * @returns {{ pictures: number, projects: number, heroes: number, credits: number, skipped: number, unmatched: string[], dropped: string[], alts: {key: string, before: string, after: string}[] }}
  */
 export function applyKeywords(exported, data) {
   if (!exported || typeof exported.images !== 'object') throw new Error('not an image desk export: no "images"');
   if (exported.version !== 4) throw new Error(`export version ${exported.version}; this importer reads version 4`);
-  const report = { pictures: 0, projects: 0, heroes: 0, skipped: 0, unmatched: [], dropped: [], alts: [] };
+  const report = { pictures: 0, projects: 0, heroes: 0, credits: 0, skipped: 0, unmatched: [], dropped: [], alts: [] };
   const postFor = (projectId) => {
     const [key, slug] = String(projectId).split('/');
     return data[key]?.posts.find((post) => post.slug === slug);
@@ -64,8 +76,8 @@ export function applyKeywords(exported, data) {
     if (post && project?.hero && post.featured?.url !== project.hero) {
       const lead = post.media.find((m) => m.url === project.hero);
       if (lead) {
-        const { id, url, alt, caption, width, height, wp_url } = lead;
-        post.featured = Object.fromEntries(Object.entries({ id, url, alt, caption, width, height, wp_url }).filter(([, v]) => v !== undefined));
+        const { id, url, alt, caption, width, height, wp_url, credit } = lead;
+        post.featured = Object.fromEntries(Object.entries({ id, url, alt, caption, width, height, wp_url, credit }).filter(([, v]) => v !== undefined));
         report.heroes++;
       } else report.unmatched.push(`${projectId}::${project.hero} (lead picture)`);
     }
@@ -88,7 +100,10 @@ export function applyKeywords(exported, data) {
     const keywords = tagsOf(entry.keywords?.length ? entry.keywords : [...(entry.projectKeywords ?? []), ...(entry.imageKeywords ?? [])], report.dropped);
     const shown = shownOf(post);
     const position = (shown.findIndex((m) => m.url === url) + 1) || (post.media.filter((m) => m.type === 'image').findIndex((m) => m.url === url) + 1) || 1;
+    // the picture's own photographer, else the one for the whole project
+    const credit = creditOf(entry.credit) ?? creditOf(exported.projects?.[projectId]?.credit);
     let changed = false;
+    let credited = false;
     for (const media of records) {
       const before = JSON.stringify(media);
       if (description) {
@@ -103,8 +118,14 @@ export function applyKeywords(exported, data) {
       const was = JSON.parse(before).alt ?? '';
       if (media.alt !== was && !report.alts.some((a) => a.key === key && a.after === media.alt)) report.alts.push({ key, before: was, after: media.alt });
       changed ||= JSON.stringify(media) !== before;
+      // a credit alone counts as "credited", not as an updated picture
+      if (credit && JSON.stringify(media.credit) !== JSON.stringify(credit)) {
+        media.credit = credit;
+        credited = true;
+      }
     }
     if (changed) report.pictures++;
+    if (credited) report.credits++;
   }
   return report;
 }
@@ -120,7 +141,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   const data = Object.fromEntries(KEYS.map((key) => [key, JSON.parse(readFileSync(path(key), 'utf-8'))]));
   const report = applyKeywords(JSON.parse(readFileSync(file, 'utf-8')), data);
   if (flag !== '--dry-run') for (const key of KEYS) writeFileSync(path(key), `${JSON.stringify(data[key], null, 2)}\n`);
-  console.log(`import-image-keywords: ${report.pictures} pictures, ${report.projects} projects and ${report.heroes} lead pictures updated; ${report.skipped} pictures of projects not marked done on the desk left alone${flag === '--dry-run' ? ' (dry run, nothing written)' : ''}`);
+  console.log(`import-image-keywords: ${report.pictures} pictures, ${report.projects} projects and ${report.heroes} lead pictures updated, ${report.credits} pictures credited; ${report.skipped} pictures of projects not marked done on the desk left alone${flag === '--dry-run' ? ' (dry run, nothing written)' : ''}`);
   for (const { key, before, after } of report.alts) console.log(`alt ${key}
   before: ${before}
   after:  ${after}`);

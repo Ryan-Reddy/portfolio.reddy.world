@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { applyKeywords, isFileNameCaption } from './import-image-keywords.mjs';
+import { applyKeywords, isFileNameCaption, creditOf } from './import-image-keywords.mjs';
 import { fallbackAlt, isMachineAlt } from '../src/lib/alt-text.js';
 
 const read = (p) => JSON.parse(readFileSync(new URL(p, import.meta.url), 'utf-8'));
@@ -108,6 +108,57 @@ test('pictures of a project Ryan never opened on the desk are left alone', () =>
   assert.equal(JSON.stringify(media(data, 'vaguelyvulgar', 'photo-cv', FIRST)), before);
   assert.equal(report.skipped, 1);
   assert.equal(report.pictures, 0);
+});
+
+const credited = (projectCredit, images) => ({ version: 4, projects: { 'vaguelyvulgar/photo-cv': { tags: '', reviewed: true, credit: projectCredit } }, images: Object.fromEntries(
+  Object.entries(images).map(([url, credit]) => [`vaguelyvulgar/photo-cv::${url}`, { projectId: 'vaguelyvulgar/photo-cv', url, description: '', keywords: [], credit }]),
+) });
+
+test('the photographer of a picture wins over the one of its project; both become media.credit', () => {
+  const data = archive();
+  const report = applyKeywords(credited({ name: 'Project Photographer', url: 'https://project.example/' }, {
+    [FIRST]: { name: '  Own   Photographer ', url: 'https://own.example/work' },
+    [SECOND]: { name: '', url: '' },
+  }), data);
+  assert.deepEqual(media(data, 'vaguelyvulgar', 'photo-cv', FIRST).credit, { name: 'Own Photographer', url: 'https://own.example/work' });
+  assert.deepEqual(media(data, 'vaguelyvulgar', 'photo-cv', SECOND).credit, { name: 'Project Photographer', url: 'https://project.example/' });
+  assert.equal(report.credits, 2);
+  // a credit alone is counted as credited, not as an updated picture
+  assert.equal(report.pictures, 0);
+  // the featured record of the same picture carries the same credit
+  const post = data.vaguelyvulgar.posts.find((p) => p.slug === 'photo-cv');
+  if (post.featured?.url === FIRST) assert.deepEqual(post.featured.credit, { name: 'Own Photographer', url: 'https://own.example/work' });
+});
+
+test('a site goes in only when it is an http(s) address', () => {
+  assert.deepEqual(creditOf({ name: 'A', url: 'javascript:alert(1)' }), { name: 'A' });
+  assert.deepEqual(creditOf({ name: 'A', url: 'www.example.com' }), { name: 'A' });
+  assert.deepEqual(creditOf({ name: 'A', url: 'mailto:a@example.com' }), { name: 'A' });
+  assert.deepEqual(creditOf({ name: 'A', url: 'http://example.com' }), { name: 'A', url: 'http://example.com/' });
+  assert.equal(creditOf({ name: ' ', url: 'https://example.com/' }), undefined);
+  assert.equal(creditOf(undefined), undefined);
+});
+
+test('no credit in the export never clears one the data has; twice changes nothing', () => {
+  const data = archive();
+  const exported = credited(undefined, { [FIRST]: { name: 'Own Photographer' } });
+  applyKeywords(exported, data);
+  assert.deepEqual(media(data, 'vaguelyvulgar', 'photo-cv', FIRST).credit, { name: 'Own Photographer' });
+  const once = JSON.stringify(data);
+  const report = applyKeywords(credited({ name: '' }, { [FIRST]: { name: '', url: '' } }), data);
+  assert.equal(JSON.stringify(data), once);
+  assert.equal(report.credits, 0);
+  assert.equal(applyKeywords(exported, data).credits, 0);
+  assert.equal(media(data, 'vaguelyvulgar', 'photo-cv', SECOND).credit, undefined);
+});
+
+test('a credit of a project Ryan never opened on the desk is left alone', () => {
+  const data = archive();
+  const report = applyKeywords({ version: 4, projects: {}, images: {
+    [`vaguelyvulgar/photo-cv::${FIRST}`]: { credit: { name: 'Someone' } },
+  } }, data);
+  assert.equal(media(data, 'vaguelyvulgar', 'photo-cv', FIRST).credit, undefined);
+  assert.equal(report.credits, 0);
 });
 
 test('file names in the shapes cameras, WordPress and Facebook give them are file names', () => {
