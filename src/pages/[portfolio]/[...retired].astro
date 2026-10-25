@@ -1,10 +1,10 @@
 ---
 // No-index pages at retired addresses, so an old link never lands on a blank page:
-// - a hidden post (archive-curation.js) hands the visitor to the wall;
+// - a hidden post (archive-curation.js) hands the visitor to the wall, or to the post its words moved to;
 // - a source kept but not shown (Maup) has no pages: its old addresses go to reddy.world.
 // None of them is in the sitemap (sitemap-images.js isRetired) or linked from the site.
 import WallRedirect from '../../components/WallRedirect.astro';
-import { isPublicArchivePost, KEPT_NOT_SHOWN } from '../../lib/archive-curation.js';
+import { isPublicArchivePost, KEPT_NOT_SHOWN, MOVED } from '../../lib/archive-curation.js';
 import { portfolios } from '../../lib/portfolios.js';
 import { titleCase } from '../../lib/portfolios.js';
 import rmaekers from '../../data/rmaekers.json';
@@ -16,18 +16,26 @@ export function getStaticPaths() {
   const name = Object.fromEntries(portfolios.map((p) => [p.id, p.name]));
   const hidden = [rmaekers, rrproductions, vaguelyvulgar].flatMap((data) => data.posts
     .filter((post) => !isPublicArchivePost(data.id, post))
-    .map((post) => ({
-      params: { portfolio: data.id, retired: post.slug },
-      // each old page keeps a title of its own
-      props: { label: name[data.id], title: `${titleCase(post.title.replace(/^\(untitled\)$/i, '') || post.slug)}: an old ${name[data.id]} page, now on Ryan Reddy’s wall` },
-    })));
+    .map((post) => {
+      const moved = MOVED[data.id]?.[String(post.id)];
+      const to = moved && data.posts.find((other) => other.slug === moved);
+      return {
+        params: { portfolio: data.id, retired: post.slug },
+        props: to
+          ? { moved: { target: `https://reddy.world/portfolio/${data.id}/${to.slug}/`, title: `${titleCase(post.title)}: now on ${titleCase(to.title)}`, text: `This page is now part of ${titleCase(to.title)}.`, link: `Go to ${titleCase(to.title)}` } }
+          // each old page keeps a title of its own
+          : { label: name[data.id], title: `${titleCase(post.title.replace(/^\(untitled\)$/i, '') || post.slug)}: an old ${name[data.id]} page, now on Ryan Reddy’s wall` },
+      };
+    }));
   const kept = [maup].filter((data) => KEPT_NOT_SHOWN.includes(data.id)).flatMap((data) => [undefined, ...data.posts.map((post) => post.slug)]
     .map((slug) => ({ params: { portfolio: data.id, retired: slug }, props: { home: true } })));
   return [...hidden, ...kept];
 }
 
-const { label, title, home } = Astro.props;
+const { label, title, home, moved } = Astro.props;
 ---
-{home
+{moved
+  ? <WallRedirect {...moved} canonical={moved.target} />
+  : home
   ? <WallRedirect target="https://reddy.world/" title="This page is no longer here — reddy.world" text="This page is no longer here." link="Go to reddy.world" />
   : <WallRedirect label={label} title={title} />}

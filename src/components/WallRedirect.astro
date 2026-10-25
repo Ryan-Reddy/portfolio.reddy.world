@@ -1,12 +1,14 @@
 ---
 // A no-index page at an old address that sends the visitor on. The overview stubs and
-// hidden posts go to the wall; the sources kept but not shown go to reddy.world's home.
+// hidden posts go to the wall (or to the post their words moved to); the sources kept but
+// not shown go to reddy.world's home.
 interface Props {
   label?: string;
   target?: string;
   title?: string;
   text?: string;
   link?: string;
+  canonical?: string;
 }
 
 const {
@@ -15,6 +17,7 @@ const {
   title = `${label} now lives on Ryan Reddy’s wall`,
   text = 'The archive now opens through the wall.',
   link = `Browse ${label} on Ryan Reddy’s wall`,
+  canonical = 'https://reddy.world/',
 } = Astro.props;
 ---
 <!doctype html>
@@ -25,7 +28,7 @@ const {
   <title>{title}</title>
   <meta name="robots" content="noindex, follow">
   <meta name="description" content="Browse Ryan Reddy’s work on the wall at reddy.world.">
-  <link rel="canonical" href="https://reddy.world/">
+  <link rel="canonical" href={canonical}>
   <meta http-equiv="refresh" content={`0; url=${target}`}>
   <script is:inline define:vars={{ target }}>location.replace(target);</script>
 </head>

@@ -190,7 +190,7 @@ const queue = JSON.stringify({ projects, count }).replace(/</g, '\\u003c');
   <header class="top">
     <div class="brand"><strong>Project SEO pass</strong><small id="score">One set of words per project</small></div>
     <div class="progress"><span id="progress-label">0 of {projects.length} projects</span><span id="remaining">{projects.length} to go</span><div class="bar"><span id="bar"></span></div></div>
-    <div class="top-actions"><button id="map" type="button">Keyword map</button><button id="help" type="button">Keys</button><button id="export" class="primary" type="button">Export</button></div>
+    <div class="top-actions"><button id="map" type="button">Keyword map</button><button id="help" type="button">Keys</button><button id="load" type="button">Load export</button><input id="load-file" type="file" accept=".json,application/json" hidden><button id="export" class="primary" type="button">Export</button></div>
   </header>
 
   <main class="workbench">
@@ -467,6 +467,31 @@ const queue = JSON.stringify({ projects, count }).replace(/</g, '\\u003c');
       const link = Object.assign(document.createElement('a'), {href: URL.createObjectURL(blob), download: 'reddy-world-image-metadata.json'});
       link.click();
       URL.revokeObjectURL(link.href);
+    });
+    // An export from another address (a PR preview, another browser) carries the work over:
+    // the projects in it and their pictures replace what this browser has for them
+    $('load').addEventListener('click', () => $('load-file').click());
+    $('load-file').addEventListener('change', async (event) => {
+      const file = event.target.files?.[0];
+      event.target.value = '';
+      if (!file) return;
+      try {
+        const loaded = JSON.parse(await file.text());
+        if (loaded.version !== 4 || typeof loaded.images !== 'object') throw new Error('not a version 4 export');
+        collect();
+        const opened = Object.keys(loaded.projects ?? {});
+        for (const id of opened) state.projects[id] = {...state.projects[id], ...loaded.projects[id]};
+        for (const [key, entry] of Object.entries(loaded.images)) {
+          if (!opened.includes(entry.projectId ?? key.split('::')[0])) continue;
+          state.images[key] = {...state.images[key], description: entry.description ?? '', tags: (entry.imageKeywords ?? []).join(', '), reviewed: Boolean(entry.reviewed)};
+        }
+        state.cursor = Math.max(0, firstIncomplete());
+        save();
+        render();
+        $('celebrate').textContent = `Loaded ${opened.length} projects from ${file.name}.`;
+      } catch (error) {
+        $('celebrate').textContent = `Could not load ${file.name}: ${error.message}.`;
+      }
     });
     $('make-hero').addEventListener('click', () => {
       const {project, image} = current();

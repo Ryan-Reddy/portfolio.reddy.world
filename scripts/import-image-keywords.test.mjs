@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { applyKeywords } from './import-image-keywords.mjs';
+import { applyKeywords, isFileNameCaption } from './import-image-keywords.mjs';
 
 const read = (p) => JSON.parse(readFileSync(new URL(p, import.meta.url), 'utf-8'));
 const sample = () => read('./fixtures/image-desk-export.sample.json');
@@ -82,4 +82,29 @@ test('a lead picture that is not in the post is reported, not written', () => {
   const report = applyKeywords({ version: 4, projects: { [`rmaekers/${post.slug}`]: { hero: '/portfolio/images/gone.jpg' } }, images: {} }, data);
   assert.equal(JSON.stringify(post.featured), before);
   assert.equal(report.unmatched.length, 1);
+});
+
+test('a caption that is only the file name, or a WordPress placeholder, never becomes alt text', () => {
+  assert.equal(isFileNameCaption('37737598_881490635394957_8985423250859229184_o', '/x/2018/09/37737598_881490635394957_8985423250859229184_o.jpg'), true);
+  assert.equal(isFileNameCaption('Vianen - By The Creek - Area 1 - Podium met toren v3[5146] fiinalsss-001', '/x/vianen-by-the-creek-area-1-podium-met-toren-v35146-fiinalsss-001.jpg'), true);
+  assert.equal(isFileNameCaption('Enter a caption', '/x/img_5427.jpg'), true);
+  assert.equal(isFileNameCaption('The Tropical stage by night', '/x/37361205_1804058373047016_o.jpg'), false);
+  const data = archive();
+  const before = JSON.stringify(media(data, 'vaguelyvulgar', 'photo-cv', SECOND));
+  const exported = { version: 4, projects: { 'vaguelyvulgar/photo-cv': { tags: '' } }, images: {
+    [`vaguelyvulgar/photo-cv::${SECOND}`]: { description: SECOND.split('/').pop().replace(/\.jpg$/, ''), keywords: [] },
+  } };
+  applyKeywords(exported, data);
+  assert.equal(JSON.stringify(media(data, 'vaguelyvulgar', 'photo-cv', SECOND)), before);
+});
+
+test('pictures of a project Ryan never opened on the desk are left alone', () => {
+  const data = archive();
+  const before = JSON.stringify(media(data, 'vaguelyvulgar', 'photo-cv', FIRST));
+  const report = applyKeywords({ version: 4, projects: {}, images: {
+    [`vaguelyvulgar/photo-cv::${FIRST}`]: { description: 'A WordPress caption the desk only carried along', keywords: ['word'] },
+  } }, data);
+  assert.equal(JSON.stringify(media(data, 'vaguelyvulgar', 'photo-cv', FIRST)), before);
+  assert.equal(report.skipped, 1);
+  assert.equal(report.pictures, 0);
 });
