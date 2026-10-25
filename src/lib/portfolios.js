@@ -3,7 +3,7 @@ import rrproductions from '../data/rrproductions.json';
 import vaguelyvulgar from '../data/vaguelyvulgar.json';
 import { hasResizer } from './media-url.js';
 import { BRAND } from './brands.js';
-import { publicArchivePosts } from './archive-curation.js';
+import { publicArchivePosts, curatedPost } from './archive-curation.js';
 
 export const ORIGIN = 'https://reddy.world';
 export const BASE = '/portfolio';
@@ -12,10 +12,12 @@ export const SITE = `${ORIGIN}${BASE}`;
 export const CONTACT = 'https://reddy.world/contact';
 export const PERSON_ID = 'https://reddy.world/#ryan';
 
+// cta: the line and button under each project page. Modelling asks for a booking, not an event.
+const CTA = { line: 'Want something like this for your event, venue or home?', button: 'Plan a free 30-minute talk' };
 const EXTRA = {
-  rmaekers: { icon: '🎪', badge: 'Festival Decors & Stage Builds' },
-  rrproductions: { icon: '🎨', badge: 'Fine Art, Sculptures & Inventions' },
-  vaguelyvulgar: { icon: '📸', badge: 'Selected modelling work' },
+  rmaekers: { icon: '🎪', badge: 'Festival Decors & Stage Builds', cta: CTA },
+  rrproductions: { icon: '🎨', badge: 'Fine Art, Sculptures & Inventions', cta: CTA },
+  vaguelyvulgar: { icon: '📸', badge: 'Selected modelling work', subtitle: 'Photographs of Ryan Reddy as a model, and his measurements', cta: { line: 'Want to book Ryan Reddy for a shoot?', button: 'Get in touch' } },
 };
 
 // Two plain questions for every project. What kind of work (one project can be several),
@@ -45,7 +47,7 @@ export const portfolios = [rmaekers, rrproductions, vaguelyvulgar].map((p) => ({
   ...EXTRA[p.id],
   brand: BRAND[p.id],
   posts: publicArchivePosts(p.id, p.posts).map((post) => {
-    const full = { ...post, portfolio: p.id, path: `/${p.id}/${post.slug}/` };
+    const full = { ...curatedPost(p.id, post), portfolio: p.id, path: `/${p.id}/${post.slug}/` };
     return { ...full, kinds: kindsOf(full) };
   }),
 }));
