@@ -68,6 +68,16 @@ New posts can use pictures that are not on WordPress.com.
   - `npm run media:unused -- --export <site>=<media export .tar> … [--wxr <site>=<WXR .xml> …]` gives every upload no page shows its reason, in [wordpress-unused.json](src/data/wordpress-unused.json), with a thumbnail under `public/images/unused/` for the no-index review page `/portfolio/image-metadata/unused/`. The media exports are Ryan's (WordPress.com mails them: https://wordpress.com/support/export/); they stay on his machine.
 - `/portfolio/image-metadata/` is a no-index, browser-local keyword and description desk, absent from the sitemap. Press **Export** there, then `npm run keywords:import -- reddy-world-image-metadata.json` writes the descriptions into each picture's `alt` and `description` and the keywords into `keywords` ([import-image-keywords.mjs](scripts/import-image-keywords.mjs); `--dry-run` first to see the count). `npm test` runs it on a sample export.
 
+## Ryan's mark on every picture
+
+`npm run build` stamps the pictures it serves, never the files in the repo ([#47](https://github.com/Ryan-Reddy/portfolio.reddy.world/issues/47)).
+
+- [watermark.mjs](scripts/watermark.mjs) rewrites `dist/images/`: a small ASCII Laser Unicorn in the bottom-right corner (black on a light corner, white on a dark one), and Ryan's name, copyright, credit line and `https://reddy.world/` in each file's EXIF and XMP. A `-480w`/`-800w`/`-1200w` copy is made again from its clean master. Stamped files are cached in `node_modules/.cache/watermark/` (CI keeps that cache between runs).
+- [check-watermark.mjs](scripts/check-watermark.mjs) then fails the build when a picture of Ryan's lacks the metadata, when one that is not his carries it, or when the pages' `ImageObject` data disagree.
+- [image-rights.js](src/lib/image-rights.js) says whose a picture is: not Ryan's (Maup, the modelling photographs, the clients' logos) get nothing; his own logos get the metadata without the unicorn.
+- The mark itself: `npm run mark:make` turns [unicorn-source.jpg](scripts/watermark/unicorn-source.jpg) into [unicorn.txt](scripts/watermark/unicorn.txt) and the two `mark-*.png` files. Run it only to change the mark.
+- `npm run dev` shows the clean pictures.
+
 ## What is shown
 
 - [archive-curation.js](src/lib/archive-curation.js) decides it. Hidden posts (unfinished, or pages that were never work) keep their data and pictures; their old address is a no-index page that hands visitors to the wall, and they are in no sitemap, feed or list.

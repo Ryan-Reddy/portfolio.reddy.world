@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev",
-    "build": "node --import ./scripts/lib/json-imports.mjs scripts/keyword-ratings.mjs && astro build && node scripts/firebase-config.mjs",
+    "build": "node --import ./scripts/lib/json-imports.mjs scripts/keyword-ratings.mjs && astro build && node scripts/watermark.mjs && node scripts/check-watermark.mjs && node scripts/firebase-config.mjs",
+    "mark:make": "node scripts/watermark/make-mark.mjs",
     "preview": "astro preview",
     "import": "python scripts/parse_wordpress.py",
     "media:self-host": "node scripts/self-host-wordpress.mjs",
@@ -22,7 +23,8 @@
   "devDependencies": {
     "@astrojs/sitemap": "^3.7.4",
     "astro": "^7.3.5",
-    "playwright": "1.61.0"
+    "playwright": "1.61.0",
+    "qrcode": "1.5.4"
   },
   "allowScripts": {
     "esbuild@0.28.2": true

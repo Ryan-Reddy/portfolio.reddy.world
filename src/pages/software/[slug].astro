@@ -5,6 +5,7 @@ import Compare from '../../components/Compare.astro';
 import { shot } from '../../lib/software.js';
 import { appFacts } from '../../lib/app-json.js';
 import { PERSON_ID, ORIGIN, SITE, BASE, contactUrl } from '../../lib/portfolios.js';
+import { imageRights } from '../../lib/image-rights.js';
 import '../../styles/software.css';
 
 export async function getStaticPaths() {
@@ -42,7 +43,7 @@ const imageObject = (s) => ({
   width: s.width,
   height: s.height,
   caption: s.caption,
-  creator: { '@id': PERSON_ID },
+  ...imageRights(s.url, PERSON_ID),
 });
 const work = d.kind === 'app'
   ? {
