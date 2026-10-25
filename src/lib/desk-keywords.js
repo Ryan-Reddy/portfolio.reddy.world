@@ -19,13 +19,12 @@ const PROJECT_INTENT = {
   clubs: ['club decor Amsterdam', 'nightlife design'],
 };
 // The word bank: keyword lists Ryan gave for the desk (2026-10-25: "Heres a great toolword list to
-// use"), how studios like his describe their work. A studio's own name is the list's source, not a
-// word to use.
+// use"), how studios like his describe their work.
 export const WORD_BANK = [
-  { source: 'Studio Binnenstad · NL', words: ['merkactivatie', 'productoplossingen', 'scenografie', 'design', 'interieur', 'meubilair', 'decor', 'beursstands', 'kunstinstallaties', '3D-ontwerpen', 'technische tekeningen', 'productie', 'Amsterdam'] },
-  { source: 'Studio Binnenstad · EN', words: ['brand activation', 'scenography', 'interior design', 'furniture', 'decor', 'exhibition stands', 'art installations', '3D designs', 'technical drawings', 'production workshop'] },
-  { source: 'Main keywords (11)', words: ['Brand Activation', 'Signing', 'Photobooth', 'Interior Design', 'Light Installations', 'Product Design', 'Stickers', 'Mobility', 'Foodtrucks', 'Instagram', 'Workshop'] },
-  { source: 'Studio Piet Boon', words: ['interior design', 'architecture', 'luxury homes', 'corporate projects', 'private projects', 'bespoke total concepts', 'hospitality design', 'residential renovation', 'furniture design'] },
+  { source: 'Word list 1 · NL', words: ['merkactivatie', 'productoplossingen', 'scenografie', 'design', 'interieur', 'meubilair', 'decor', 'beursstands', 'kunstinstallaties', '3D-ontwerpen', 'technische tekeningen', 'productie', 'Amsterdam'] },
+  { source: 'Word list 1 · EN', words: ['brand activation', 'scenography', 'interior design', 'furniture', 'decor', 'exhibition stands', 'art installations', '3D designs', 'technical drawings', 'production workshop'] },
+  { source: 'Word list 2', words: ['Brand Activation', 'Signing', 'Photobooth', 'Interior Design', 'Light Installations', 'Product Design', 'Stickers', 'Mobility', 'Foodtrucks', 'Instagram', 'Workshop'] },
+  { source: 'Word list 3', words: ['interior design', 'architecture', 'luxury homes', 'corporate projects', 'private projects', 'bespoke total concepts', 'hospitality design', 'residential renovation', 'furniture design'] },
 ];
 const IMAGE_VOCABULARY = ['wide view', 'close-up', 'detail', 'finished installation', 'work in progress', 'night', 'daylight', 'people', 'lighting', 'materials'];
 const NOISE = new Set(['project', 'projects', 'portfolio', 'uncategorized', 'geen categorie']);
