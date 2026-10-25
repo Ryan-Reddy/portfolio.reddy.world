@@ -6,7 +6,17 @@ import { applyKeywords, isFileNameCaption } from './import-image-keywords.mjs';
 
 const read = (p) => JSON.parse(readFileSync(new URL(p, import.meta.url), 'utf-8'));
 const sample = () => read('./fixtures/image-desk-export.sample.json');
-const archive = () => Object.fromEntries(['rmaekers', 'rrproductions', 'vaguelyvulgar'].map((k) => [k, read(`../src/data/${k}.json`)]));
+// the modelling pictures as WordPress left them (no alt text, description or keywords), so
+// these tests show what the importer does with a blank picture, whatever the data now carries
+const blank = (data) => {
+  const post = data.vaguelyvulgar.posts.find((p) => p.slug === 'photo-cv');
+  for (const m of [...post.media, post.featured]) {
+    Object.assign(m, { alt: '', description: '' });
+    delete m.keywords;
+  }
+  return data;
+};
+const archive = () => blank(Object.fromEntries(['rmaekers', 'rrproductions', 'vaguelyvulgar'].map((k) => [k, read(`../src/data/${k}.json`)])));
 const media = (data, key, slug, url) => data[key].posts.find((p) => p.slug === slug).media.find((m) => m.url === url);
 const FIRST = '/portfolio/images/vaguelyvulgar/2016/08/854b8538485967-57631dbc24357.jpg';
 const SECOND = '/portfolio/images/vaguelyvulgar/2016/08/10150002_776022152408873_59738154_n.jpg';

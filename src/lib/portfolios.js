@@ -14,11 +14,16 @@ export const PERSON_ID = 'https://reddy.world/#ryan';
 
 // cta: the line and button under each project page. Modelling asks for a booking, not an event.
 const CTA = { line: 'Want something like this for your event, venue or home?', button: 'Plan a free 30-minute talk' };
+// Modelling has no subtitle: "Modelling" says it (Ryan, 2026-10-25: no words about the work)
 const EXTRA = {
-  rmaekers: { icon: '🎪', badge: 'Festival Decors & Stage Builds', cta: CTA },
-  rrproductions: { icon: '🎨', badge: 'Fine Art, Sculptures & Inventions', cta: CTA },
-  vaguelyvulgar: { icon: '📸', badge: 'Selected modelling work', subtitle: 'Photographs of Ryan Reddy as a model, and his measurements', cta: { line: 'Want to book Ryan Reddy for a shoot?', button: 'Get in touch' } },
+  rmaekers: { cta: CTA },
+  rrproductions: { cta: CTA },
+  // subject: Ryan is in these pictures, other people took them (src/lib/model-page.js)
+  vaguelyvulgar: { subtitle: null, subject: true, cta: { line: 'Want to book Ryan Reddy for a shoot?', button: 'Get in touch' } },
 };
+
+/** "Name: subtitle", or the name alone when the portfolio has none */
+export const portfolioLabel = (p) => (p.subtitle ? `${p.name}: ${p.subtitle}` : p.name);
 
 // Two plain questions for every project. What kind of work (one project can be several),
 // and where it was (club or festival). Built from the archive's own categories and tags,
@@ -127,7 +132,8 @@ export function altFor(post, media, index) {
  */
 export function contextOf(post) {
   const kind = post.kinds.map((k) => KIND_LABEL[k])[0];
-  const year = String(post.date || '').slice(0, 4);
+  // an undated page (the modelling measurements) gets no year: they are current, not 2016's
+  const year = post.undated ? '' : String(post.date || '').slice(0, 4);
   return `${kind ? `${kind} by ` : ''}${BRAND[post.portfolio]}${year ? `, ${year}` : ''}`;
 }
 

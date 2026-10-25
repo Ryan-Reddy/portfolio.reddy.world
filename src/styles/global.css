@@ -1044,3 +1044,108 @@ html.paper .footer-links a, html.paper .breadcrumb a { color: var(--fg); }
 .measurements dd {
   margin: 0;
 }
+
+/*
+ * The modelling page as a comp card: the lead picture large with the name and the
+ * measurements beside it (wide) or under it (narrow), the other pictures below in calm
+ * columns at their own shape, none cropped. --lead-r is the lead picture's width / height.
+ */
+.project-page.comp-card {
+  max-width: 1120px;
+}
+
+.comp-lead {
+  display: grid;
+  grid-template-columns: min(58%, calc(var(--lead-r, 0.667) * 82vh)) minmax(16rem, 1fr);
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+    "photo title"
+    "photo facts";
+  gap: 0 3rem;
+  align-items: start;
+  margin: 0 0 3rem;
+}
+
+.comp-title {
+  grid-area: title;
+  border-bottom: 1px solid rgba(199, 168, 109, 0.2);
+  margin-bottom: 1.75rem;
+  padding-bottom: 1rem;
+}
+
+.comp-title .modal-title {
+  margin: 0;
+}
+
+.comp-photo {
+  grid-area: photo;
+}
+
+.comp-facts {
+  grid-area: facts;
+}
+
+.comp-card .gallery-thumb {
+  aspect-ratio: var(--r, 1);
+}
+
+.comp-card .gallery-thumb:hover {
+  transform: none;
+}
+
+.comp-card .measurements {
+  gap: 0.55rem 2rem;
+  margin: 0;
+  align-items: baseline;
+}
+
+.comp-card .measurements dt {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+.comp-card .measurements dd {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.comp-grid {
+  columns: 3 10rem;
+  column-gap: 0.75rem;
+  margin: 0 0 3rem;
+}
+
+.comp-grid .gallery-item {
+  break-inside: avoid;
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 720px) {
+  .comp-lead {
+    grid-template-columns: 1fr;
+    grid-template-rows: none;
+    grid-template-areas:
+      "title"
+      "photo"
+      "facts";
+  }
+
+  .comp-title {
+    margin-bottom: 1.25rem;
+  }
+
+  .comp-photo {
+    width: min(100%, calc(var(--lead-r, 0.667) * 80vh));
+    margin: 0 auto 2rem;
+  }
+
+  .comp-card .measurements dd {
+    font-size: 1.35rem;
+  }
+}

@@ -2,7 +2,8 @@
 import Base from '../../layouts/Base.astro';
 import { renderContent } from '../../lib/content.js';
 import { absUrl } from '../../lib/media-url.js';
-import { portfolios, formatDate, photos, altFor, contextOf, picture, contactUrl, titleCase, PERSON_ID, ORIGIN, SITE, BASE, themeByTag, KIND_LABEL } from '../../lib/portfolios.js';
+import { subjectImageObject } from '../../lib/model-page.js';
+import { portfolios, formatDate, photos, altFor, contextOf, picture, contactUrl, titleCase, PERSON_ID, ORIGIN, SITE, BASE, themeByTag, KIND_LABEL, portfolioLabel } from '../../lib/portfolios.js';
 
 export function getStaticPaths() {
   return portfolios.flatMap((p) =>
@@ -60,14 +61,23 @@ function figure(indices) {
   return ids.length ? `<div class="post-figure">${rows(ids)}</div>` : '';
 }
 
-const body = renderContent(post.content, { title: name, figure });
+// The modelling page is a comp card: the lead picture large with the measurements beside it,
+// the other pictures in a grid at their own shape. Its text only placed the pictures.
+const comp = post.layout === 'comp-card';
+const lead = comp ? (imgs.find((m) => m.url === post.featured?.url) ?? imgs[0]) : null;
+// the lead is the page's largest picture: loaded first, not lazily
+const leadHtml = lead ? item(post.media.indexOf(lead), '(max-width: 720px) 100vw, 640px').replace(' loading="lazy"', ' fetchpriority="high"') : '';
+const gridHtml = comp ? imgs.filter((m) => m !== lead).map((m) => item(post.media.indexOf(m), '(max-width: 720px) 50vw, 360px')).join('') : '';
+const leadRatio = lead?.width && lead?.height ? (lead.width / lead.height).toFixed(3) : '0.667';
+
+const body = comp ? '' : renderContent(post.content, { title: name, figure });
 // Pictures the text did not place: only posts that never placed any keep their uploads here
-const rest = imgs.filter((m) => !shown.has(m.url));
+const rest = comp ? [] : imgs.filter((m) => !shown.has(m.url));
 const restHtml = rows(rest.map((m) => post.media.indexOf(m)));
 
 // The chosen featured image heads the page, unless the post already shows it
 const featured = post.featured;
-const hero = featured && !shown.has(featured.url) ? { ...picture(featured), alt: altFor(post, featured, 0) } : null;
+const hero = featured && !comp && !shown.has(featured.url) ? { ...picture(featured), alt: altFor(post, featured, 0) } : null;
 
 const shareImage = featured && { url: absUrl(featured.url), width: featured.width, height: featured.height, alt: altFor(post, featured, 0) };
 const words = body.replace(/<[^>]+>/g, ' ').split(/\s+/).filter(Boolean).length;
@@ -89,6 +99,9 @@ const isPost = post.type === 'post';
 // the featured image first: search engines take the first as the post's picture
 const images = [featured, ...imgs.filter((m) => m.url !== featured?.url)].filter(Boolean);
 
+// on the modelling page Ryan is in the pictures: what they are about, not who took them
+const pictureObject = (m, i) => (p.subject ? subjectImageObject(imageObject(m, i), m, PERSON_ID) : imageObject(m, i));
+
 const jsonLd = [
   {
     '@context': 'https://schema.org',
@@ -104,9 +117,9 @@ const jsonLd = [
     publisher: { '@type': 'Person', '@id': PERSON_ID, name: 'Ryan Reddy', url: `${ORIGIN}/` },
     articleSection: post.categories[0] || p.name,
     keywords: [...new Set([...post.categories, ...post.tags, ...(post.keywords ?? [])])].join(', ') || undefined,
-    wordCount: words,
-    isPartOf: { '@type': 'Blog', name: `${p.name}: ${p.subtitle}`, url: `${SITE}/${p.id}/` },
-    image: images.length ? images.map((m) => imageObject(m, Math.max(0, post.media.indexOf(m)))) : undefined,
+    wordCount: words || undefined,
+    isPartOf: { '@type': 'Blog', name: portfolioLabel(p), url: `${SITE}/${p.id}/` },
+    image: images.length ? images.map((m) => pictureObject(m, Math.max(0, post.media.indexOf(m)))) : undefined,
   },
   {
     '@context': 'https://schema.org',
@@ -121,12 +134,26 @@ const jsonLd = [
 const article = isPost ? { published: post.published, modified: post.modified, section: post.categories[0] || p.name, tags: post.tags } : undefined;
 ---
 <Base title={`${name} — ${p.brand} | Ryan Reddy`} description={description} image={shareImage} active={p.id} jsonLd={jsonLd} type={isPost ? 'article' : 'website'} article={article}>
-  <article class="project-page">
+  <article class:list={['project-page', { 'comp-card': comp }]}>
     <nav class="breadcrumb" aria-label="Breadcrumb">
       <a href={`${BASE}/`}>Portfolio</a> <span aria-hidden="true">/</span> <a href={`${BASE}/${p.id}/`}>{p.name}</a>
     </nav>
 
-    <header class="modal-header">
+    {comp && (
+      <div class="comp-lead" style={`--lead-r: ${leadRatio}`}>
+        <header class="comp-title"><h1 class="modal-title">{post.title.trim()}</h1></header>
+        <div class="comp-photo" set:html={leadHtml} />
+        {post.measurements?.length > 0 && (
+          <section class="comp-facts" aria-labelledby="measurements">
+            <h2 class="modal-gallery-title" id="measurements">Measurements</h2>
+            <dl class="measurements">{post.measurements.map(([label, value]) => <Fragment><dt>{label}</dt><dd>{value}</dd></Fragment>)}</dl>
+          </section>
+        )}
+      </div>
+    )}
+    {comp && gridHtml && <div class="comp-grid" set:html={gridHtml} />}
+
+    {!comp && <header class="modal-header">
       <div class="modal-meta">
         <time datetime={post.published}>{formatDate(post.date)}</time>
         {post.kinds.length > 0 && <span>&bull; {post.kinds.map((k) => KIND_LABEL[k]).join(', ')}</span>}
@@ -137,7 +164,7 @@ const article = isPost ? { published: post.published, modified: post.modified, s
           ? <a class="card-tag" href={`${BASE}/theme/${t}/`}>#{themeByTag[t].label}</a>
           : <span class="card-tag">#{t}</span>)}</div>
       )}
-    </header>
+    </header>}
 
     {hero && (
       <figure class="post-hero">
