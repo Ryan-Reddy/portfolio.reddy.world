@@ -562,6 +562,19 @@
         "set building",
         "Film/Foto Set",
         "amsterdam"
+      ],
+      "videos": [
+        {
+          "kind": "youtube",
+          "id": "R_jxXc23Lv8",
+          "url": "https://www.youtube.com/watch?v=R_jxXc23Lv8",
+          "status": "public",
+          "title": "Beau Battant - \"I want you\" (OFFICIAL VIDEO)",
+          "channel": "Beau Battant",
+          "channel_url": "https://www.youtube.com/@beaubattant7619",
+          "thumbnail": "/portfolio/images/rmaekers/video/R_jxXc23Lv8.jpg",
+          "checked": "2026-10-25"
+        }
       ]
     },
     {
@@ -2563,6 +2576,30 @@
           "type": "image",
           "wp_url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2018/05/7f9f97ff-08be-419d-b7b0-f8fe296b3953.jpg"
         }
+      ],
+      "videos": [
+        {
+          "kind": "youtube",
+          "id": "I6BIW-YneXk",
+          "url": "https://www.youtube.com/watch?v=I6BIW-YneXk",
+          "status": "public",
+          "title": "Hal N8vdN8 Marktkantine ReddyMaekers",
+          "channel": "Reddy Maekers",
+          "channel_url": "https://www.youtube.com/@reddymaekers4108",
+          "thumbnail": "/portfolio/images/rmaekers/video/I6BIW-YneXk.jpg",
+          "checked": "2026-10-25"
+        },
+        {
+          "kind": "youtube",
+          "id": "EIM-zv6e_uE",
+          "url": "https://www.youtube.com/watch?v=EIM-zv6e_uE",
+          "status": "public",
+          "title": "N8 voor de N8",
+          "channel": "Reddy Maekers",
+          "channel_url": "https://www.youtube.com/@reddymaekers4108",
+          "thumbnail": "/portfolio/images/rmaekers/video/EIM-zv6e_uE.jpg",
+          "checked": "2026-10-25"
+        }
       ]
     },
     {
@@ -2675,6 +2712,19 @@
           "height": 769,
           "type": "image",
           "wp_url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2018/05/c4530fc6-7bbd-4dc6-bfd3-aae195490b67.jpg"
+        }
+      ],
+      "videos": [
+        {
+          "kind": "youtube",
+          "id": "Kze6sH4xZSs",
+          "url": "https://www.youtube.com/watch?v=Kze6sH4xZSs",
+          "status": "public",
+          "title": "VBX at de Shelter 1",
+          "channel": "Reddy Maekers",
+          "channel_url": "https://www.youtube.com/@reddymaekers4108",
+          "thumbnail": "/portfolio/images/rmaekers/video/Kze6sH4xZSs.jpg",
+          "checked": "2026-10-25"
         }
       ]
     },
@@ -5683,6 +5733,20 @@
           "type": "image",
           "wp_url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2017/04/img_5776.jpg"
         }
+      ],
+      "videos": [
+        {
+          "kind": "youtube",
+          "id": "RbDDnqCbF1c",
+          "url": "https://www.youtube.com/watch?v=RbDDnqCbF1c&t=119s",
+          "start": 119,
+          "status": "public",
+          "title": "Gratis naar Drake concert | Gierige Gasten",
+          "channel": "Nieuwe Gasten",
+          "channel_url": "https://www.youtube.com/@NieuweGasten",
+          "thumbnail": "/portfolio/images/rmaekers/video/RbDDnqCbF1c.jpg",
+          "checked": "2026-10-25"
+        }
       ]
     },
     {
@@ -6407,6 +6471,30 @@
           "type": "image",
           "wp_url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2016/12/456063483_780x439-1.jpg"
         }
+      ],
+      "videos": [
+        {
+          "kind": "vimeo",
+          "id": "80195631",
+          "url": "https://vimeo.com/80195631",
+          "status": "public",
+          "title": "Volunar's Kitchen, zaterdag 30 november Club Up Amsterdam",
+          "channel": "Volunar Records",
+          "channel_url": "https://vimeo.com/user22954625",
+          "thumbnail": "/portfolio/images/rmaekers/video/vimeo-80195631.jpg",
+          "checked": "2026-10-25"
+        },
+        {
+          "kind": "vimeo",
+          "id": "81698928",
+          "url": "https://vimeo.com/81698928",
+          "status": "public",
+          "title": "Volunar's Kitchen aftermovie",
+          "channel": "Volunar Records",
+          "channel_url": "https://vimeo.com/user22954625",
+          "thumbnail": "/portfolio/images/rmaekers/video/vimeo-81698928.jpg",
+          "checked": "2026-10-25"
+        }
       ]
     },
     {
@@ -6779,6 +6867,19 @@
           "type": "image",
           "wp_url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2016/09/13651909_1802481889963177_1253024062_n.jpg"
         }
+      ],
+      "videos": [
+        {
+          "kind": "youtube",
+          "id": "8PDVmUBn3Uc",
+          "url": "https://www.youtube.com/watch?v=8PDVmUBn3Uc",
+          "status": "public",
+          "title": "STRAF_WERK Festival 2016 - Blijburg Aan Zee",
+          "channel": "straf_werk",
+          "channel_url": "https://www.youtube.com/@straf_werk",
+          "thumbnail": "/portfolio/images/rmaekers/video/8PDVmUBn3Uc.jpg",
+          "checked": "2026-10-25"
+        }
       ]
     },
     {
@@ -7068,6 +7169,19 @@
           "type": "image",
           "wp_url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2016/08/13391289_139012743169632_1357542087_n.jpg"
         }
+      ],
+      "videos": [
+        {
+          "kind": "vimeo",
+          "id": "162252572",
+          "url": "https://vimeo.com/162252572",
+          "status": "public",
+          "title": "Geloof in Jezelf Kerk",
+          "channel": "by Tomm",
+          "channel_url": "https://vimeo.com/user18367679",
+          "thumbnail": "/portfolio/images/rmaekers/video/vimeo-162252572.jpg",
+          "checked": "2026-10-25"
+        }
       ]
     },
     {
@@ -7350,6 +7464,19 @@
           "height": 640,
           "type": "image",
           "wp_url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2016/07/13502031_1124927197548744_2705711150467899385_n.jpg"
+        }
+      ],
+      "videos": [
+        {
+          "kind": "youtube",
+          "id": "bBRc6LqvhFI",
+          "url": "https://www.youtube.com/watch?v=bBRc6LqvhFI",
+          "status": "public",
+          "title": "Aftermovie Wicked Jazz Sounds Festival 2016",
+          "channel": "Wicked Jazz Sounds Festival Amsterdam",
+          "channel_url": "https://www.youtube.com/@wickedjazzsoundsfestivalam9216",
+          "thumbnail": "/portfolio/images/rmaekers/video/bBRc6LqvhFI.jpg",
+          "checked": "2026-10-25"
         }
       ]
     },
@@ -9243,6 +9370,19 @@
           "height": 540,
           "type": "image",
           "wp_url": "https://ryanvanlil.files.wordpress.com/2015/11/10435745_259517750919613_7587497343064877587_n.jpg"
+        }
+      ],
+      "videos": [
+        {
+          "kind": "youtube",
+          "id": "-XPPmP-eC60",
+          "url": "https://www.youtube.com/watch?v=-XPPmP-eC60",
+          "status": "public",
+          "title": "Georgie's Wunder Garten 2014",
+          "channel": "Georgie's",
+          "channel_url": "https://www.youtube.com/@georgies4306",
+          "thumbnail": "/portfolio/images/rmaekers/video/-XPPmP-eC60.jpg",
+          "checked": "2026-10-25"
         }
       ]
     },
