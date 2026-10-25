@@ -12,12 +12,15 @@ export const CREDIT = 'Ryan Reddy';
 export const COPYRIGHT = '© Ryan Reddy';
 export const WEB_STATEMENT = 'https://reddy.world/';
 
-// Not Ryan's work: no mark, no copyright claim.
+// Every picture the site serves carries the mark (Ryan, 2026-10-25: "i want all images hosted on my
+// site watermarked please, with name"). These are not Ryan's own work, all cleared for his use, so
+// they carry the mark (the unicorn and reddy.world) but not his name as creator or his copyright
+// in their metadata or structured data: that would claim someone else's picture.
 const NOT_RYANS = [
   // Maup: kept in the repo, not Ryan's work, never shown (src/lib/archive-curation.js)
   /^\/portfolio\/images\/maup\//,
-  // The modelling pictures are photographs OF Ryan, taken by other people: a decision for
-  // Ryan on #47 before his name goes on them as their creator
+  // The modelling pictures are photographs OF Ryan, taken by other people; the photographer's
+  // credit comes from the image desk
   /^\/portfolio\/images\/vaguelyvulgar\//,
   // ReddyMaekers' "Clients" page: the clients' own logos
   ...[
@@ -27,23 +30,20 @@ const NOT_RYANS = [
   ].map((f) => new RegExp(`^/portfolio/images/rmaekers/2016/07/${f.replace(/[.]/g, '\\.')}$`)),
 ];
 
-// Ryan's own logos: his name in the file, but no unicorn stamped on a logo.
-const NO_STAMP = [
-  /^\/portfolio\/images\/rmaekers\/2016\/07\/logo-round-2\.jpg$/,
-  /^\/portfolio\/images\/rmaekers\/2018\/09\/26903677_1547956805300554_1758949314504906172_n-logo-small-white-background-reddymaekers1\.jpg$/,
-  /^\/portfolio\/images\/rrproductions\/2015\/05\/logo-piraat-glitterbaard-1-1\.gif$/,
-];
+// Pictures with Ryan's name in the file but no mark: none since every picture is marked (2026-10-25)
+const NO_STAMP = [];
 
 /** The picture a -480w/-800w/-1200w copy was made from (its own URL for a master) */
 export const masterOf = (url) => url.replace(/-\d+w(\.(?:jpe?g|png|webp|gif))$/i, '$1');
 
 /**
  * What a served picture carries, by its URL (/portfolio/images/...):
- * 'mark'  the corner unicorn and the metadata; 'meta' the metadata only; 'none' neither.
+ * 'mark' the corner mark and Ryan's name and copyright in the metadata; 'stamp' the mark only,
+ * for pictures that are not his own work; 'meta' his metadata only (none at the moment).
  */
 export function rightsOf(url) {
   const master = masterOf(url);
-  if (NOT_RYANS.some((re) => re.test(master))) return 'none';
+  if (NOT_RYANS.some((re) => re.test(master))) return 'stamp';
   if (NO_STAMP.some((re) => re.test(master))) return 'meta';
   return 'mark';
 }
@@ -51,7 +51,7 @@ export function rightsOf(url) {
 /** creator, credit and copyright for a picture's ImageObject, or nothing when it is not Ryan's */
 export function imageRights(url, personId) {
   const path = url.replace(/^https:\/\/reddy\.world/, '');
-  if (rightsOf(path) === 'none') return {};
+  if (rightsOf(path) === 'stamp') return {};
   return { creator: { '@id': personId }, creditText: CREDIT, copyrightNotice: COPYRIGHT };
 }
 

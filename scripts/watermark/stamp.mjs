@@ -4,9 +4,12 @@ import { CREATOR, CREDIT, COPYRIGHT, WEB_STATEMENT } from '../../src/lib/image-r
 
 // The corner mark: about a tenth of the picture's shorter side, never under 44 or over
 // 160 px tall, a small margin from the bottom-right edges, slightly see-through.
-export const MARK = { share: 0.11, min: 44, max: 160, margin: 0.025, minMargin: 6, opacity: 0.85 };
+// With reddy.world under the unicorn the mark is a little taller than the unicorn alone was.
+// From qrMin px tall it carries a QR code for https://reddy.world/ beside it: its 27 modules are
+// then 3.5 px or more, enough for a phone camera.
+export const MARK = { share: 0.13, min: 48, max: 190, margin: 0.025, minMargin: 6, opacity: 0.85, qrMin: 96 };
 // Bump when the mark or the metadata change, so cached stamped files are made again
-export const STAMP = 'unicorn-ascii-1';
+export const STAMP = 'unicorn-ascii-2';
 
 /** Where the mark goes in a width x height picture: { height, margin } in px */
 export function markBox(width, height, markAspect) {
@@ -17,6 +20,9 @@ export function markBox(width, height, markAspect) {
   const margin = Math.max(MARK.minMargin, Math.round(short * MARK.margin));
   return { height: h, width: Math.round(h * markAspect), margin };
 }
+
+/** Which mark: with the QR code when the mark is tall enough for it to scan */
+export const markVariant = (height) => (height >= MARK.qrMin ? 'qr' : 'plain');
 
 /** Light corner (mean luminance over half): the black mark; dark corner: the white one */
 export const markColour = (luminance) => (luminance > 0.5 ? 'black' : 'white');
@@ -51,8 +57,15 @@ export const XMP = `<?xpacket begin="﻿" id="W5M0MpCehiHzreSzNTczkc9d"?>
 </rdf:Description></rdf:RDF></x:xmpmeta>
 <?xpacket end="r"?>`;
 
-/** The XMP for a picture with the corner mark ('mark') or with the metadata only ('meta') */
-export const xmpFor = (kind) => XMP.replace('STAMP_KIND', kind === 'mark' ? STAMP : 'metadata-only');
+/** The XMP for a picture that is not Ryan's work but carries the mark ('stamp'): which stamp, nothing else */
+export const XMP_STAMP_ONLY = `<?xpacket begin="\uFEFF" id="W5M0MpCehiHzreSzNTczkc9d"?>
+<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+<rdf:Description rdf:about="" xmlns:reddy="https://reddy.world/ns/picture/1.0/" reddy:Stamp="${STAMP}"/>
+</rdf:RDF></x:xmpmeta>
+<?xpacket end="r"?>`;
+
+/** The XMP for a picture with the mark ('mark'), Ryan's metadata only ('meta') or the mark only ('stamp') */
+export const xmpFor = (kind) => (kind === 'stamp' ? XMP_STAMP_ONLY : XMP.replace('STAMP_KIND', kind === 'mark' ? STAMP : 'metadata-only'));
 
 /** EXIF (IFD0) Artist and Copyright */
 export const EXIF = { IFD0: { Artist: CREATOR, Copyright: COPYRIGHT } };

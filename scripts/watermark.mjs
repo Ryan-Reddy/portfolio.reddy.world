@@ -21,7 +21,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 import { masterOf, rightsOf } from '../src/lib/image-rights.js';
-import { EXIF, MARK, STAMP, markBox, markColour, meanLuminance, xmpFor } from './watermark/stamp.mjs';
+import { EXIF, MARK, STAMP, markBox, markColour, markVariant, meanLuminance, xmpFor } from './watermark/stamp.mjs';
 
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
 const DIST = path.resolve(ROOT, process.argv[2] ?? 'dist');
@@ -40,19 +40,21 @@ sharp.cache(false);
 sharp.concurrency(1);
 mkdirSync(CACHE, { recursive: true });
 
-const MARKS = Object.fromEntries(['white', 'black'].map((c) => [c, readFileSync(path.join(ROOT, 'scripts', 'watermark', `mark-${c}.png`))]));
-const { width: MW, height: MH } = await sharp(MARKS.white).metadata();
-const ASPECT = MW / MH;
+// mark-white.png, mark-black.png and their -qr versions (scripts/watermark/make-mark.mjs)
+const MARKS = Object.fromEntries(['white', 'black', 'white-qr', 'black-qr'].map((c) => [c, readFileSync(path.join(ROOT, 'scripts', 'watermark', `mark-${c}.png`))]));
+const aspectOf = async (buf) => { const { width, height } = await sharp(buf).metadata(); return width / height; };
+const ASPECT = { plain: await aspectOf(MARKS.white), qr: await aspectOf(MARKS['white-qr']) };
 // the stamp's own fingerprint: the mark pictures, its size rules and the metadata
-const STAMP_KEY = createHash('sha1').update(MARKS.white).update(MARKS.black)
-  .update(JSON.stringify(MARK)).update(STAMP).update(xmpFor('mark')).digest('hex');
+const STAMP_KEY = Object.values(MARKS).reduce((h, buf) => h.update(buf), createHash('sha1'))
+  .update(JSON.stringify(MARK)).update(STAMP).update(xmpFor('mark')).update(xmpFor('stamp')).digest('hex');
 
 const sized = new Map();
-/** The mark in one colour at one height, already see-through */
+/** The mark in one colour at one height (with the QR code when tall enough), already see-through */
 function markAt(colour, height) {
-  const key = `${colour}${height}`;
+  const name = markVariant(height) === 'qr' ? `${colour}-qr` : colour;
+  const key = `${name}${height}`;
   if (!sized.has(key)) {
-    sized.set(key, sharp(MARKS[colour]).resize({ height, kernel: 'lanczos3' }).ensureAlpha()
+    sized.set(key, sharp(MARKS[name]).resize({ height, kernel: 'lanczos3' }).ensureAlpha()
       .linear([1, 1, 1, MARK.opacity], [0, 0, 0, 0]).png().toBuffer());
   }
   return sized.get(key);
@@ -65,7 +67,8 @@ const walk = (dir) => readdirSync(dir).flatMap((name) => {
 
 /** Where the mark goes on a width x height picture (one frame), and in which colour */
 function place(width, height, luminanceOf) {
-  const box = markBox(width, height, ASPECT);
+  const plain = markBox(width, height, ASPECT.plain);
+  const box = markVariant(plain.height) === 'qr' ? markBox(width, height, ASPECT.qr) : plain;
   const left = Math.max(0, width - box.width - box.margin);
   const top = Math.max(0, height - box.height - box.margin);
   return { ...box, left, top, colour: markColour(luminanceOf({ left, top, w: Math.min(box.width, width - left), h: Math.min(box.height, height - top) })) };
@@ -74,7 +77,8 @@ function place(width, height, luminanceOf) {
 /** Encodes a stamped picture in its own format, with Ryan's name in it */
 function encode(img, { kind, ext, variant, isPalette, anim = {} }) {
   if (ext === '.gif') return img.gif({ ...anim, effort: 7 }).toBuffer(); // GIF has no room for metadata
-  img = img.withExif(EXIF).withXmp(xmpFor(kind));
+  // a picture that is not Ryan's work carries no name in its metadata: only which stamp it has
+  img = (kind === 'stamp' ? img : img.withExif(EXIF)).withXmp(xmpFor(kind));
   if (ext === '.png') return img.png({ compressionLevel: 9, palette: isPalette }).toBuffer();
   if (ext === '.webp') return img.webp({ quality: variant || anim.loop !== undefined ? 80 : 82, ...anim }).toBuffer();
   return img.jpeg({ quality: variant ? 78 : 82, progressive: true, mozjpeg: true }).toBuffer();
@@ -87,7 +91,7 @@ async function stampAnimated(srcBuf, meta, out) {
   const { data, info } = await sharp(srcBuf).raw().toBuffer({ resolveWithObject: true }); // the first frame
   const p = place(meta.width, frameH, (box) => meanLuminance(data, info, box));
   const mark = await markAt(p.colour, p.height);
-  const img = out.kind === 'mark'
+  const img = out.kind === 'mark' || out.kind === 'stamp'
     ? sharp(srcBuf, { animated: true }).composite(Array.from({ length: frames }, (_, i) => ({ input: mark, left: p.left, top: i * frameH + p.top })))
     : sharp(srcBuf, { animated: true });
   return encode(img, { ...out, isPalette: false, anim: { loop: meta.loop ?? 0, delay: meta.delay } });
@@ -106,7 +110,7 @@ async function stampGroup(srcBuf, outs) {
     const h = Math.round((info.height * w) / info.width);
     let img = sharp(data, { raw: info });
     if (o.width) img = img.resize({ width: o.width });
-    if (o.kind === 'mark') {
+    if (o.kind === 'mark' || o.kind === 'stamp') {
       // the corner's brightness, read from the master at the same place
       const s = info.width / w;
       const p = place(w, h, (b) => meanLuminance(data, info, {
@@ -123,7 +127,7 @@ async function stampGroup(srcBuf, outs) {
 
 const started = Date.now();
 const files = existsSync(path.join(DIST, 'images')) ? walk(path.join(DIST, 'images')).filter((f) => PICTURE.test(f)) : [];
-const tally = { mark: 0, meta: 0, none: 0, cached: 0, before: 0, after: 0 };
+const tally = { mark: 0, meta: 0, stamp: 0, none: 0, cached: 0, before: 0, after: 0 };
 
 // Group the served files by the clean picture they are made from
 const groups = new Map();
@@ -170,5 +174,5 @@ await Promise.all(Array.from({ length: THREADS }, worker));
 const mb = (n) => `${(n / 1e6).toFixed(1)} MB`;
 const pct = tally.before ? (((tally.after - tally.before) / tally.before) * 100).toFixed(1) : '0';
 console.log(`watermark: ${files.length} pictures in ${((Date.now() - started) / 1000).toFixed(1)} s · `
-  + `${tally.mark} with the mark, ${tally.meta} metadata only, ${tally.none} not Ryan's (left as they are) · `
+  + `${tally.mark + tally.stamp} with the mark (${tally.stamp} of them not Ryan's own work: no name or copyright in the file), ${tally.meta} metadata only · `
   + `${tally.cached} from cache · ${mb(tally.before)} -> ${mb(tally.after)} (${pct >= 0 ? '+' : ''}${pct}%)`);
