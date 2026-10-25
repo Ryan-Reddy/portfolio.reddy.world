@@ -1,101 +1,15 @@
 ---
-import { portfolios, photos, picture, SITE, KIND_LABEL } from '../lib/portfolios.js';
+import { deskProjects, ratingCandidates } from '../lib/desk-keywords.js';
+import { ratedFor, stems } from '../lib/keyword-ratings.js';
+import ratings from '../data/keyword-ratings.json';
 
-const SEARCH_INTENT = {
-  rmaekers: ['production studio Amsterdam', 'experiential design studio Amsterdam', 'creative fabrication Amsterdam', 'brand activations Amsterdam', 'exhibition stand design Amsterdam'],
-  rrproductions: ['creative technologist Amsterdam', 'industrial design', 'product design', 'product solutions', 'art installation', 'sculpture', 'custom fabrication'],
-  vaguelyvulgar: ['male model Amsterdam', 'fashion model', 'editorial modelling', 'portrait photography', 'creative talent Amsterdam'],
-};
-const PROJECT_INTENT = {
-  decor: ['festival stage design', 'event decor Amsterdam', 'art installations Amsterdam', 'set building', 'custom props'],
-  signage: ['custom signage Amsterdam', 'light installations', 'exhibition design'],
-  furniture: ['furniture design Amsterdam', 'interior design Amsterdam', 'custom interiors', 'product design solutions'],
-  design: ['product design Amsterdam', 'interior design Amsterdam', 'creative product solutions'],
-  rentals: ['event furniture rental Amsterdam', 'festival decor rental'],
-  artists: ['artist collaboration', 'art production Amsterdam'],
-  festivals: ['festival production Amsterdam', 'festival installations'],
-  clubs: ['club decor Amsterdam', 'nightlife design'],
-};
-const IMAGE_VOCABULARY = ['wide view', 'close-up', 'detail', 'finished installation', 'work in progress', 'night', 'daylight', 'people', 'lighting', 'materials'];
-const NOISE = new Set(['project', 'projects', 'portfolio', 'uncategorized', 'geen categorie']);
-const STOPWORDS = new Set('the a an and or of in on at for with from by to is are was were this that these those our my we you your it its as into over under de het een en of van voor met op in bij door dit deze die dat mijn onze foto photo image picture'.split(' '));
-const useful = (value) => String(value ?? '').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
-const unique = (values) => [...new Set(values.map(useful).filter((value) => value && value.length > 2 && !NOISE.has(value.toLowerCase())))];
-const mediaTitle = (value) => {
-  const title = useful(value);
-  return /(^img[_ -]?\d+$)|(^[\da-f-]{20,}$)|(^dsc[_ -]?\d+$)|(^fullsizeoutput_)/i.test(title) ? '' : title;
-};
-const handwrittenDescription = (image, projectTitle) => {
-  const text = useful(image.caption) || useful(image.alt);
-  if (!text || /^[\da-f]{8}-[\da-f-]{20,}$/i.test(text) || /^(img|dsc|fullsizeoutput)[_ -]?\w+$/i.test(text) || /\.(jpe?g|png|gif|webp)$/i.test(text)) return '';
-  if (text.toLowerCase() === useful(projectTitle).toLowerCase() || /,\s*(photo|image|picture)\s+\d+$/i.test(text)) return '';
-  return text;
-};
-const suggestionsFor = (portfolio, post) => unique([
-  ...(SEARCH_INTENT[portfolio.id] ?? []),
-  ...post.kinds.flatMap((kind) => PROJECT_INTENT[kind] ?? []),
-  ...post.kinds.map((kind) => KIND_LABEL[kind]),
-  ...post.categories,
-  ...post.tags,
-  post.title,
-]).slice(0, 18);
-const wordsIn = (text) => useful(text).match(/[\p{L}\p{N}][\p{L}\p{N}'’-]*/gu) ?? [];
-const metadataKeywords = (texts, limit = 12) => {
-  const scores = new Map();
-  const add = (label, points) => {
-    const clean = useful(label).replace(/^[’'-]+|[’'-]+$/g, '');
-    const key = clean.toLowerCase();
-    if (clean.length < 3 || STOPWORDS.has(key) || NOISE.has(key) || /^\d+$/.test(key)) return;
-    const entry = scores.get(key) ?? {label: clean, score: 0};
-    entry.score += points;
-    scores.set(key, entry);
-  };
-  for (const text of texts) {
-    const words = wordsIn(text);
-    words.forEach((word) => add(word, 1));
-    for (let index = 0; index < words.length - 1; index++) {
-      if (!STOPWORDS.has(words[index].toLowerCase()) && !STOPWORDS.has(words[index + 1].toLowerCase())) add(`${words[index]} ${words[index + 1]}`, 1.6);
-    }
-  }
-  return [...scores.values()].sort((a, b) => b.score - a.score || a.label.localeCompare(b.label)).slice(0, limit).map(({label}) => label);
-};
-
-const projects = portfolios.flatMap((portfolio) => portfolio.posts.map((post) => {
-  const projectPhotos = photos(post);
-  const handwritten = projectPhotos.map((image, index) => ({index, text: handwrittenDescription(image, post.title)})).filter(({text}) => text);
-  const originalSuggestions = metadataKeywords(handwritten.map(({text}) => text));
-  return {
-    id: `${portfolio.id}/${post.slug}`,
-    portfolio: portfolio.name,
-    title: post.title.trim(),
-    href: `${SITE}${post.path}`,
-    // the picture that leads the project today (its card, its page, the wall); Ryan can choose another
-    hero: post.featured?.url ?? '',
-    originalSuggestions,
-    currentKeywords: unique([...originalSuggestions, ...post.kinds.map((kind) => KIND_LABEL[kind]), ...post.categories, ...post.tags]),
-    searchSuggestions: suggestionsFor(portfolio, post).filter((tag) => !originalSuggestions.some((original) => original.toLowerCase() === tag.toLowerCase())),
-    images: projectPhotos.map((image, index) => {
-    const pic = picture(image);
-    const nearby = handwritten.filter((item) => item.index !== index).sort((a, b) => Math.abs(a.index - index) - Math.abs(b.index - index)).slice(0, 3);
-    const nearbySuggestions = metadataKeywords(nearby.map(({text}) => text), 8);
-    return {
-      key: `${portfolio.id}/${post.slug}::${image.url}`,
-      url: image.url,
-      index: index + 1,
-      src: pic.src,
-      srcset: pic.srcset ?? '',
-      width: pic.width,
-      height: pic.height,
-      existingDescription: handwrittenDescription(image, post.title),
-      nearby: nearby.map(({index: sourceIndex, text}) => ({image: sourceIndex + 1, text})),
-      nearbySuggestions,
-      suggestions: unique([...nearbySuggestions, mediaTitle(image.title), ...IMAGE_VOCABULARY]),
-    };
-    }),
-  };
-})).filter((project) => project.images.length);
+// the third column: the project's words with a rating, plus related words that rate higher (scripts/keyword-ratings.mjs)
+const deskList = deskProjects();
+const vocabulary = new Set(deskList.flatMap((project) => ratingCandidates(project).flatMap(stems)));
+const projects = deskList.map((project) => ({...project, rated: ratedFor(ratingCandidates(project), ratings, {vocabulary, relatedFrom: project.intent})}));
+const ratingsInfo = {updatedAt: ratings.updatedAt, bing: Object.keys(ratings.bing ?? {}).length > 0};
 const count = projects.reduce((sum, project) => sum + project.images.length, 0);
-const queue = JSON.stringify({ projects, count }).replace(/</g, '\\u003c');
+const queue = JSON.stringify({ projects, count, ratingsInfo }).replace(/</g, '\\u003c');
 ---
 <!doctype html>
 <html lang="en">
@@ -155,6 +69,14 @@ const queue = JSON.stringify({ projects, count }).replace(/</g, '\\u003c');
     :global(button.scope) { min-height: 0; padding: .25rem .38rem; border: 0; border-left: 1px solid #555; color: #bbb; font-size: .68rem; }
     :global(button.scope:hover), :global(button.scope:focus-visible) { color: #111; background: var(--gold); outline: 0; }
     button.add-all { min-height: 0; padding: 0; border: 0; color: var(--gold); font-size: .78rem; }
+    :global(.rating) { display: inline-flex; align-items: center; padding: 0 .45rem; border-left: 1px solid #555; color: var(--gold); font-size: .68rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    :global(.rating[data-level="none"]) { color: #888; }
+    :global(.rating-empty) { color: #888; font-size: .78rem; }
+    details.rated-ideas > summary { cursor: pointer; margin-bottom: .4rem; color: #aaa; font-size: .78rem; }
+    details.how-to-pick { color: #bbb; font-size: .78rem; line-height: 1.4; }
+    details.how-to-pick summary { cursor: pointer; color: var(--gold); }
+    details.how-to-pick ul { margin: .4rem 0; padding-left: 1.1rem; display: grid; gap: .25rem; }
+    details.how-to-pick small { color: #888; }
     .effective { color: #aaa; font-size: .78rem; line-height: 1.4; }
     .nearby { display: grid; gap: .3rem; color: #bbb; font-size: .78rem; line-height: 1.35; }
     :global(.nearby q) { color: #ddd; }
@@ -217,6 +139,24 @@ const queue = JSON.stringify({ projects, count }).replace(/</g, '\\u003c');
         <div class="suggestion-head"><span>Customer-search ideas for this project</span></div>
         <div class="suggestions" id="project-search-suggestions"></div>
       </div>
+      <details class="rated-ideas" open>
+        <summary>Search-rated ideas · ●●● = most read about</summary>
+        <div class="suggestion-block">
+        <div class="suggestions" id="project-rated-suggestions"></div>
+        <div class="suggestion-head"><span>Related, more read about</span></div>
+        <div class="suggestions" id="project-rated-related"></div>
+        <details class="how-to-pick">
+          <summary>How to pick · what the dots mean</summary>
+          <ul>
+            <li>The right people over many people: a word a client types when they need you (festival decor Amsterdam) beats a big, broad word (festival).</li>
+            <li>Local: put Amsterdam in one or two words, and add the Dutch word where clients search in Dutch.</li>
+            <li>Few and accurate: four to eight words that are true of every picture in the project.</li>
+            <li>Dots: readers of the topic's Wikipedia page in 30 days, English and Dutch (● 100+, ●● 1,000+, ●●● 10,000+). Interest in the topic, not searches for these exact words; a big number also means more competition.</li>
+          </ul>
+          <small id="rated-source"></small>
+        </details>
+        </div>
+      </details>
       <div class="inherited" id="inherited" aria-label="Project tags applied to this picture"></div>
 
       <details class="description" id="description-panel">
@@ -317,6 +257,29 @@ const queue = JSON.stringify({ projects, count }).replace(/</g, '\\u003c');
         return wrap;
       }));
     }
+    // the third column: like renderTagButtons, with each word's rating beside it (src/lib/keyword-ratings.js)
+    function renderRatedButtons(containerId, items, emptyText) {
+      const selected = new Set(tags($('project-tags').value).map((tag) => tag.toLowerCase()));
+      if (!items.length) {
+        $(containerId).replaceChildren(Object.assign(document.createElement('span'), {className: 'rating-empty', textContent: emptyText}));
+        return;
+      }
+      $(containerId).replaceChildren(...items.map((item) => {
+        const wrap = Object.assign(document.createElement('span'), {className: 'suggestion-set'});
+        const button = Object.assign(document.createElement('button'), {type: 'button', className: 'suggestion', textContent: item.tag});
+        button.setAttribute('aria-pressed', String(selected.has(item.tag.toLowerCase())));
+        button.title = `Toggle “${item.tag}” in every image in this project · ${item.title}`;
+        button.addEventListener('click', () => {
+          changeTag('project-tags', item.tag, true);
+          $('project-tags').focus({preventScroll: true});
+        });
+        const badge = Object.assign(document.createElement('span'), {className: 'rating', textContent: item.badge, title: item.title});
+        badge.dataset.level = item.level === null ? 'none' : String(item.level);
+        if (item.bing !== null && item.bing !== undefined) badge.textContent += ` · Bing ${item.bing}`;
+        wrap.append(button, badge);
+        return wrap;
+      }));
+    }
     function renderFilmstrip(project, projectIndex, imageIndex) {
       const start = flat.findIndex((item) => item.projectIndex === projectIndex);
       $('filmstrip').replaceChildren(...project.images.map((image, index) => {
@@ -339,6 +302,8 @@ const queue = JSON.stringify({ projects, count }).replace(/</g, '\\u003c');
       $('inherited').replaceChildren(...projectTags.map((tag) => Object.assign(document.createElement('span'), {className: 'chip', textContent: tag})));
       renderTagButtons('project-original-suggestions', project.originalSuggestions, 'project-tags');
       renderTagButtons('project-search-suggestions', project.searchSuggestions, 'project-tags');
+      renderRatedButtons('project-rated-suggestions', project.rated?.hasData ? project.rated.rated : [], 'No data yet: the ratings come with the next build.');
+      renderRatedButtons('project-rated-related', project.rated?.related ?? [], project.rated?.hasData ? 'None that more people read about.' : 'No data yet.');
       renderTagButtons('image-suggestions', image.suggestions, 'image-tags');
       $('nearby').replaceChildren(...(image.nearby.length
         ? image.nearby.map(({image: number, text}) => {
@@ -476,6 +441,9 @@ const queue = JSON.stringify({ projects, count }).replace(/</g, '\\u003c');
       render({focus: false});
       $('celebrate').textContent = 'Lead picture chosen: it heads the project, its card and the wall.';
     });
+    $('rated-source').textContent = DATA.ratingsInfo?.updatedAt
+      ? `Ratings from Wikipedia and Datamuse${DATA.ratingsInfo.bing ? ' and Bing Webmaster Tools' : ''}, fetched ${DATA.ratingsInfo.updatedAt.slice(0, 10)} when the site was built.`
+      : 'No ratings fetched yet.';
     $('help').addEventListener('click', () => $('keys').showModal());
     $('close-keys').addEventListener('click', () => $('keys').close());
     $('map').addEventListener('click', () => { collect(); renderMap(); $('keyword-map').showModal(); $('map-filter').focus(); });
