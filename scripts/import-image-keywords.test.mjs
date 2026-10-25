@@ -2,7 +2,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { applyKeywords, isFileNameCaption } from './import-image-keywords.mjs';
+import { applyKeywords, isFileNameCaption, creditOf } from './import-image-keywords.mjs';
+import { fallbackAlt, isMachineAlt } from '../src/lib/alt-text.js';
 
 const read = (p) => JSON.parse(readFileSync(new URL(p, import.meta.url), 'utf-8'));
 const sample = () => read('./fixtures/image-desk-export.sample.json');
@@ -24,11 +25,11 @@ test('a written description becomes the alt text and the description; keywords a
   assert.equal(featured.alt, 'A sample description typed on the desk');
 });
 
-test('keywords without a description fill an empty alt with the title and the keywords', () => {
+test('keywords without a description fill an empty alt with the title, the place and the keywords', () => {
   const data = archive();
   applyKeywords(sample(), data);
   const m = media(data, 'vaguelyvulgar', 'photo-cv', SECOND);
-  assert.equal(m.alt, 'Modelling portfolio — sample project word, second sample');
+  assert.equal(m.alt, 'Modelling portfolio, photo 2 — sample project word, second sample');
   assert.equal(m.description, '');
 });
 
@@ -67,7 +68,7 @@ test('the lead picture Ryan chose becomes the featured picture of the post; twic
   const data = archive();
   const post = data.rmaekers.posts.find((p) => p.media.filter((m) => m.type === 'image').length > 1);
   const other = post.media.find((m) => m.type === 'image' && m.url !== post.featured?.url);
-  const exported = { version: 4, projects: { [`rmaekers/${post.slug}`]: { hero: other.url } }, images: {} };
+  const exported = { version: 4, projects: { [`rmaekers/${post.slug}`]: { hero: other.url, reviewed: true } }, images: {} };
   const report = applyKeywords(exported, data);
   assert.equal(post.featured.url, other.url);
   assert.equal(post.featured.width, other.width);
@@ -79,7 +80,7 @@ test('a lead picture that is not in the post is reported, not written', () => {
   const data = archive();
   const post = data.rmaekers.posts[0];
   const before = JSON.stringify(post.featured);
-  const report = applyKeywords({ version: 4, projects: { [`rmaekers/${post.slug}`]: { hero: '/portfolio/images/gone.jpg' } }, images: {} }, data);
+  const report = applyKeywords({ version: 4, projects: { [`rmaekers/${post.slug}`]: { hero: '/portfolio/images/gone.jpg', reviewed: true } }, images: {} }, data);
   assert.equal(JSON.stringify(post.featured), before);
   assert.equal(report.unmatched.length, 1);
 });
@@ -91,7 +92,7 @@ test('a caption that is only the file name, or a WordPress placeholder, never be
   assert.equal(isFileNameCaption('The Tropical stage by night', '/x/37361205_1804058373047016_o.jpg'), false);
   const data = archive();
   const before = JSON.stringify(media(data, 'vaguelyvulgar', 'photo-cv', SECOND));
-  const exported = { version: 4, projects: { 'vaguelyvulgar/photo-cv': { tags: '' } }, images: {
+  const exported = { version: 4, projects: { 'vaguelyvulgar/photo-cv': { tags: '', reviewed: true } }, images: {
     [`vaguelyvulgar/photo-cv::${SECOND}`]: { description: SECOND.split('/').pop().replace(/\.jpg$/, ''), keywords: [] },
   } };
   applyKeywords(exported, data);
@@ -107,4 +108,115 @@ test('pictures of a project Ryan never opened on the desk are left alone', () =>
   assert.equal(JSON.stringify(media(data, 'vaguelyvulgar', 'photo-cv', FIRST)), before);
   assert.equal(report.skipped, 1);
   assert.equal(report.pictures, 0);
+});
+
+const credited = (projectCredit, images) => ({ version: 4, projects: { 'vaguelyvulgar/photo-cv': { tags: '', reviewed: true, credit: projectCredit } }, images: Object.fromEntries(
+  Object.entries(images).map(([url, credit]) => [`vaguelyvulgar/photo-cv::${url}`, { projectId: 'vaguelyvulgar/photo-cv', url, description: '', keywords: [], credit }]),
+) });
+
+test('the photographer of a picture wins over the one of its project; both become media.credit', () => {
+  const data = archive();
+  const report = applyKeywords(credited({ name: 'Project Photographer', url: 'https://project.example/' }, {
+    [FIRST]: { name: '  Own   Photographer ', url: 'https://own.example/work' },
+    [SECOND]: { name: '', url: '' },
+  }), data);
+  assert.deepEqual(media(data, 'vaguelyvulgar', 'photo-cv', FIRST).credit, { name: 'Own Photographer', url: 'https://own.example/work' });
+  assert.deepEqual(media(data, 'vaguelyvulgar', 'photo-cv', SECOND).credit, { name: 'Project Photographer', url: 'https://project.example/' });
+  assert.equal(report.credits, 2);
+  // a credit alone is counted as credited, not as an updated picture
+  assert.equal(report.pictures, 0);
+  // the featured record of the same picture carries the same credit
+  const post = data.vaguelyvulgar.posts.find((p) => p.slug === 'photo-cv');
+  if (post.featured?.url === FIRST) assert.deepEqual(post.featured.credit, { name: 'Own Photographer', url: 'https://own.example/work' });
+});
+
+test('a site goes in only when it is an http(s) address', () => {
+  assert.deepEqual(creditOf({ name: 'A', url: 'javascript:alert(1)' }), { name: 'A' });
+  assert.deepEqual(creditOf({ name: 'A', url: 'www.example.com' }), { name: 'A' });
+  assert.deepEqual(creditOf({ name: 'A', url: 'mailto:a@example.com' }), { name: 'A' });
+  assert.deepEqual(creditOf({ name: 'A', url: 'http://example.com' }), { name: 'A', url: 'http://example.com/' });
+  assert.equal(creditOf({ name: ' ', url: 'https://example.com/' }), undefined);
+  assert.equal(creditOf(undefined), undefined);
+});
+
+test('no credit in the export never clears one the data has; twice changes nothing', () => {
+  const data = archive();
+  const exported = credited(undefined, { [FIRST]: { name: 'Own Photographer' } });
+  applyKeywords(exported, data);
+  assert.deepEqual(media(data, 'vaguelyvulgar', 'photo-cv', FIRST).credit, { name: 'Own Photographer' });
+  const once = JSON.stringify(data);
+  const report = applyKeywords(credited({ name: '' }, { [FIRST]: { name: '', url: '' } }), data);
+  assert.equal(JSON.stringify(data), once);
+  assert.equal(report.credits, 0);
+  assert.equal(applyKeywords(exported, data).credits, 0);
+  assert.equal(media(data, 'vaguelyvulgar', 'photo-cv', SECOND).credit, undefined);
+});
+
+test('a credit of a project Ryan never opened on the desk is left alone', () => {
+  const data = archive();
+  const report = applyKeywords({ version: 4, projects: {}, images: {
+    [`vaguelyvulgar/photo-cv::${FIRST}`]: { credit: { name: 'Someone' } },
+  } }, data);
+  assert.equal(media(data, 'vaguelyvulgar', 'photo-cv', FIRST).credit, undefined);
+  assert.equal(report.credits, 0);
+});
+
+test('file names in the shapes cameras, WordPress and Facebook give them are file names', () => {
+  assert.equal(isFileNameCaption('IMG_6773', '/x/2018/10/img_6773-1.jpg'), true);
+  assert.equal(isFileNameCaption('36772197_1004240556420936_8305567324182675456_n.jpg', '/x/2018/07/36772197_1004240556420936_8305567324182675456_n.jpg'), true);
+  assert.equal(isFileNameCaption('DSC_0012', '/x/2019/01/dsc_0012-scaled.jpg'), true);
+  assert.equal(isFileNameCaption('photo-1024x768.jpg', '/x/photo.jpg'), true);
+  assert.equal(isFileNameCaption('beach-e1534567890', '/x/beach.jpg'), true);
+  // shapes that are file names whatever the picture is called
+  assert.equal(isFileNameCaption('IMG_4923.jpg', '/x/img_49232.jpg'), true);
+  assert.equal(isFileNameCaption('fullsizeoutput_34a4', '/x/other.jpeg'), true);
+  assert.equal(isFileNameCaption('20af1101-8636-4b14-a969-a98932f410f8', ''), true);
+  assert.equal(isFileNameCaption('36772197_1004240556420936_8305567324182675456_n', ''), true);
+  // words stay words
+  assert.equal(isFileNameCaption('Street signs with led lighting', '/x/img_6773-1.jpg'), false);
+  assert.equal(isFileNameCaption('Locker room - desperados', '/x/desperados-1_empty.jpg'), false);
+});
+
+test('an alt that is a file name, or one the importer wrote, is replaced; written words are kept', () => {
+  const data = archive();
+  const post = data.rmaekers.posts.find((p) => p.slug === 'beau-battant');
+  const pic = post.media.find((m) => m.url.endsWith('/img_2615.jpg'));
+  const kept = post.media.find((m) => m.url.endsWith('/img_2682.jpg'));
+  pic.alt = 'IMG_2615';
+  kept.alt = 'Behind the scenes camera angle positioning';
+  const exported = { version: 4, projects: { 'rmaekers/beau-battant': { tags: 'beau battant, Beau Battant, https://example.com/a, music', reviewed: true } }, images: {
+    [`rmaekers/beau-battant::${pic.url}`]: { description: '', keywords: ['Beau Battant', 'music', 'https://example.com/a', 'videoclip', 'art project'] },
+    [`rmaekers/beau-battant::${kept.url}`]: { description: '', keywords: ['music'] },
+  } };
+  const report = applyKeywords(exported, data);
+  const place = post.media.filter((m) => m.type === 'image' && m.duplicate_of === undefined).indexOf(pic) + 1;
+  assert.equal(pic.alt, `Beau Battant, photo ${place} — music, videoclip, art project`);
+  assert.equal(kept.alt, 'Behind the scenes camera angle positioning');
+  assert.ok(report.dropped.includes('https://example.com/a'));
+  assert.ok(!post.keywords.includes('https://example.com/a'));
+  assert.equal(report.alts.length, 1);
+  // the old fallback shape is the importer's too
+  pic.alt = 'BEAU BATTANT — music, videoclip, art project';
+  applyKeywords(exported, data);
+  assert.equal(pic.alt, `Beau Battant, photo ${place} — music, videoclip, art project`);
+});
+
+test('a project not marked done on the desk is left alone: no keywords, no lead picture, no alt', () => {
+  const data = archive();
+  const post = data.rmaekers.posts.find((p) => p.slug === 'by-the-creek-festival');
+  const before = JSON.stringify(post);
+  const other = post.media.find((m) => m.type === 'image' && m.url !== post.featured?.url);
+  const report = applyKeywords({ version: 4, projects: { 'rmaekers/by-the-creek-festival': { tags: 'Creek, Podium', hero: other.url } }, images: {
+    [`rmaekers/by-the-creek-festival::${other.url}`]: { description: 'Words', keywords: ['Creek'] },
+  } }, data);
+  assert.equal(JSON.stringify(post), before);
+  assert.equal(report.skipped, 1);
+});
+
+test('the fallback alt: title case for an all-capitals title, no keyword that is the title', () => {
+  assert.equal(fallbackAlt('MERCHANDISE', 3, ['merchandise', 'brand activation', 'fun', 'shop', 'example']), 'Merchandise, photo 3 — brand activation, fun, shop');
+  assert.equal(fallbackAlt('Tropical stage Vunzige Deuntjes Festival', 4, []), 'Tropical stage Vunzige Deuntjes Festival, photo 4');
+  assert.equal(isMachineAlt('Merchandise, photo 3 — brand activation, fun, shop', '/x/95-3.jpeg', 'MERCHANDISE'), true);
+  assert.equal(isMachineAlt('MERCHANDISE — brand activation, fun, shop', '/x/95-3.jpeg', 'MERCHANDISE'), true);
+  assert.equal(isMachineAlt('Giant swings with cosmic swingers by ReddyMaekers.', '/x/a.jpg', 'Giant swings'), false);
 });
