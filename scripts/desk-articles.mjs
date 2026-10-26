@@ -53,19 +53,28 @@ export function missing(article, photos = null) {
 /** One article file's text */
 export function articleFile(id, article, { software = [], photos = {} } = {}) {
   const kind = article.kind ?? 'story';
-  const lines = ['---', `kind: ${kind}`, `title: ${str(clean(article.title))}`, `description: ${str(descriptionFrom(article.summary, article.content))}`];
+  const lines = ['---', `kind: ${kind}`, `title: ${str(clean(article.title))}`];
+  // fields the desk doesn't edit but keeps, when a draft came with them (src/data/article-seeds/)
+  if (clean(article.titleLang)) lines.push(`titleLang: ${str(clean(article.titleLang))}`);
+  if (clean(article.seoTitle)) lines.push(`seoTitle: ${str(clean(article.seoTitle))}`);
+  lines.push(`description: ${str(descriptionFrom(article.summary, article.content))}`);
   if (clean(article.summary)) lines.push(`summary: ${str(clean(article.summary))}`);
   lines.push(`lang: ${str(article.lang || 'en')}`);
   const person = article.person ?? {};
   if (kind === 'interview') {
     lines.push(`byline: ${str(clean(article.byline))}`, 'person:', `  name: ${str(clean(person.name))}`, `  role: ${str(clean(person.role))}`);
+    if (clean(person.roleLang)) lines.push(`  roleLang: ${str(clean(person.roleLang))}`);
     if (clean(person.org)) lines.push(`  org: ${str(clean(person.org))}`);
     const orgUrl = httpUrl(clean(person.orgUrl));
-    if (orgUrl) {
-      lines.push(`  orgUrl: ${str(orgUrl)}`);
-      // the organisation's name in the role links to its site (no words added)
-      if (clean(person.org) && clean(person.role).includes(clean(person.org))) lines.push('  roleLinks:', `    ${str(clean(person.org))}: ${str(orgUrl)}`);
-    }
+    if (orgUrl) lines.push(`  orgUrl: ${str(orgUrl)}`);
+    // words of the role linked to where they stand: the draft's own (only words the role has), else the
+    // organisation's name to its site (no words added)
+    const given = Object.entries(person.roleLinks ?? {}).map(([words, url]) => [clean(words), httpUrl(clean(url))])
+      .filter(([words, url]) => words && url && clean(person.role).includes(words));
+    const links = given.length ? given : orgUrl && clean(person.org) && clean(person.role).includes(clean(person.org)) ? [[clean(person.org), orgUrl]] : [];
+    if (links.length) lines.push('  roleLinks:', ...links.map(([words, url]) => `    ${str(words)}: ${str(url)}`));
+    const sameAs = (person.orgSameAs ?? []).map((url) => httpUrl(clean(url))).filter(Boolean);
+    if (sameAs.length) lines.push('  orgSameAs:', ...sameAs.map((url) => `    - ${str(url)}`));
     const profile = httpUrl(clean(person.profile));
     if (profile) lines.push(`  profile: ${str(profile)}`);
   }
@@ -76,6 +85,9 @@ export function articleFile(id, article, { software = [], photos = {} } = {}) {
     lines.push('hero:', `  file: ${str(photos[article.hero].file)}`, `  alt: ${str(clean(lead.alt))}`);
     if (photos[article.hero].share) lines.push(`  share: ${str(photos[article.hero].share)}`);
   }
+  // Ryan's own words above the article
+  const intro = String(article.intro?.text ?? '').trim();
+  if (intro) lines.push('intro:', `  lang: ${str(clean(article.intro.lang) || article.lang || 'en')}`, `  text: ${str(intro)}`);
   if (article.related && software.includes(article.related)) lines.push(`related: ${str(article.related)}`);
   // the pictures in the text, as the pictures themselves (a marker of a picture without a copy goes)
   const body = storyHtml(article.content).trim().replace(/<figure data-picture="([a-z0-9]+)"><\/figure>/gi, (_, pid) => {

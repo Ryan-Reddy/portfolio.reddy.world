@@ -36,10 +36,11 @@ export async function makePictures(state, existing, originals, publicDir) {
     const dir = path.join(publicDir, 'images', articleImages(slug));
     const made = {};
     for (const pid of shown) {
-      const original = path.join(originals, path.basename(article.pictures[pid].path));
       const master = path.join(dir, `${pid}.webp`);
+      // a draft seeded from the repo (src/data/article-seeds/) brings its picture as this copy, with no original
       if (!existsSync(master)) {
-        if (!existsSync(original)) continue; // not fetched: the article waits (scripts/desk-articles.mjs says so)
+        const original = article.pictures[pid].path && path.join(originals, path.basename(article.pictures[pid].path));
+        if (!original || !existsSync(original)) continue; // not fetched: the article waits (scripts/desk-articles.mjs says so)
         mkdirSync(dir, { recursive: true });
         // turned the way the camera held it, at most 2000 px wide
         await sharp(original).rotate().resize({ width: MAX, withoutEnlargement: true }).webp({ quality: 82 }).toFile(master);

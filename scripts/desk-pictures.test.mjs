@@ -63,3 +63,19 @@ test('an article whose picture has no description, or no copy yet, waits on the 
   const notCopied = { articles: { a1: article() } };
   assert.match(articleFiles(notCopied, {}, { photos: { a1: {} } }).waiting[0].missing.join(), /copied from your account/);
 });
+
+test("a seeded draft's picture already in the repo needs no original from the account", async () => {
+  const { root, originals, publicDir, dir } = await setup();
+  try {
+    const { mkdirSync } = await import('node:fs');
+    mkdirSync(dir, { recursive: true });
+    await sharp({ create: { width: 1600, height: 900, channels: 3, background: '#fc0' } }).webp().toFile(path.join(dir, 'pseed.webp'));
+    const seeded = article({ content: '<p>One.</p>', pictures: { pseed: { src: '/portfolio/images/articles/street-interviews/pseed.webp', alt: 'Yellow signs' } }, hero: 'pseed' });
+    const made = await makePictures({ articles: { a1: seeded } }, {}, originals, publicDir);
+    assert.equal(made.a1.pseed.width, 1600);
+    assert.ok(existsSync(path.join(dir, 'pseed-1200w.webp')));
+    assert.ok(existsSync(path.join(dir, 'pseed-share.jpg')));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
