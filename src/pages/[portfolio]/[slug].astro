@@ -148,7 +148,7 @@ const jsonLd = [
 const article = isPost ? { published: post.published, modified: post.modified, section: post.categories[0] || p.name, tags: post.tags } : undefined;
 ---
 <Base title={fitTitle(`${name} — ${p.brand} | Ryan Reddy`, `${name} — ${p.brand}`, name)} description={description} image={shareImage} active={p.id} jsonLd={jsonLd} type={isPost ? 'article' : 'website'} article={article}>
-  <article class:list={['project-page', { 'comp-card': comp }]}>
+  <article class:list={['project-page', { 'comp-card': comp }]} data-desk-project={`${p.id}/${post.slug}`}>
     <nav class="breadcrumb" aria-label="Breadcrumb">
       <a href={`${BASE}/`}>Portfolio</a> <span aria-hidden="true">/</span> <a href={`${BASE}/${p.id}/`}>{p.name}</a>
     </nav>
@@ -183,7 +183,7 @@ const article = isPost ? { published: post.published, modified: post.modified, s
 
     {hero && (
       <figure class="post-hero">
-        <img src={hero.src} srcset={hero.srcset} sizes="(max-width: 900px) 100vw, 852px" width={hero.width} height={hero.height} alt={hero.alt} fetchpriority="high" decoding="async">
+        <img src={hero.src} srcset={hero.srcset} sizes="(max-width: 900px) 100vw, 852px" width={hero.width} height={hero.height} alt={hero.alt} fetchpriority="high" decoding="async" data-desk-picture={featured.url}>
         {(featured.caption || featured.credit?.name) && <Fragment set:html={captionHtml(featured)} />}
       </figure>
     )}

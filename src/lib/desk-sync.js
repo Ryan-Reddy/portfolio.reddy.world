@@ -219,6 +219,10 @@ show({ kind: 'local' });
 
 // ---------- the account copy ----------
 let unwatch = null;
+// The edit bar on the project pages (src/lib/edit-bar.js) loads only where this flag is set: in a browser
+// whose account has read the desk, which only Ryan's can (the rules are owner-only)
+const OWNER_FLAG = 'reddy-desk-owner';
+const owner = (yes) => { try { if (yes) localStorage.setItem(OWNER_FLAG, '1'); else localStorage.removeItem(OWNER_FLAG); } catch {} };
 import('./desk-cloud.js').then((module) => {
   cloud = module;
   cloud.watchUser((signedIn) => {
@@ -226,19 +230,24 @@ import('./desk-cloud.js').then((module) => {
     unwatch = null;
     user = signedIn;
     first = true;
-    if (!user) return show({ kind: 'local' });
+    if (!user) { owner(false); return show({ kind: 'local' }); }
     show({ kind: 'checking' });
     remoteCopy = null;
     unwatch = cloud.watchRemote((remote, updated) => {
+      owner(true);
       remoteCopy = remote;
       const merged = mergeStates(desk.state, remote, existing);
       if (!sameWork(merged, desk.state) || (first && remote && merged.cursor !== desk.state.cursor)) {
-        apply(merged, { keepPlace: !first });
+        // opened on one project (the edit bar's "Open in the desk"): stay there
+        apply(merged, { keepPlace: !first || desk.pinned });
       }
       const behind = !remote || !sameWork(merged, remote);
       first = false;
       if (behind) push();
       else if (status.kind === 'checking' || status.kind === 'saved') show({ kind: 'saved', at: updated ?? Date.now() });
-    }, (error) => show(error.code === 'permission-denied' ? { kind: 'denied' } : { kind: 'error', message: error.code ?? error.message }));
+    }, (error) => {
+      if (error.code === 'permission-denied') owner(false);
+      show(error.code === 'permission-denied' ? { kind: 'denied' } : { kind: 'error', message: error.code ?? error.message });
+    });
   });
 }).catch((error) => show({ kind: 'error', message: `could not load the account code: ${error.message}` }));
