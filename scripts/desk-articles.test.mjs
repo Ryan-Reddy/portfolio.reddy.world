@@ -55,3 +55,34 @@ test('an address another file has gets a number; the same draft sent twice write
   assert.equal(deskIdOf(articleFile('a2', story)), 'a2');
   assert.equal(slugFrom('Café Carter: terras & bar'), 'cafe-carter-terras-bar');
 });
+
+test('a draft seeded from the repo keeps the fields the desk does not edit, and its own address', async () => {
+  const { readFileSync } = await import('node:fs');
+  const seed = JSON.parse(readFileSync(new URL('../src/data/article-seeds/afenneroefs2023.json', import.meta.url), 'utf-8'));
+  const ready = { ...seed, status: 'ready', readyAt: T, at: T, created: T };
+  const copy = (pid, width, height) => ({ file: `${pid}.webp`, src: `/portfolio/images/articles/fenne-roefs-mijksenaar/${pid}.webp`, srcset: `/portfolio/images/articles/fenne-roefs-mijksenaar/${pid}.webp ${width}w`, width, height });
+  const photos = { afenneroefs2023: { pairport1: { ...copy('pairport1', 1600, 900), share: 'pairport1-share.jpg' }, pschiphol2: copy('pschiphol2', 450, 450) } };
+  const { write, waiting } = articleFiles({ articles: { afenneroefs2023: ready } }, {}, { software: ['ral-contrast-checker'], photos });
+  assert.deepEqual(waiting, []);
+  assert.equal(write[0].slug, 'fenne-roefs-mijksenaar');
+  const front = frontOf(write[0].text);
+  assert.equal(front.titleLang, 'en');
+  assert.equal(front.seoTitle, 'Color Choices in Public Space · Fenne Roefs');
+  assert.equal(front.lang, 'nl');
+  assert.equal(front.person.roleLang, 'en');
+  assert.deepEqual(front.person.roleLinks, { 'Lab & Academy': 'https://www.mijksenaar.com/lab/', Mijksenaar: 'https://www.mijksenaar.com/' });
+  assert.deepEqual(front.person.orgSameAs, ['https://www.linkedin.com/company/mijksenaar']);
+  assert.equal(front.intro.lang, 'nl');
+  assert.match(front.intro.text, /^In 2023 interviewde ik Fenne Roefs/);
+  assert.equal(front.related, 'ral-contrast-checker');
+  assert.equal(front.hero.file, 'pairport1.webp');
+  // every question stays a heading; the second picture sits after the airport colours, as itself
+  assert.equal((write[0].text.match(/<h2>/g) ?? []).length, 9);
+  assert.match(write[0].text, /dit was wel iets nieuws\.<\/li><\/ul>\s*<figure class="article-figure"><img src="\/portfolio\/images\/articles\/fenne-roefs-mijksenaar\/pschiphol2\.webp"/);
+});
+
+test('words of a role link only when the role has them; no words are added', () => {
+  const person = { name: 'A. Person', role: 'Researcher at Example', org: 'Example', orgUrl: 'https://example.com', roleLinks: { 'Not in the role': 'https://example.com/x', Researcher: 'javascript:x()' } };
+  const front = frontOf(articleFile('i1', { ...story, kind: 'interview', byline: 'With', person }));
+  assert.deepEqual(front.person.roleLinks, { Example: 'https://example.com/' });
+});
