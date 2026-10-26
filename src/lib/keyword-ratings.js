@@ -44,19 +44,41 @@ const viewsOf = (topic) => {
   const counts = ['en', 'nl'].map((lang) => topic.wiki[lang]?.views).filter((v) => typeof v === 'number');
   return counts.length ? counts.reduce((a, b) => a + b, 0) : 0;
 };
+// the 30 days before, for the same pages; null when a page has no earlier count
+const previousOf = (topic) => {
+  const pages = ['en', 'nl'].map((lang) => topic?.wiki?.[lang]).filter((page) => page?.title);
+  return pages.length && pages.every((page) => typeof page.previous === 'number') ? pages.reduce((sum, page) => sum + page.previous, 0) : null;
+};
+
+/**
+ * Rising: at least a quarter more readers than in the 30 days before, from a base of 50 or more
+ * (a page going from 4 to 9 readers is not a trend). Returns the change as a fraction, or null.
+ */
+export function trendOf(views, previous) {
+  if (typeof views !== 'number' || typeof previous !== 'number' || previous < 50) return null;
+  return (views - previous) / previous;
+}
+export const RISING = 0.25;
+const trendBadge = (trend) => (trend !== null && trend >= RISING ? ` ↑${Math.round(trend * 100)}%` : '');
+const trendTitle = (trend) => (trend === null ? '' : `${trend >= 0 ? 'up' : 'down'} ${Math.abs(Math.round(trend * 100))}% on the 30 days before`);
 
 /** One word's rating, from the build's data. */
 export function rate(word, ratings) {
   const { core, local } = coreOf(word);
   const topic = ratings?.topics?.[core];
   const bing = ratings?.bing?.[normalize(word)];
-  const views = topic ? viewsOf(topic) : null;
-  const level = levelOf(views);
   const pages = topic?.wiki ? ['en', 'nl'].map((lang) => topic.wiki[lang]?.title && `${lang}: ${topic.wiki[lang].title}`).filter(Boolean) : [];
+  // a phrase without a page of its own is rated by its closest page (≈)
+  const closest = !pages.length ? topic?.closest ?? null : null;
+  const views = closest ? closest.views : topic ? viewsOf(topic) : null;
+  const trend = closest ? trendOf(closest.views, closest.previous) : trendOf(views, previousOf(topic));
+  const level = levelOf(views);
   const parts = [];
   if (!topic) parts.push('no data yet');
-  else if (!pages.length) parts.push('no Wikipedia page for this topic');
+  else if (closest) parts.push(`no page of its own; its closest page “${closest.page}” had ${closest.views.toLocaleString('en')} readers in 30 days`);
+  else if (!pages.length) parts.push('no Wikipedia page for this topic, nor a close one');
   else parts.push(`${views.toLocaleString('en')} readers in 30 days (${pages.join(', ')})`);
+  if (trend !== null) parts.push(trendTitle(trend));
   if (local) parts.push(`rated by its topic “${core}”; the place makes it local`);
   if (typeof bing?.impressions === 'number') parts.push(`Bing, Netherlands: ${bing.impressions.toLocaleString('en')} searches in ${bing.weeks} weeks`);
   return {
@@ -64,7 +86,9 @@ export function rate(word, ratings) {
     views,
     level,
     local,
-    badge: level === null ? 'no data' : `${'●'.repeat(level)}${'○'.repeat(3 - level)}${views ? ` ${compact(views)}` : ''}`,
+    trend,
+    approx: Boolean(closest),
+    badge: level === null ? 'no data' : `${closest ? '≈ ' : ''}${'●'.repeat(level)}${'○'.repeat(3 - level)}${views ? ` ${compact(views)}` : ''}${trendBadge(trend)}`,
     bing: typeof bing?.impressions === 'number' ? bing.impressions : null,
     title: parts.join(' · '),
   };
@@ -99,7 +123,7 @@ export function relevant(topic, item, vocabulary = new Set()) {
  * The third column for one project: its words rated and sorted (most read first, no data last),
  * and related words that more people read about than the word they came from.
  */
-export function ratedFor(words, ratings, { limit = 10, relatedLimit = 6, vocabulary = new Set(), relatedFrom = null } = {}) {
+export function ratedFor(words, ratings, { limit = Infinity, relatedLimit = 6, vocabulary = new Set(), relatedFrom = null } = {}) {
   // related words only for these (the customer-search ideas); a pair of words lifted from a caption
   // ("chair no") finds nonsense ("electric chair")
   const from = relatedFrom ? new Set(relatedFrom.map(normalize)) : null;
@@ -121,13 +145,17 @@ export function ratedFor(words, ratings, { limit = 10, relatedLimit = 6, vocabul
       if (seen.has(key) || !rateable(other.tag) || !relevant(core, other, vocabulary) || typeof other.views !== 'number' || other.views <= (item.views ?? 0)) continue;
       if (!related.has(key) || related.get(key).views < other.views) {
         const level = levelOf(other.views);
+        const trend = trendOf(other.views, other.previous);
         related.set(key, {
           tag: other.tag,
           views: other.views,
           level,
-          badge: `${'●'.repeat(level)}${'○'.repeat(3 - level)} ${compact(other.views)}`,
+          trend,
+          approx: false,
+          bing: null,
+          badge: `${'●'.repeat(level)}${'○'.repeat(3 - level)} ${compact(other.views)}${trendBadge(trend)}`,
           from: item.tag,
-          title: `Related to “${item.tag}” (${other.source === 'datamuse' ? 'Datamuse' : 'Wikipedia search'}) · ${other.views.toLocaleString('en')} readers of its Wikipedia page in 30 days`,
+          title: [`Related to “${item.tag}” (${other.source === 'datamuse' ? 'Datamuse' : 'Wikipedia search'}) · ${other.views.toLocaleString('en')} readers of its Wikipedia page in 30 days`, trendTitle(trend)].filter(Boolean).join(' · '),
         });
       }
     }
@@ -137,4 +165,27 @@ export function ratedFor(words, ratings, { limit = 10, relatedLimit = 6, vocabul
     related: [...related.values()].sort((a, b) => b.views - a.views || a.tag.localeCompare(b.tag)).slice(0, relatedLimit),
     hasData: rated.some((item) => item.level !== null),
   };
+}
+
+/**
+ * Every word idea for one project in one list, each rated (Ryan, 2026-10-26: "why seperated? bring them
+ * together, and please can we get them all rated?"): his own words from the captions, what clients
+ * search, related words that more people read about, and the word bank. One entry per word, with the
+ * places it came from (`sources`), sorted like the rated column: Bing's searches, then most read; no data last.
+ * @param {{source: string, words: string[]}[]} lists
+ */
+export function ideasFor(lists, ratings, { vocabulary = new Set(), relatedFrom = null, relatedLimit = 12 } = {}) {
+  const ideas = new Map();
+  const add = (word, source, rating) => {
+    const key = normalize(word);
+    if (!key) return;
+    const entry = ideas.get(key) ?? { ...(rating ?? (rateable(word) ? rate(word, ratings) : { tag: word, views: null, level: null, trend: null, approx: false, bing: null, badge: '', title: 'too short or too long to rate' })), sources: [] };
+    if (!entry.sources.includes(source)) entry.sources.push(source);
+    ideas.set(key, entry);
+  };
+  for (const { source, words } of lists) for (const word of words) add(word, source);
+  const { related } = ratedFor(lists.flatMap((list) => list.words), ratings, { relatedLimit, vocabulary, relatedFrom });
+  for (const item of related) add(item.tag, 'related', item);
+  const known = (item) => (item.level === null ? 0 : 1);
+  return [...ideas.values()].sort((a, b) => (b.bing ?? -1) - (a.bing ?? -1) || known(b) - known(a) || (b.views ?? -1) - (a.views ?? -1) || a.tag.localeCompare(b.tag));
 }

@@ -6,7 +6,9 @@
 //   KEYWORD_RATINGS_BUDGET=600 npm run keywords:rate   allow ten minutes instead of two
 //
 // Sources, all free and called one request at a time (their terms: see the comparison on issue #46):
-// - Wikipedia (en, nl): readers of a topic's page in the last 30 days, and related pages from its search.
+// - Wikipedia (en, nl): readers of a topic's page in the last 30 days and in the 30 days before (the trend),
+//   and related pages from its search. A phrase with no page of its own is rated by the closest page
+//   Wikipedia's search finds for it, when that page shares a word with it (marked ≈ on the desk).
 //   Wikimedia asks for a User-Agent with contact details and requests in series, not in parallel.
 // - Datamuse: related words ("means like"); free without a key up to 100,000 requests a day.
 // - Bing Webmaster Tools, only when BING_WEBMASTER_API_KEY is set: weekly searches in the Netherlands
@@ -15,12 +17,14 @@
 // Never fails the build: a source that is down leaves its words as they were (or "no data").
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { coreOf, normalize, rateable } from '../src/lib/keyword-ratings.js';
+import { coreOf, normalize, rateable, stems } from '../src/lib/keyword-ratings.js';
 
 const OUT = fileURLToPath(new URL('../src/data/keyword-ratings.json', import.meta.url));
 const USER_AGENT = 'reddy.world-image-desk/1.0 (https://reddy.world/contact; build-time keyword ratings)';
 const DAY = 24 * 60 * 60 * 1000;
 export const MAX_AGE_DAYS = 30;
+// entries written before the trend and the closest page were kept are fetched again
+export const VERSION = 2;
 const GAP_MS = 250;
 
 export function emptyRatings() {
@@ -55,7 +59,7 @@ export function lookups(wordLists) {
   return { topics: [...topics].sort(), words: [...words].sort() };
 }
 
-export const isStale = (entry, now, maxAgeDays = MAX_AGE_DAYS) => !entry?.fetchedAt || now - Date.parse(entry.fetchedAt) > maxAgeDays * DAY;
+export const isStale = (entry, now, maxAgeDays = MAX_AGE_DAYS, version = null) => !entry?.fetchedAt || now - Date.parse(entry.fetchedAt) > maxAgeDays * DAY || (version !== null && entry.v !== version);
 
 /** Tidies a Wikipedia title into a keyword: no "(disambiguation)" part, lower case unless it is a name. */
 export function titleToTag(title) {
@@ -68,6 +72,18 @@ const sumViews = (pageviews) => {
   const values = Object.values(pageviews).filter((v) => typeof v === 'number');
   return values.length ? values.reduce((a, b) => a + b, 0) : 0;
 };
+
+/**
+ * Wikipedia's daily readers (date -> count, up to 60 days) as the last 30 days and the 30 before them.
+ * `previous` is null when fewer than 28 earlier days came back, so a young page shows no trend.
+ */
+export function splitViews(pageviews) {
+  if (!pageviews || typeof pageviews !== 'object') return { views: null, previous: null };
+  const days = Object.keys(pageviews).sort();
+  const count = (list) => list.reduce((sum, day) => sum + (typeof pageviews[day] === 'number' ? pageviews[day] : 0), 0);
+  const before = days.slice(0, -30);
+  return { views: count(days.slice(-30)), previous: before.length >= 28 ? count(before) : null };
+}
 
 /** One request at a time, a pause between them, one retry; null when the source is down. */
 export function politeFetcher({ fetchImpl = globalThis.fetch, gapMs = GAP_MS, deadline = Infinity, log = () => {} } = {}) {
@@ -95,12 +111,12 @@ export function politeFetcher({ fetchImpl = globalThis.fetch, gapMs = GAP_MS, de
 
 const wikiApi = (lang, params) => `https://${lang}.wikipedia.org/w/api.php?${new URLSearchParams({ action: 'query', format: 'json', formatversion: '2', maxlag: '5', ...params })}`;
 
-/** Readers in 30 days of the pages with exactly these titles (after Wikipedia's own redirects). */
+/** Readers in 30 days (and the 30 before) of the pages with exactly these titles (after Wikipedia's own redirects). */
 export async function wikiExact(fetchJson, lang, titles) {
   const out = {};
   for (let i = 0; i < titles.length; i += 50) {
     const batch = titles.slice(i, i + 50);
-    let params = { titles: batch.join('|'), redirects: '1', prop: 'pageviews', pvipdays: '30' };
+    let params = { titles: batch.join('|'), redirects: '1', prop: 'pageviews', pvipdays: '60' };
     const pages = new Map();
     let data = null;
     for (let round = 0; round < 6; round++) {
@@ -108,9 +124,9 @@ export async function wikiExact(fetchJson, lang, titles) {
       if (!data?.query) break;
       const q = data.query;
       for (const page of q.pages ?? []) {
-        const known = pages.get(page.title) ?? { missing: Boolean(page.missing || page.invalid), views: null };
-        const views = sumViews(page.pageviews);
-        if (views !== null) known.views = (known.views ?? 0) + views;
+        const known = pages.get(page.title) ?? { missing: Boolean(page.missing || page.invalid), days: null };
+        // a continued answer can bring a page's days in parts
+        if (page.pageviews && typeof page.pageviews === 'object') known.days = { ...known.days, ...page.pageviews };
         pages.set(page.title, known);
       }
       const follow = (title) => {
@@ -122,7 +138,8 @@ export async function wikiExact(fetchJson, lang, titles) {
       for (const title of batch) {
         const page = pages.get(follow(title));
         if (!page) continue;
-        out[title] = page.missing ? { title: null, views: null } : { title: follow(title), views: page.views ?? 0 };
+        const { views, previous } = splitViews(page.days);
+        out[title] = page.missing ? { title: null, views: null } : { title: follow(title), views: views ?? 0, previous };
       }
       if (!data.continue) break;
       params = { ...params, ...data.continue };
@@ -131,13 +148,23 @@ export async function wikiExact(fetchJson, lang, titles) {
   return out;
 }
 
-/** Wikipedia's own search for a topic: the pages it finds, with readers in 30 days. */
+/** Wikipedia's own search for a topic: the pages it finds, in its order (`rank`), with readers in 30 days and the 30 before. */
 export async function wikiRelated(fetchJson, lang, topic, limit = 6) {
-  const data = await fetchJson(wikiApi(lang, { generator: 'search', gsrsearch: topic, gsrlimit: String(limit), gsrnamespace: '0', prop: 'pageviews', pvipdays: '30' }));
+  const data = await fetchJson(wikiApi(lang, { generator: 'search', gsrsearch: topic, gsrlimit: String(limit), gsrnamespace: '0', prop: 'pageviews', pvipdays: '60' }));
   if (!data) return null;
   return (data.query?.pages ?? [])
-    .map((page) => ({ tag: titleToTag(page.title), page: page.title, views: sumViews(page.pageviews), source: 'wikipedia' }))
+    .map((page) => ({ tag: titleToTag(page.title), page: page.title, ...splitViews(page.pageviews), rank: page.index ?? 99, source: 'wikipedia' }))
     .filter((item) => typeof item.views === 'number' && normalize(item.tag) !== topic);
+}
+
+/**
+ * The page a phrase without its own page is rated by: Wikipedia's first search hit that shares a word
+ * with it ("3d designs" -> "3D modeling", never an unrelated famous page). null when none does.
+ */
+export function closestPage(topic, hits) {
+  const own = new Set(stems(topic));
+  const best = [...(hits ?? [])].sort((a, b) => a.rank - b.rank).find((hit) => hit.views > 0 && stems(hit.page).some((stem) => own.has(stem)));
+  return best ? { page: best.page, views: best.views, previous: best.previous ?? null } : null;
 }
 
 /** Datamuse: words that mean something like the topic. */
@@ -170,7 +197,7 @@ const capitalise = (topic) => topic.charAt(0).toUpperCase() + topic.slice(1);
 export async function refreshRatings(wordLists, previous, { fetchJson, now = Date.now(), bingKey = '', log = () => {}, maxTopics = Infinity } = {}) {
   const ratings = { ...emptyRatings(), ...previous, topics: { ...previous?.topics }, bing: { ...previous?.bing } };
   const { topics, words } = lookups(wordLists);
-  const stale = topics.filter((t) => isStale(ratings.topics[t], now)).sort((a, b) => Number(Boolean(ratings.topics[a])) - Number(Boolean(ratings.topics[b])) || a.localeCompare(b)).slice(0, maxTopics);
+  const stale = topics.filter((t) => isStale(ratings.topics[t], now, MAX_AGE_DAYS, VERSION)).sort((a, b) => Number(Boolean(ratings.topics[a])) - Number(Boolean(ratings.topics[b])) || a.localeCompare(b)).slice(0, maxTopics);
   const stamp = new Date(now).toISOString();
   let updated = 0;
   if (stale.length) {
@@ -191,7 +218,7 @@ export async function refreshRatings(wordLists, previous, { fetchJson, now = Dat
     const similarTitles = [...new Set(pending.flatMap((p) => p.similar.map(capitalise)))];
     const similarViews = similarTitles.length ? await wikiExact(fetchJson, 'en', similarTitles) : {};
     for (const { topic, en, nl, related, similar } of pending) {
-      const fromDatamuse = similar.map((word) => ({ tag: word, page: similarViews[capitalise(word)]?.title, views: similarViews[capitalise(word)]?.views, source: 'datamuse' })).filter((item) => typeof item.views === 'number' && item.views > 0);
+      const fromDatamuse = similar.map((word) => ({ tag: word, page: similarViews[capitalise(word)]?.title, views: similarViews[capitalise(word)]?.views, previous: similarViews[capitalise(word)]?.previous ?? null, source: 'datamuse' })).filter((item) => typeof item.views === 'number' && item.views > 0);
       // one entry per Wikipedia page (sculpting and sculptor both lead to Sculpture), never the topic's own page
       const own = new Set([en?.title, nl?.title].filter(Boolean));
       const all = new Map();
@@ -200,10 +227,13 @@ export async function refreshRatings(wordLists, previous, { fetchJson, now = Dat
         if (normalize(item.tag) === topic || own.has(item.page)) continue;
         if (!all.has(key) || (all.get(key).source === 'datamuse' && item.source !== 'datamuse')) all.set(key, item);
       }
+      const hasPage = Boolean(en?.title || nl?.title);
       ratings.topics[topic] = {
+        v: VERSION,
         fetchedAt: stamp,
         wiki: { en: en?.title ? en : null, nl: nl?.title ? nl : null },
-        related: [...all.values()].sort((a, b) => b.views - a.views || a.tag.localeCompare(b.tag)).slice(0, 12),
+        ...(hasPage ? {} : { closest: closestPage(topic, related) }),
+        related: [...all.values()].sort((a, b) => b.views - a.views || a.tag.localeCompare(b.tag)).slice(0, 12).map(({ rank, ...item }) => item),
       };
       updated++;
     }
@@ -216,7 +246,7 @@ export async function refreshRatings(wordLists, previous, { fetchJson, now = Dat
     }
   }
   ratings.sources = {
-    wikipedia: 'Readers of the topic\'s Wikipedia page in 30 days, English + Dutch (Wikimedia API, CC0 data)',
+    wikipedia: 'Readers of the topic\'s Wikipedia page in 30 days and the 30 before, English + Dutch; a phrase without a page: its closest page (Wikimedia API, CC0 data)',
     datamuse: 'Related words, means-like (Datamuse API, https://www.datamuse.com/api/)',
     ...(bingKey || Object.keys(ratings.bing).length ? { bing: 'Searches in the Netherlands for the exact words, last 4 weeks (Bing Webmaster Tools GetKeywordStats)' } : {}),
   };

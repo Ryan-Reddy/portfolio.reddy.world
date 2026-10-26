@@ -3,8 +3,8 @@
 // reads it (src/lib/keyword-ratings.js). No network: every source is a fake that answers like the real one.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { refreshRatings, lookups, isStale, titleToTag, serialise, emptyRatings, politeFetcher, bingStats } from './keyword-ratings.mjs';
-import { coreOf, rateable, levelOf, ratedFor, rate, relevant } from '../src/lib/keyword-ratings.js';
+import { refreshRatings, lookups, isStale, titleToTag, serialise, emptyRatings, politeFetcher, bingStats, splitViews, closestPage, VERSION } from './keyword-ratings.mjs';
+import { coreOf, rateable, levelOf, ratedFor, rate, relevant, trendOf, ideasFor } from '../src/lib/keyword-ratings.js';
 
 const NOW = Date.parse('2026-10-25T12:00:00Z');
 const days = (n) => n * 24 * 60 * 60 * 1000;
@@ -75,14 +75,14 @@ test('the builder rates every topic from Wikipedia (en + nl) and keeps related w
   const { ratings, updated } = await refreshRatings([['industrial design', 'Sculpture', 'event decor Amsterdam']], emptyRatings(), { fetchJson, now: NOW });
   assert.equal(updated, 3);
   const industrial = ratings.topics['industrial design'];
-  assert.deepEqual(industrial.wiki.en, { title: 'Industrial design', views: 4500 });
-  assert.deepEqual(industrial.wiki.nl, { title: 'Industriële vormgeving', views: 200 });
+  assert.deepEqual(industrial.wiki.en, { title: 'Industrial design', views: 4500, previous: null });
+  assert.deepEqual(industrial.wiki.nl, { title: 'Industriële vormgeving', views: 200, previous: null });
   // its own page is not "related"; the search's famous unrelated page is kept here and filtered when read
   assert.deepEqual(industrial.related.map((r) => r.tag), ['Jeffrey Dahmer', 'computer-aided design', 'industrial engineering']);
   // Datamuse's sculpting leads to Sculpture itself, so only statue stays
   assert.deepEqual(ratings.topics.sculpture.related.map((r) => [r.tag, r.source]), [['statue', 'datamuse']]);
   // a phrase without a page: fetched, no page, and Datamuse's backfill words are dropped
-  assert.deepEqual(ratings.topics['event decor'], { fetchedAt: new Date(NOW).toISOString(), wiki: { en: null, nl: null }, related: [] });
+  assert.deepEqual(ratings.topics['event decor'], { v: VERSION, fetchedAt: new Date(NOW).toISOString(), wiki: { en: null, nl: null }, closest: null, related: [] });
 });
 
 test('a source that is down leaves the words without data, and the build goes on', async () => {
@@ -180,4 +180,55 @@ test('the file is written with sorted keys, so a refresh is a small diff', () =>
   const text = serialise({ ...emptyRatings(), topics: { b: {}, a: {} } });
   assert.ok(text.indexOf('"a"') < text.indexOf('"b"'));
   assert.ok(text.endsWith('\n'));
+});
+
+// ---------- every idea rated, and rising interest (Ryan, 2026-10-26) ----------
+const daysOf = (first, second) => Object.fromEntries(Array.from({ length: 60 }, (_, i) => [`2026-0${i < 30 ? 8 : 9}-${String((i % 30) + 1).padStart(2, '0')}`, i < 30 ? first : second]));
+
+test('60 days of readers split into the last 30 and the 30 before; a young page has no earlier count', () => {
+  assert.deepEqual(splitViews(daysOf(10, 20)), { views: 600, previous: 300 });
+  assert.deepEqual(splitViews({ '2026-10-01': 5, '2026-10-02': null }), { views: 5, previous: null });
+  assert.deepEqual(splitViews(undefined), { views: null, previous: null });
+});
+
+test('rising means a quarter more readers than the 30 days before, from a base of 50', () => {
+  assert.equal(trendOf(150, 100), 0.5);
+  assert.equal(trendOf(9, 4), null);
+  assert.equal(trendOf(100, null), null);
+  const ratings = { topics: { 'interior design': { v: VERSION, wiki: { en: { title: 'Interior design', views: 8400, previous: 6000 }, nl: null }, related: [] } }, bing: {} };
+  const rated = rate('interior design', ratings);
+  assert.match(rated.badge, /●●○ 8\.4k ↑40%$/);
+  assert.match(rated.title, /up 40% on the 30 days before/);
+});
+
+test('a phrase without a page is rated by the closest page that shares a word, marked ≈', () => {
+  const hits = [{ page: 'Jeffrey Dahmer', views: 590000, rank: 1 }, { page: 'Computer-aided design', views: 9000, previous: 8000, rank: 2 }];
+  assert.deepEqual(closestPage('3d designs', hits), { page: 'Computer-aided design', views: 9000, previous: 8000 });
+  assert.equal(closestPage('adnight', hits), null);
+  const ratings = { topics: { '3d designs': { v: VERSION, wiki: { en: null, nl: null }, closest: { page: '3D modeling', views: 9000, previous: 8000 }, related: [] } }, bing: {} };
+  const rated = rate('3D designs', ratings);
+  assert.equal(rated.approx, true);
+  assert.match(rated.badge, /^≈ ●●○ 9k$/);
+  assert.match(rated.title, /closest page “3D modeling”/);
+});
+
+test('entries from before the trend are fetched again', () => {
+  assert.equal(isStale({ fetchedAt: '2026-10-25T00:00:00Z' }, NOW, 30, VERSION), true);
+  assert.equal(isStale({ fetchedAt: '2026-10-25T00:00:00Z', v: VERSION }, NOW, 30, VERSION), false);
+});
+
+test('all ideas in one list, each once with where it came from, rated and sorted; unrateable ones last', () => {
+  const ratings = { topics: {
+    'interior design': { v: VERSION, wiki: { en: { title: 'Interior design', views: 8400, previous: 8000 }, nl: null }, related: [] },
+    scenografie: { v: VERSION, wiki: { en: null, nl: { title: 'Scenografie', views: 300, previous: 290 } }, related: [] },
+  }, bing: {} };
+  const ideas = ideasFor([
+    { source: 'yours', words: ['scenografie', 'ab'] },
+    { source: 'search', words: ['interior design'] },
+    { source: 'bank', words: ['Interior design', 'scenografie'] },
+  ], ratings);
+  assert.deepEqual(ideas.map((idea) => idea.tag), ['interior design', 'scenografie', 'ab']);
+  assert.deepEqual(ideas[0].sources, ['search', 'bank']);
+  assert.deepEqual(ideas[1].sources, ['yours', 'bank']);
+  assert.equal(ideas[2].level, null);
 });
