@@ -194,6 +194,17 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     .reading-text h2, .reading-text h3, .reading-text h4 { font-family: var(--display); }
     .reading-text a, .reading .dek a { color: #8b3a1a; }
     .row2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: .6rem; }
+    .pic-list { display: grid; gap: .6rem; }
+    .pic-row { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); gap: .6rem; padding: .5rem; border: 1px solid var(--line); }
+    .pic-row img { width: 5.5rem; height: 4.2rem; object-fit: cover; background: #111; }
+    .pic-row textarea { min-height: 3.4rem; }
+    .pic-row .row { display: flex; flex-wrap: wrap; gap: .3rem; }
+    .pic-row .row button { min-height: 2rem; padding: .2rem .55rem; font-size: .78rem; }
+    .pic-row button[aria-pressed="true"] { color: var(--gold-ink); background: var(--gold); }
+    .add-pics { display: inline-flex; align-items: center; min-height: 2.5rem; padding: .5rem .85rem; border: 1px solid var(--gold); color: var(--gold); cursor: pointer; width: max-content; }
+    .add-pics:focus-within { outline: 2px solid var(--gold); outline-offset: 2px; }
+    .reading figure { margin: .4rem 0; }
+    .reading figure img, .reading .lead img { display: block; width: 100%; max-height: 28rem; object-fit: cover; }
     .state[data-ready="true"] { border-color: var(--gold); color: var(--gold); }
     .panel.article-panel { grid-template-rows: auto minmax(0, 1fr); }
     .ov-articles ul { list-style: none; margin: .4rem 0; padding: 0; display: grid; gap: .3rem; }
@@ -428,6 +439,12 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
           <h2>The text</h2>
           <div class="story" id="article-text" contenteditable="true" role="textbox" aria-multiline="true" aria-label="The article's text"></div>
           <p class="hint">Paragraphs, headings, bold, italic, links and lists are kept. Ctrl+B and Ctrl+I work.</p>
+        </section>
+        <section class="block" aria-labelledby="pictures-title">
+          <h2 id="pictures-title">Pictures</h2>
+          <div class="pic-list" id="pic-list"></div>
+          <label class="add-pics">＋ Add pictures <input id="pic-input" type="file" accept="image/*" multiple hidden></label>
+          <p class="hint" id="pic-hint">They stay private in your account until the article is published. ★ makes one the lead picture across the top; "In the text" puts it where your cursor is.</p>
         </section>
         <section class="block">
           <h2>Publishing</h2>
@@ -682,8 +699,9 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       return /^https?:\/\/[^/]/i.test(value) || /^\/(?!\/)/.test(value);
     };
     const holdsBlocks = (node) => [...node.children].some((c) => /^(P|H[1-6]|UL|OL|BLOCKQUOTE|HR|FIGURE|TABLE|DIV)$/.test(c.tagName) || c.classList.contains('pics'));
-    // `pictures(media)`: what a <figure data-media> becomes (the desk's picture block); without it the figure stays, empty
-    function tidy(root, pictures = null) {
+    // `pictures(media)`: what a <figure data-media> becomes (the desk's picture block); without it the figure stays, empty.
+    // An article's own picture is <figure data-picture="id">; `photos(id)` makes its block, else it stays a figure.
+    function tidy(root, pictures = null, photos = null) {
       for (const child of [...root.childNodes]) {
         if (child.nodeType === 8) { child.remove(); continue; }
         if (child.nodeType !== 1) continue;
@@ -694,8 +712,14 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
           else if (tag === 'FIGURE') { child.replaceChildren(); for (const attr of [...child.attributes]) if (attr.name !== 'data-media') child.removeAttribute(attr.name); }
           continue;
         }
+        const photo = child.dataset?.picture;
+        if ((tag === 'FIGURE' || child.classList.contains('pics')) && photo !== undefined && /^[a-z0-9]+$/i.test(photo)) {
+          if (photos) child.replaceWith(photos(photo));
+          else { const figure = document.createElement('figure'); figure.dataset.picture = photo; child.replaceWith(figure); }
+          continue;
+        }
         if (DROP.has(tag)) { child.remove(); continue; }
-        tidy(child, pictures);
+        tidy(child, pictures, photos);
         if (RENAME[tag]) {
           const next = document.createElement(RENAME[tag]);
           next.append(...child.childNodes);
@@ -1129,14 +1153,20 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       const article = openArticleRecord();
       if (!article) return;
       const text = el('div', {className: 'reading-text'});
-      text.innerHTML = cleanHtml(article.content);
+      text.innerHTML = withPhotos(article, cleanHtml(article.content), (id, picture) => {
+        const figure = el('figure');
+        figure.append(photoImg(picture, picture.alt));
+        return figure;
+      });
       const summary = String(article.summary ?? '').trim();
+      const lead = article.hero && article.pictures?.[article.hero];
       const person = (article.kind ?? 'story') === 'interview' && article.person?.name ? article.person : null;
       const dek = person && el('p', {className: 'dek', textContent: `${String(article.byline ?? '').trim()} ${person.name}${person.role ? `, ${person.role}` : ''}`.trim()});
       $('reading').replaceChildren(
         el('span', {className: 'when', textContent: `${DATA.kinds?.[article.kind ?? 'story']?.label ?? 'Story'} · ${article.status === 'ready' ? 'ready for the site' : 'draft'} · started ${started(article)}`}),
         el('h2', {className: 'reading-title', textContent: articleTitle(article)}),
         dek,
+        lead ? el('div', {className: 'lead'}, photoImg(lead, lead.alt)) : null,
         summary ? el('p', {className: 'sum', textContent: summary}) : el('p', {className: 'sum empty-note', textContent: 'No summary yet: the wall shows the first words of the text.'}),
         text,
       );
@@ -1144,6 +1174,98 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       $('article-when').textContent = `Started ${started(article)}`;
       document.title = `${articleTitle(article)} (draft) — Portfolio desk`;
     }
+    // ---------- an article's pictures: uploaded to the account (reddy.world's /api/desk-upload), private until published ----------
+    // In the text a picture is <figure data-picture="id">; the article keeps {pictures: {id: {path, name, alt}}, hero: id}.
+    const photoUrls = new Map();
+    function photoImg(picture, alt) {
+      const img = el('img', {alt: alt ?? '', loading: 'lazy'});
+      const known = photoUrls.get(picture.path);
+      if (known) img.src = known;
+      else if (window.deskSync?.picture) window.deskSync.picture(picture.path).then((url) => { if (url) { photoUrls.set(picture.path, url); img.src = url; } }).catch(() => {});
+      return img;
+    }
+    // the text with each picture marker made into `make(id, picture)`; markers of removed pictures go
+    function withPhotos(article, html, make) {
+      const template = document.createElement('template');
+      template.innerHTML = html;
+      tidy(template.content, null, (id) => (article.pictures?.[id] ? make(id, article.pictures[id]) : document.createTextNode('')));
+      return template.innerHTML;
+    }
+    // the pictures the page will show: the lead and the ones in the text
+    function shownPictures(article) {
+      const inText = [...String(article.content ?? '').matchAll(/data-picture="([a-z0-9]+)"/gi)].map((m) => m[1]);
+      return [...new Set([article.hero, ...inText].filter((id) => id && article.pictures?.[id]))];
+    }
+    function setPicture(id, field, value) {
+      const article = state.articles[state.article];
+      state.articles[state.article] = {...article, pictures: {...article.pictures, [id]: {...article.pictures[id], [field]: value}}};
+      save();
+      renderReading();
+      renderPublish();
+    }
+    function renderPictureList() {
+      const article = openArticleRecord();
+      if (!article) return;
+      const pictures = Object.entries(article.pictures ?? {}).filter(([, picture]) => picture && !picture.removed);
+      $('pic-list').replaceChildren(...pictures.map(([id, picture]) => {
+        const alt = el('textarea', {value: picture.alt ?? '', placeholder: 'What someone who can\'t see it should hear'});
+        alt.setAttribute('aria-label', `What ${picture.name} shows`);
+        alt.addEventListener('input', () => setPicture(id, 'alt', alt.value));
+        const lead = el('button', {type: 'button', textContent: article.hero === id ? '★ Lead picture' : '☆ Lead'});
+        lead.setAttribute('aria-pressed', String(article.hero === id));
+        lead.addEventListener('click', () => { setArticle('hero', article.hero === id ? undefined : id); renderPictureList(); });
+        const place = el('button', {type: 'button', textContent: 'In the text'});
+        place.addEventListener('click', () => placePicture(id));
+        const remove = el('button', {type: 'button', className: 'quiet', textContent: 'Remove'});
+        remove.addEventListener('click', () => {
+          const current = state.articles[state.article];
+          const content = String(current.content ?? '').replace(new RegExp(`<figure data-picture="${id}"></figure>`, 'g'), '');
+          state.articles[state.article] = {...current, content, hero: current.hero === id ? undefined : current.hero, pictures: {...current.pictures, [id]: {...current.pictures[id], removed: true}}};
+          save();
+          render();
+        });
+        return el('div', {className: 'pic-row'}, photoImg(picture, ''), el('div', {}, alt, el('div', {className: 'row'}, lead, place, remove)));
+      }));
+    }
+    // a picture into the text where the cursor is (else at the end), as a fixed block
+    let lastRange = null;
+    document.addEventListener('selectionchange', () => {
+      const selection = getSelection();
+      if (selection?.rangeCount && $('article-text').contains(selection.anchorNode)) lastRange = selection.getRangeAt(0).cloneRange();
+    });
+    function placePicture(id) {
+      const article = openArticleRecord();
+      const block = el('span', {className: 'pics', contentEditable: 'false'});
+      block.dataset.picture = id;
+      block.append(photoImg(article.pictures[id], ''));
+      const editor = $('article-text');
+      if (lastRange && editor.contains(lastRange.startContainer)) { lastRange.collapse(false); lastRange.insertNode(block); }
+      else editor.append(block);
+      setArticle('content', cleanHtml(editor.innerHTML));
+    }
+    $('pic-input').addEventListener('change', async (event) => {
+      const files = [...(event.target.files ?? [])];
+      event.target.value = '';
+      for (const file of files) {
+        const id = `p${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+        $('pic-hint').textContent = `Adding ${file.name}…`;
+        try {
+          if (!window.deskSync?.upload) throw new Error('the desk is still starting');
+          const {path, name} = await window.deskSync.upload(file);
+          photoUrls.set(path, URL.createObjectURL(file));
+          const article = state.articles[state.article];
+          state.articles[state.article] = {...article, pictures: {...article.pictures, [id]: {path, name, alt: ''}}, hero: article.hero ?? id};
+          save();
+          renderPictureList();
+          renderReading();
+          renderPublish();
+          $('pic-hint').textContent = `${file.name} added. Say what it shows, for someone who can't see it.`;
+        } catch (error) {
+          $('pic-hint').textContent = `${file.name} was not added: ${error.message}.`;
+        }
+      }
+    });
+
     // ---------- what the article needs on the site: kind, language, year, the person, the case study ----------
     const kinds = DATA.kinds ?? {};
     $('article-kind').replaceChildren(...Object.entries(kinds).map(([id, kind]) => new Option(kind.label, id)));
@@ -1159,6 +1281,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       if (!String(article.title ?? '').trim()) missing.push('a title');
       if ((String(article.summary ?? '').trim() + ' ' + plainText(article.content)).trim().length < 50) missing.push('a few more words (50 characters)');
       if (kindOf(article) === 'interview' && !(article.person?.name?.trim() && article.person?.role?.trim() && String(article.byline ?? '').trim())) missing.push('the person: their name, role and the words before their name');
+      if (shownPictures(article).some((id) => !String(article.pictures?.[id]?.alt ?? '').trim())) missing.push('what every picture shows (for someone who can\'t see it)');
       return missing;
     }
     function renderPublish() {
@@ -1226,7 +1349,13 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       if (document.activeElement !== $('article-title')) $('article-title').value = article.title ?? '';
       if (document.activeElement !== $('article-summary')) $('article-summary').value = article.summary ?? '';
       // an empty text starts with one paragraph, so the first line typed is a paragraph too
-      if (document.activeElement !== $('article-text')) $('article-text').innerHTML = cleanHtml(article.content) || '<p><br></p>';
+      if (document.activeElement !== $('article-text')) $('article-text').innerHTML = withPhotos(article, cleanHtml(article.content), (id, picture) => {
+        const block = el('span', {className: 'pics', contentEditable: 'false'});
+        block.dataset.picture = id;
+        block.append(photoImg(picture, ''));
+        return block;
+      }) || '<p><br></p>';
+      renderPictureList();
       $('project-picker').value = `article:${state.article}`;
       resetDelete();
       renderReading();

@@ -100,12 +100,34 @@ async function send() {
   return { kind: 'sent', prs: DESK_PRS, run: body.run ?? RUN_PAGE };
 }
 
+// An article's pictures: uploaded to reddy.world's /api/desk-upload (functions/desk.js there), private in the
+// project's Storage until the article is published; shown on the desk from there with Ryan's sign-in.
+async function upload(file) {
+  if (!cloud || !user) throw new Error('sign in first: pictures are kept in your account');
+  const response = await fetch('/api/desk-upload', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${await cloud.idToken()}`, 'Content-Type': file.type || 'application/octet-stream', 'X-File-Name': encodeURIComponent(file.name) },
+    body: file,
+  });
+  if (response.status === 404) throw new Error('pictures are added on reddy.world itself, not on a preview');
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(body.error ?? `HTTP ${response.status}`);
+  return { path: body.path, name: body.name };
+}
+async function picture(path) {
+  if (!cloud || !user) return null;
+  const response = await fetch(`/api/desk-upload?path=${encodeURIComponent(path)}`, { headers: { Authorization: `Bearer ${await cloud.idToken()}` } });
+  return response.ok ? URL.createObjectURL(await response.blob()) : null;
+}
+
 window.deskSync = {
   stamp: (state) => stamp(state, snap, Date.now(), existing),
   saved: () => { renderOverview(); push(); },
   // Load export: replaces the loaded projects' records (the page then calls save(), which writes through)
   load: (state, loaded) => applyExport(state, loaded, Date.now()),
   send,
+  upload,
+  picture,
 };
 addEventListener('online', push);
 

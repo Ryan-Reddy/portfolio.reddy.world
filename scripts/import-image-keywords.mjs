@@ -255,7 +255,12 @@ export function applyDesk(state, data) {
 
 // Command line: read the export (or the desk itself), apply it to src/data/*.json and say what changed
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
-  const [file, flag] = process.argv.slice(2);
+  const args = process.argv.slice(2);
+  const file = args.find((arg, i) => !arg.startsWith('--') && args[i - 1] !== '--pictures');
+  const flag = args.includes('--dry-run') ? '--dry-run' : undefined;
+  // the web copies of the articles' pictures (scripts/desk-pictures.mjs), when Send to site made them
+  const picturesFile = args[args.indexOf('--pictures') + 1];
+  const photos = args.includes('--pictures') && picturesFile ? JSON.parse(readFileSync(picturesFile, 'utf-8')) : {};
   if (!file) {
     console.error('usage: node scripts/import-image-keywords.mjs <reddy-world-image-metadata.json | desk.json> [--dry-run]');
     process.exit(2);
@@ -275,7 +280,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
       return [f.replace(/\.md$/, ''), { text, desk: deskIdOf(text) }];
     })) : {};
     const software = readdirSync(SOFTWARE).filter((f) => f.endsWith('.md')).map((f) => f.replace(/\.md$/, ''));
-    const { write, remove, waiting } = articleFiles(input, existing, { software });
+    const { write, remove, waiting } = articleFiles(input, existing, { software, photos });
     if (flag !== '--dry-run') {
       for (const { slug, text } of write) writeFileSync(new URL(`${slug}.md`, ARTICLES), text);
       for (const slug of remove) unlinkSync(new URL(`${slug}.md`, ARTICLES));
