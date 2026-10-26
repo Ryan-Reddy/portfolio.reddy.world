@@ -22,6 +22,9 @@ const NOT_RYANS = [
   // The modelling pictures are photographs OF Ryan, taken by other people; the photographer's
   // credit comes from the image desk
   /^\/portfolio\/images\/vaguelyvulgar\//,
+  // The airport photo on Fenne Roefs' interview: found by Ryan, not his own (Ryan, 2026-10-26: "airport
+  // photo i found on google, free to use"); its source and license are still to be found (#65)
+  /^\/portfolio\/images\/interviews\/fenne-roefs-mijksenaar\/airport-signs/,
   // ReddyMaekers' "Clients" page: the clients' own logos
   ...[
     'logo-2.jpg', 'radion-logo.jpg', 'dekmantel_logo_1438179591.png', 'apenkooi_logo_def1.png',
