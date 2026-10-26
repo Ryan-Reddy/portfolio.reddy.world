@@ -103,6 +103,17 @@ html.paper .breadcrumb a { color: var(--rust); }
 .figs .tall img { max-width: 260px; }
 .doors { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 12px 28px; border-top: 1px solid var(--line); padding-top: 24px; font-weight: 600; }
 
+/* An interview (/portfolio/interviews/): one column, each question a heading over its answer */
+.interview { grid-template-columns: minmax(0, 1fr); }
+.interview .intro { display: grid; gap: 14px; max-width: 64ch; font-size: 1.05rem; color: var(--ink); }
+.interview .story h2 {
+  font-family: var(--display); font-size: clamp(1.35rem, 2.6vw, 1.65rem); font-weight: 600;
+  letter-spacing: normal; text-transform: none; line-height: 1.2;
+  margin: 18px 0 -8px; padding-top: 22px; border-top: 1px solid var(--line);
+}
+.interview .story h2:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
+.interview .story p { line-height: 1.65; }
+
 /* --------------------------------------------------------------------------
    The overview
    -------------------------------------------------------------------------- */

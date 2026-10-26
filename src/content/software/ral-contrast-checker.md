@@ -16,7 +16,7 @@ audience: Architects, interior designers and paint suppliers choosing colours fo
 maker: Reddy.World Enterprises
 role: "A 2023 team assignment at Hogeschool Utrecht for Stichting Accessibility; the checker as it runs today: Ryan Reddy"
 order: 5
-updated: 2026-10-21
+updated: 2026-10-26
 screenshots:
   - file: ral-pass.webp
     dark: ral-pass-dark.webp
@@ -41,7 +41,7 @@ It started in 2023 as a team assignment by students of Hogeschool Utrecht, for S
 
 ## What the research added
 
-The research for the project included an expert interview with Mijksenaar Wayfinding, about colour and contrast in signs and buildings. What it taught, in short:
+The research for the project included [an expert interview with Mijksenaar Wayfinding](/portfolio/interviews/fenne-roefs-mijksenaar/), about colour and contrast in signs and buildings. What it taught, in short:
 
 - **Contrast decides what gets noticed.** Schiphol's yellow signs stand out so strongly that the eye goes to them on its own, and the colour has become part of the airport's identity.
 - **Some people need more contrast.** Older people and people with low vision need a bigger difference between colours than others do.

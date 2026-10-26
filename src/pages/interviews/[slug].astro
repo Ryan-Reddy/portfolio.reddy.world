@@ -1,0 +1,83 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getCollection, getEntry, render } from 'astro:content';
+import { PERSON_ID, ORIGIN, SITE, BASE } from '../../lib/portfolios.js';
+import '../../styles/software.css';
+
+export async function getStaticPaths() {
+  const entries = await getCollection('interviews');
+  return entries.map((entry) => ({ params: { slug: entry.id }, props: { entry } }));
+}
+
+const { entry } = Astro.props;
+const d = entry.data;
+const { Content } = await render(entry);
+const pageUrl = `${SITE}/interviews/${entry.id}/`;
+const related = await getEntry(d.related);
+const relatedUrl = `${SITE}/software/${related.id}/`;
+const who = d.interviewee;
+// the intro is Ryan's own words, one paragraph per blank line
+const intro = d.intro?.text.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'CreativeWork',
+    '@id': `${pageUrl}#work`,
+    name: d.title,
+    description: d.description,
+    inLanguage: d.lang,
+    dateCreated: String(d.year),
+    dateModified: d.updated.toISOString().slice(0, 10),
+    mainEntityOfPage: pageUrl,
+    url: pageUrl,
+    author: { '@type': 'Person', '@id': PERSON_ID, name: 'Ryan Reddy', url: `${ORIGIN}/` },
+    contributor: {
+      '@type': 'Person',
+      name: who.name,
+      jobTitle: who.role,
+      worksFor: { '@type': 'Organization', name: who.org, url: who.orgUrl },
+    },
+    isPartOf: { '@type': 'CreativeWork', '@id': `${relatedUrl}#work`, name: related.data.title, url: relatedUrl },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Portfolio', item: `${SITE}/` },
+      { '@type': 'ListItem', position: 2, name: 'Software', item: `${SITE}/software/` },
+      { '@type': 'ListItem', position: 3, name: related.data.title, item: relatedUrl },
+      { '@type': 'ListItem', position: 4, name: d.title, item: pageUrl },
+    ],
+  },
+];
+---
+<Base
+  title={`${d.seoTitle ?? d.title} · reddy.world`}
+  description={d.description}
+  active="software"
+  jsonLd={jsonLd}
+  theme="paper"
+  lang={d.lang}
+  footnote="Software and websites by Ryan Reddy."
+>
+  <article class="case interview">
+    <nav class="breadcrumb" aria-label="Breadcrumb" lang="en">
+      <a href={`${BASE}/`}>Portfolio</a> <span aria-hidden="true">/</span> <a href={`${BASE}/software/`}>Software</a> <span aria-hidden="true">/</span> <a href={`${BASE}/software/${related.id}/`}>{related.data.title}</a>
+    </nav>
+
+    <header class="case-head">
+      <h1 lang={d.titleLang}>{d.title}</h1>
+      <p class="dek">{d.byline} {who.name},{' '}<span lang={who.roleLang}>{who.role}</span></p>
+    </header>
+
+    {intro && <div class="intro" lang={d.intro.lang}>{intro.map((p) => <p>{p}</p>)}</div>}
+
+    <div class="story"><Content /></div>
+
+    <aside class="doors" aria-label="More" lang="en">
+      <a href={`${BASE}/software/${related.id}/`}>{related.data.title}</a>
+      <a href="/">See all my work →</a>
+    </aside>
+  </article>
+</Base>

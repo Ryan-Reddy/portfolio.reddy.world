@@ -1,4 +1,4 @@
-import { defineCollection } from 'astro:content';
+import { defineCollection, reference } from 'astro:content';
 import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
 
@@ -65,4 +65,37 @@ const software = defineCollection({
   }),
 });
 
-export const collections = { software };
+// One interview per file, at /portfolio/interviews/<file name>/ (reddy.world#176): the questions
+// as ## headings, the answers in the interviewee's own words. Nothing else is written on the page
+// but an intro in Ryan's own words.
+const interviews = defineCollection({
+  loader: glob({ pattern: '*.md', base: './src/content/interviews' }),
+  schema: z.object({
+    title: z.string(),
+    // the title's language when it differs from the interview's
+    titleLang: z.string().optional(),
+    // the <title>, when the title is too long for a search result
+    seoTitle: z.string().optional(),
+    description: z.string().min(50).max(160),
+    // the interview's language; the page is marked with it
+    lang: z.string().default('nl'),
+    // the words before the interviewee's name, as the transcript has them
+    byline: z.string(),
+    interviewee: z.object({
+      name: z.string(),
+      role: z.string(),
+      roleLang: z.string().optional(),
+      org: z.string(),
+      orgUrl: z.url(),
+    }),
+    year: z.number().int(),
+    // Ryan's own words above the interview, quoted and dated in the PR that adds them
+    intro: z.object({ text: z.string(), lang: z.string().default('en') }).optional(),
+    // the case study the interview was for
+    related: reference('software'),
+    // the sitemap's lastmod
+    updated: z.coerce.date(),
+  }),
+});
+
+export const collections = { software, interviews };

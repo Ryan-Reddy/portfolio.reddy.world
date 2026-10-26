@@ -27,5 +27,13 @@ export async function GET() {
     lines.push(`- [${data.title}](${SITE}/software/${id}/) (${data.year}): ${data.summary}${data.live ? ` Live: ${data.live}` : ''}`);
   }
   lines.push('');
+  const interviews = await getCollection('interviews');
+  if (interviews.length) {
+    lines.push('## Interviews', '');
+    for (const { id, data } of interviews) {
+      lines.push(`- [${data.title}](${SITE}/interviews/${id}/) (${data.year}, ${data.lang}): ${data.interviewee.name}, ${data.interviewee.org}`);
+    }
+    lines.push('');
+  }
   return new Response(lines.join('\n'), { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
 }

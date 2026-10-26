@@ -51,6 +51,13 @@ for (const name of readdirSync(SOFTWARE_DIR).filter((f) => f.endsWith('.md'))) {
 }
 byPath.set(`${SITE}/software/`, { img: [], lastmod: newest || undefined });
 
+// The interviews (src/content/interviews/<slug>.md): text only, so just the last edit
+const INTERVIEWS_DIR = new URL('../content/interviews/', import.meta.url);
+for (const name of readdirSync(INTERVIEWS_DIR).filter((f) => f.endsWith('.md'))) {
+  const data = yaml.load(readFileSync(new URL(name, INTERVIEWS_DIR), 'utf-8').split(/^---\s*$/m)[1]);
+  byPath.set(`${SITE}/interviews/${name.replace(/\.md$/, '')}/`, { img: [], lastmod: day(data.updated) });
+}
+
 /** A no-index page at a retired address: never in the sitemap */
 export function isRetired(url) {
   return retired.has(url);
