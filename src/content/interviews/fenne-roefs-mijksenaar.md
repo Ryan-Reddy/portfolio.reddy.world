@@ -11,9 +11,17 @@ interviewee:
   roleLang: en
   org: Mijksenaar
   orgUrl: https://www.mijksenaar.com/
+  # her role's own words, linked to where they stand on Mijksenaar's site (its Lab page names her as its lead)
+  roleLinks:
+    Lab & Academy: https://www.mijksenaar.com/lab/
+    Mijksenaar: https://www.mijksenaar.com/
+  # as mijksenaar.com links it
+  orgSameAs:
+    - https://www.linkedin.com/company/mijksenaar
 year: 2023
 hero:
   file: airport-signs.webp
+  share: airport-signs-share.jpg
   alt: "Twee verlichte gele borden boven de gangen van een luchthaven. Links: Exit, Baggage hall, Arrivals hall, met daaronder op een grijze strook Transfer, Connecting flights, rood doorgestreept. Rechts: Transfer, Connecting flights, Gates B C D E F G H, Lounges, met een pijl naar rechts."
 # Ryan, 2026-10-26: "just write a simple intro line that fits"
 intro:

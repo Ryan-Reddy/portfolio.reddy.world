@@ -21,7 +21,28 @@ const who = d.interviewee;
 // the intro is Ryan's own words, one paragraph per blank line
 const intro = d.intro?.text.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
 const hero = d.hero && { ...(await pictureAt(`interviews/${entry.id}`, d.hero.file)), alt: d.hero.alt };
-const shareImage = hero && { url: `${ORIGIN}${hero.url}`, width: hero.width, height: hero.height, alt: hero.alt };
+// the link card (LinkedIn and others): the JPEG copy when there is one, else the picture itself
+const card = d.hero?.share && (await pictureAt(`interviews/${entry.id}`, d.hero.share));
+const shareImage = hero && (card
+  ? { url: `${ORIGIN}${card.url}`, width: card.width, height: card.height, alt: hero.alt }
+  : { url: `${ORIGIN}${hero.url}`, width: hero.width, height: hero.height, alt: hero.alt });
+// the role's own words, the ones in `roleLinks` linked to where they stand (first time each appears)
+function linkedParts(text, links = {}) {
+  const parts = [];
+  let rest = text;
+  const keys = Object.keys(links);
+  while (rest) {
+    const hits = keys.map((key) => [key, rest.indexOf(key)]).filter(([, at]) => at >= 0).sort((a, b) => a[1] - b[1] || b[0].length - a[0].length);
+    if (!hits.length) { parts.push({ text: rest }); break; }
+    const [key, at] = hits[0];
+    if (at) parts.push({ text: rest.slice(0, at) });
+    parts.push({ text: key, href: links[key] });
+    keys.splice(keys.indexOf(key), 1);
+    rest = rest.slice(at + key.length);
+  }
+  return parts;
+}
+const roleParts = linkedParts(who.role, who.roleLinks);
 
 const jsonLd = [
   {
@@ -40,7 +61,9 @@ const jsonLd = [
       '@type': 'Person',
       name: who.name,
       jobTitle: who.role,
-      worksFor: { '@type': 'Organization', name: who.org, url: who.orgUrl },
+      url: who.profile,
+      sameAs: who.profile ? [who.profile] : undefined,
+      worksFor: { '@type': 'Organization', name: who.org, url: who.orgUrl, sameAs: who.orgSameAs },
     },
     isPartOf: { '@type': 'CreativeWork', '@id': `${relatedUrl}#work`, name: related.data.title, url: relatedUrl },
     image: hero ? {
@@ -71,6 +94,8 @@ const jsonLd = [
   image={shareImage}
   active="software"
   jsonLd={jsonLd}
+  type="article"
+  article={{ modified: d.updated.toISOString().slice(0, 10), section: 'Interviews' }}
   theme="paper"
   lang={d.lang}
   footnote="Software and websites by Ryan Reddy."
@@ -82,7 +107,7 @@ const jsonLd = [
 
     <header class="case-head">
       <h1 lang={d.titleLang}>{d.title}</h1>
-      <p class="dek">{d.byline} {who.name},{' '}<span lang={who.roleLang}>{who.role}</span></p>
+      <p class="dek">{d.byline} {who.profile ? <a href={who.profile} rel="noopener">{who.name}</a> : who.name},{' '}<span lang={who.roleLang}>{roleParts.map((part) => (part.href ? <a href={part.href} rel="noopener">{part.text}</a> : part.text))}</span></p>
     </header>
 
     {hero && (

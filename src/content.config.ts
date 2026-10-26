@@ -87,10 +87,17 @@ const interviews = defineCollection({
       roleLang: z.string().optional(),
       org: z.string(),
       orgUrl: z.url(),
+      // words of the role that link to where they stand on the organisation's own site; no words are added
+      roleLinks: z.record(z.string(), z.url()).optional(),
+      // the organisation's own profiles (as its site links them), for the structured data
+      orgSameAs: z.array(z.url()).optional(),
+      // the interviewee's own profile (as Ryan gives it): her name links there, and the structured data
+      profile: z.url().optional(),
     }),
     year: z.number().int(),
-    // the picture across the top, in public/images/interviews/<slug>/; alt in the interview's language
-    hero: z.object({ file: z.string(), alt: z.string().min(1) }).optional(),
+    // the picture across the top, in public/images/interviews/<slug>/; alt in the interview's language;
+    // `share`: a JPEG copy for link cards (LinkedIn and others read JPEG and PNG, not always WebP)
+    hero: z.object({ file: z.string(), alt: z.string().min(1), share: z.string().optional() }).optional(),
     // Ryan's own words above the interview, quoted and dated in the PR that adds them
     intro: z.object({ text: z.string(), lang: z.string().default('en') }).optional(),
     // the case study the interview was for
