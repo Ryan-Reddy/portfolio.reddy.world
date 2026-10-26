@@ -112,8 +112,10 @@ addEventListener('online', push);
 // what /private shows on its ticket for the desk
 function overviewSummary(state = desk.state) {
   const sum = summarize(desk.DATA.projects, state, { credits });
-  return { done: sum.done, total: sum.total, next: sum.next?.title ?? null, savedAt: Date.now() };
+  return { done: sum.done, total: sum.total, next: sum.next?.title ?? null, drafts: drafts(state).length, savedAt: Date.now() };
 }
+const drafts = (state = desk.state) => Object.entries(state.articles ?? {}).filter(([, article]) => article && !article.deleted)
+  .sort(([, a], [, b]) => (b.created ?? 0) - (a.created ?? 0));
 
 // ---------- the overview ----------
 const label = { done: 'Done', started: 'Started', todo: 'Not started' };
@@ -134,6 +136,7 @@ function bar(part) {
 function openProject(index) {
   const start = desk.flat.findIndex((item) => item.projectIndex === index);
   if (start >= 0) desk.state.cursor = start;
+  desk.state.article = null;
   closeOverview();
   desk.render();
 }
@@ -169,6 +172,27 @@ function renderOverview() {
       el('ul', {}, ...rows));
     return details;
   }));
+  renderArticles();
+}
+
+// the articles Ryan is writing for the wall: drafts until he publishes them
+function renderArticles() {
+  const box = $('ov-articles');
+  if (!box) return;
+  const when = (ms) => new Date(ms).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  const rows = drafts().map(([id, article]) => {
+    const button = el('button', { type: 'button', className: 'ov-row' }, el('span', { className: 'ov-dot', ariaHidden: 'true' }),
+      el('strong', {}, String(article.title ?? '').trim() || 'Untitled article'), el('small', {}, `Draft${article.at ? ` · saved ${when(article.at)}` : ''}`));
+    button.addEventListener('click', () => { closeOverview(); desk.openArticle(id); });
+    return el('li', {}, button);
+  });
+  const add = el('button', { type: 'button' }, '＋ New article');
+  add.addEventListener('click', () => { closeOverview(); desk.newArticle(); });
+  box.replaceChildren(
+    el('h3', {}, 'Your articles'),
+    rows.length ? el('ul', {}, ...rows) : el('p', { className: 'ov-line' }, 'No drafts yet. A new article stays a draft, only for you, until you publish it.'),
+    add,
+  );
 }
 
 function openOverview() {

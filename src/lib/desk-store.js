@@ -1,8 +1,8 @@
 // The image desk's saved work: what changed, how two copies merge, and where Ryan is.
 //
 // The desk keeps one state object (see src/pages/image-metadata.astro):
-//   { projects: {id: {tags, reviewed, hero, credit?}}, images: {key: {description, tags, reviewed, credit?}},
-//     cursor, session }
+//   { projects: {id: {tags, reviewed, hero, credit?, summary?, content?}}, images: {key: {description, tags, reviewed, credit?}},
+//     articles: {id: {title, summary, content, status: 'draft', created} | {deleted: true}}, cursor, article, session }
 // and this file adds, without changing those fields:
 //   - `at` on a project or picture: when Ryan last changed it (ms), so two copies merge entry by entry
 //     and the newer change wins;
@@ -15,6 +15,8 @@
 // Pure functions only: the page, the cloud sync and the tests all use them.
 
 const STAMPS = new Set(['at', 'doneAt']);
+// the kinds of entry Ryan works on; each merges entry by entry
+const KINDS = ['projects', 'images', 'articles'];
 
 /** The fields Ryan typed, in a stable order, without the stamps: equal strings mean nothing changed. */
 export function contentOf(entry) {
@@ -39,8 +41,8 @@ export function isPristine(entry, existingDescription = '') {
 
 /** What `stamp` compares against: the content of every entry as last seen. */
 export function snapshotOf(state) {
-  const snap = {projects: {}, images: {}};
-  for (const kind of ['projects', 'images']) {
+  const snap = {projects: {}, images: {}, articles: {}};
+  for (const kind of KINDS) {
     for (const [key, entry] of Object.entries(state?.[kind] ?? {})) snap[kind][key] = contentOf(entry);
   }
   return snap;
@@ -59,7 +61,8 @@ export const dayOf = (ms) => {
 export function stamp(state, snap, now, existing = {}) {
   let changed = false;
   const finished = [];
-  for (const kind of ['projects', 'images']) {
+  for (const kind of KINDS) {
+    snap[kind] ??= {};
     for (const [key, entry] of Object.entries(state[kind] ?? {})) {
       if (!entry || typeof entry !== 'object') continue;
       const content = contentOf(entry);
@@ -154,6 +157,8 @@ export function mergeStates(local, remote, existing = {}) {
     ...a,
     projects: mergeMap(a.projects, b.projects),
     images: mergeMap(a.images, b.images, existing),
+    // a deleted article stays as a stamped {deleted: true}, so the newer delete wins over an older copy
+    articles: mergeMap(a.articles, b.articles),
     days: {...b.days, ...a.days},
     cursor: Number.isInteger(newer.cursor) ? newer.cursor : (a.cursor ?? b.cursor ?? 0),
     session: Math.max(Number(a.session) || 0, Number(b.session) || 0),
@@ -191,7 +196,7 @@ export function applyExport(state, loaded, now) {
 
 /** Same work in both? (Ignores the place and the session counter, which are per browser.) */
 export function sameWork(a, b) {
-  const keyed = (state) => JSON.stringify(['projects', 'images'].map((kind) => Object.entries(state?.[kind] ?? {})
+  const keyed = (state) => JSON.stringify(KINDS.map((kind) => Object.entries(state?.[kind] ?? {})
     .sort(([x], [y]) => (x < y ? -1 : x > y ? 1 : 0)).map(([key, entry]) => [key, contentOf(entry), entry?.at ?? 0])));
   return keyed(a) === keyed(b) && JSON.stringify(Object.keys(a?.days ?? {}).sort()) === JSON.stringify(Object.keys(b?.days ?? {}).sort());
 }
