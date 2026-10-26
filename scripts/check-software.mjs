@@ -81,6 +81,13 @@ for (const slug of interviews) {
   else if (lang !== 'en' && !/<header class="site-header"[^>]*\slang="en"/.test(html)) say(`the page is lang="${lang}" but its English header is not marked lang="en"`);
   const questions = (html.match(/<h2[\s>]/g) ?? []).length;
   if (questions < 1) say('no questions (## headings)');
+  for (const img of html.match(/<img\b[^>]*>/g) ?? []) {
+    const missing = ['alt', 'width', 'height', 'srcset'].filter((a) => !attr(img, a));
+    if (missing.length) say(`<img src="${attr(img, 'src')}"> has no ${missing.join(', ')}`);
+    for (const src of [attr(img, 'src'), ...(attr(img, 'srcset') ?? '').split(',').map((s) => s.trim().split(' ')[0])].filter(Boolean)) {
+      if (src.startsWith('/portfolio/') && !existsSync(new URL(src.slice('/portfolio/'.length), DIST))) say(`picture not in the build: ${src}`);
+    }
+  }
 
   let ld = [];
   try { ld = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].flatMap((m) => [JSON.parse(m[1])].flat()); } catch (e) { say(`JSON-LD does not parse: ${e.message}`); }

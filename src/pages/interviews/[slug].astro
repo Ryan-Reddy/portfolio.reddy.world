@@ -2,6 +2,8 @@
 import Base from '../../layouts/Base.astro';
 import { getCollection, getEntry, render } from 'astro:content';
 import { PERSON_ID, ORIGIN, SITE, BASE } from '../../lib/portfolios.js';
+import { pictureAt } from '../../lib/software.js';
+import { imageRights } from '../../lib/image-rights.js';
 import '../../styles/software.css';
 
 export async function getStaticPaths() {
@@ -18,6 +20,8 @@ const relatedUrl = `${SITE}/software/${related.id}/`;
 const who = d.interviewee;
 // the intro is Ryan's own words, one paragraph per blank line
 const intro = d.intro?.text.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
+const hero = d.hero && { ...(await pictureAt(`interviews/${entry.id}`, d.hero.file)), alt: d.hero.alt };
+const shareImage = hero && { url: `${ORIGIN}${hero.url}`, width: hero.width, height: hero.height, alt: hero.alt };
 
 const jsonLd = [
   {
@@ -39,6 +43,15 @@ const jsonLd = [
       worksFor: { '@type': 'Organization', name: who.org, url: who.orgUrl },
     },
     isPartOf: { '@type': 'CreativeWork', '@id': `${relatedUrl}#work`, name: related.data.title, url: relatedUrl },
+    image: hero ? {
+      '@type': 'ImageObject',
+      contentUrl: `${ORIGIN}${hero.url}`,
+      url: `${ORIGIN}${hero.url}`,
+      width: hero.width,
+      height: hero.height,
+      caption: hero.alt,
+      ...imageRights(hero.url, PERSON_ID),
+    } : undefined,
   },
   {
     '@context': 'https://schema.org',
@@ -55,6 +68,7 @@ const jsonLd = [
 <Base
   title={`${d.seoTitle ?? d.title} · reddy.world`}
   description={d.description}
+  image={shareImage}
   active="software"
   jsonLd={jsonLd}
   theme="paper"
@@ -70,6 +84,12 @@ const jsonLd = [
       <h1 lang={d.titleLang}>{d.title}</h1>
       <p class="dek">{d.byline} {who.name},{' '}<span lang={who.roleLang}>{who.role}</span></p>
     </header>
+
+    {hero && (
+      <figure class="case-hero">
+        <img src={hero.src} srcset={hero.srcset} sizes="(max-width: 1152px) 100vw, 1120px" width={hero.width} height={hero.height} alt={hero.alt} fetchpriority="high" decoding="async">
+      </figure>
+    )}
 
     {intro && <div class="intro" lang={d.intro.lang}>{intro.map((p) => <p>{p}</p>)}</div>}
 

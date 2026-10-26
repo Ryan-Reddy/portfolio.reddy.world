@@ -12,6 +12,13 @@ interviewee:
   org: Mijksenaar
   orgUrl: https://www.mijksenaar.com/
 year: 2023
+hero:
+  file: airport-signs.webp
+  alt: "Twee verlichte gele borden boven de gangen van een luchthaven. Links: Exit, Baggage hall, Arrivals hall, met daaronder op een grijze strook Transfer, Connecting flights, rood doorgestreept. Rechts: Transfer, Connecting flights, Gates B C D E F G H, Lounges, met een pijl naar rechts."
+# Ryan, 2026-10-26: "just write a simple intro line that fits"
+intro:
+  lang: nl
+  text: In 2023 interviewde ik Fenne Roefs over kleur en wayfinding, voor de RAL Contrast Checker die we op de Hogeschool Utrecht bouwden voor Stichting Accessibility.
 related: ral-contrast-checker
 updated: 2026-10-26
 ---

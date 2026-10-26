@@ -89,6 +89,8 @@ const interviews = defineCollection({
       orgUrl: z.url(),
     }),
     year: z.number().int(),
+    // the picture across the top, in public/images/interviews/<slug>/; alt in the interview's language
+    hero: z.object({ file: z.string(), alt: z.string().min(1) }).optional(),
     // Ryan's own words above the interview, quoted and dated in the PR that adds them
     intro: z.object({ text: z.string(), lang: z.string().default('en') }).optional(),
     // the case study the interview was for
