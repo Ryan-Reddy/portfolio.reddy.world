@@ -1,16 +1,27 @@
 ---
 import { deskProjects, ratingCandidates, WORD_BANK } from '../lib/desk-keywords.js';
-import { ratedFor, stems } from '../lib/keyword-ratings.js';
+import { ideasFor, normalize, stems, RISING } from '../lib/keyword-ratings.js';
 import ratings from '../data/keyword-ratings.json';
 import { archiveCredits } from '../lib/desk-credits.js';
 
-// the third column: the project's words with a rating, plus related words that rate higher (scripts/keyword-ratings.mjs)
+// Every word idea in one list, each rated (scripts/keyword-ratings.mjs fetches the numbers at build time):
+// per project the words and where they came from; each word's rating once, in `ratings`.
 const deskList = deskProjects();
 const vocabulary = new Set(deskList.flatMap((project) => ratingCandidates(project).flatMap(stems)));
-const projects = deskList.map((project) => ({...project, rated: ratedFor(ratingCandidates(project), ratings, {vocabulary, relatedFrom: project.intent})}));
-const ratingsInfo = {updatedAt: ratings.updatedAt, bing: Object.keys(ratings.bing ?? {}).length > 0};
+const ideaRatings = {};
+const bank = WORD_BANK.flatMap((list) => list.words);
+const projects = deskList.map((project) => {
+  const ideas = ideasFor([
+    { source: 'yours', words: project.originalSuggestions },
+    { source: 'search', words: project.searchSuggestions },
+    { source: 'bank', words: bank },
+  ], ratings, { vocabulary, relatedFrom: project.intent });
+  for (const { sources, ...rating } of ideas) ideaRatings[normalize(rating.tag)] ??= rating;
+  return { ...project, ideas: ideas.map((idea) => [idea.tag, idea.sources]) };
+});
+const ratingsInfo = {updatedAt: ratings.updatedAt, bing: Object.keys(ratings.bing ?? {}).length > 0, rising: RISING};
 const count = projects.reduce((sum, project) => sum + project.images.length, 0);
-const queue = JSON.stringify({ projects, count, ratingsInfo, wordBank: WORD_BANK }).replace(/</g, '\\u003c');
+const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRatings }).replace(/</g, '\\u003c');
 ---
 <!doctype html>
 <html lang="en">
@@ -110,6 +121,8 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, wordBank: WORD_BANK
     .idea button[aria-pressed="true"] { color: var(--gold-ink); background: var(--gold); }
     .idea .rating { display: inline-flex; align-items: center; padding: 0 .45rem; border-left: 1px solid #555; color: var(--gold); font-size: .68rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
     .idea .rating[data-level="none"] { color: #888; }
+    .idea[data-rising="true"] { border-color: var(--gold); }
+    .subtabs button:disabled { opacity: .4; }
     details.drawer { border: 1px solid var(--line); }
     details.drawer > summary { cursor: pointer; padding: .55rem .7rem; font-size: .85rem; font-weight: 600; }
     details.drawer > div { padding: 0 .7rem .7rem; display: grid; gap: .55rem; }
@@ -554,37 +567,45 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, wordBank: WORD_BANK
         const badge = el('span', {className: 'rating', textContent: rating.badge + (rating.bing != null ? ` · Bing ${rating.bing}` : ''), title: rating.title});
         badge.dataset.level = rating.level === null ? 'none' : String(rating.level);
         wrap.append(badge);
+        wrap.dataset.rising = String(typeof rating.trend === 'number' && rating.trend >= (DATA.ratingsInfo?.rising ?? 0.25));
       }
       return wrap;
     }
 
     // ---------- the Project tab ----------
-    const IDEA_TABS = [
-      {id: 'yours', label: 'Your words', hint: 'Words from your own captions in this post.'},
-      {id: 'search', label: 'What clients search', hint: 'Phrases people type when they need this kind of work.'},
-      {id: 'rated', label: 'Rated', hint: 'Dots: readers of the topic on Wikipedia in 30 days (● 100+, ●● 1,000+, ●●● 10,000+).'},
-      {id: 'bank', label: 'Word bank', hint: 'Your word lists.'},
+    // Every idea in one list, all rated, most searched or read first (Ryan, 2026-10-26: "why seperated?
+    // bring them together, and please can we get them all rated?"). The filters only narrow it.
+    const IDEA_FILTERS = [
+      {id: 'all', label: 'All'},
+      {id: 'rising', label: 'Rising ↑'},
+      {id: 'yours', label: 'Your words'},
+      {id: 'search', label: 'Clients search'},
+      {id: 'related', label: 'Related'},
+      {id: 'bank', label: 'Word bank'},
     ];
-    let ideaTab = 'yours';
+    const FROM = {yours: 'from your captions', search: 'what clients search for', related: 'related, more read', bank: 'your word lists'};
+    const key = (word) => String(word).toLowerCase().replace(/\s+/g, ' ').trim();
+    let ideaFilter = 'all';
     function renderIdeas() {
       const {project} = current();
       const chosen = projectTags(project);
       const has = (word) => chosen.some((w) => same(w, word));
       const add = (word) => () => setProjectTags(toggled(projectTags(current().project), word));
-      $('idea-tabs').replaceChildren(...IDEA_TABS.map((t) => {
-        const button = el('button', {type: 'button', textContent: t.label});
-        button.setAttribute('aria-pressed', String(t.id === ideaTab));
-        button.addEventListener('click', () => { ideaTab = t.id; renderIdeas(); });
+      const ideas = project.ideas.map(([tag, sources]) => ({...(DATA.ratings[key(tag)] ?? {tag, badge: '', level: null, trend: null}), tag, sources}));
+      const rising = (idea) => typeof idea.trend === 'number' && idea.trend >= DATA.ratingsInfo.rising;
+      $('idea-tabs').replaceChildren(...IDEA_FILTERS.map((f) => {
+        const n = f.id === 'all' ? ideas.length : f.id === 'rising' ? ideas.filter(rising).length : ideas.filter((idea) => idea.sources.includes(f.id)).length;
+        const button = el('button', {type: 'button', textContent: `${f.label} ${n}`});
+        button.setAttribute('aria-pressed', String(f.id === ideaFilter));
+        button.disabled = !n && f.id !== 'all';
+        button.addEventListener('click', () => { ideaFilter = f.id; renderIdeas(); });
         return button;
       }));
-      const info = IDEA_TABS.find((t) => t.id === ideaTab);
-      $('idea-hint').textContent = info.hint;
-      let items = [];
-      if (ideaTab === 'yours') items = project.originalSuggestions.map((w) => ideaButton(w, has(w), add(w)));
-      if (ideaTab === 'search') items = project.searchSuggestions.map((w) => ideaButton(w, has(w), add(w)));
-      if (ideaTab === 'rated') items = project.rated?.hasData ? [...project.rated.rated, ...project.rated.related].map((r) => ideaButton(r.tag, has(r.tag), add(r.tag), r)) : [el('span', {className: 'hint', textContent: 'No ratings yet: they come with the next build.'})];
-      if (ideaTab === 'bank') items = DATA.wordBank.flatMap((list) => [el('span', {className: 'row-label', textContent: list.source}), ...list.words.map((w) => ideaButton(w, has(w), add(w)))]);
-      $('idea-list').replaceChildren(...(items.length ? items : [el('span', {className: 'hint', textContent: 'Nothing here for this project.'})]));
+      const shown = ideas.filter((idea) => ideaFilter === 'all' || (ideaFilter === 'rising' ? rising(idea) : idea.sources.includes(ideaFilter)));
+      $('idea-list').replaceChildren(...(shown.length
+        ? shown.map((idea) => ideaButton(idea.tag, has(idea.tag), add(idea.tag), idea.badge ? {...idea, title: [idea.title, idea.sources.map((s) => FROM[s]).join(', ')].filter(Boolean).join(' · ')} : null))
+        : [el('span', {className: 'hint', textContent: 'Nothing here for this project.'})]));
+      $('idea-hint').textContent = `Dots: readers of the topic on Wikipedia in 30 days (● 100+, ●● 1,000+, ●●● 10,000+). ≈: a phrase rated by its closest page. ↑: rising, a quarter or more above a year before, against Wikipedia as a whole${DATA.ratingsInfo.bing ? '; Bing: searches in the Netherlands in 4 weeks' : ''}.${DATA.ratingsInfo.updatedAt ? ` Numbers from ${new Date(DATA.ratingsInfo.updatedAt).toLocaleDateString('en-GB', {day: 'numeric', month: 'short'})}.` : ''}`;
     }
     function renderProjectWords() {
       const {project} = current();
