@@ -380,7 +380,19 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, wordBank: WORD_BANK
 
     // What the desk shows: Ryan's change when he made one, else what the archive has today.
     // A record is only written once he changes something, so opening a project changes nothing.
-    const pick = (record, field, base) => (record[field] !== undefined ? record[field] : base);
+    // A blank field counts as unchanged: earlier desks wrote blanks just by showing a project (and
+    // "Send to site" reads blanks the same way). A field Ryan empties on purpose is named in `cleared`.
+    const isCleared = (record, field) => Array.isArray(record?.cleared) && record.cleared.includes(field);
+    const pick = (record, field, base) => (isCleared(record, field) ? '' : String(record[field] ?? '').trim() ? record[field] : base);
+    // the record with its new value, `cleared` kept in step: emptying a field the archive fills clears it on purpose
+    function withValue(record, field, value, base) {
+      const cleared = (record?.cleared ?? []).filter((name) => name !== field);
+      if (!String(value ?? '').trim() && String(base ?? '').trim()) cleared.push(field);
+      const next = {...record, [field]: value};
+      if (cleared.length) next.cleared = cleared;
+      else delete next.cleared;
+      return next;
+    }
     const projectTags = (project) => tags(pick(projectRecord(project), 'tags', project.keywords.join(', ')));
     const isDone = (project) => Boolean(projectRecord(project).reviewed ?? project.done);
     const summaryOf = (project) => pick(projectRecord(project), 'summary', project.summary);
@@ -391,13 +403,13 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, wordBank: WORD_BANK
     function setProject(project, field, value, base) {
       const record = state.projects[project.id];
       if (!record && value === base) return;
-      state.projects[project.id] = {...record, [field]: value};
+      state.projects[project.id] = withValue(record, field, value, base);
       save();
     }
     function setImage(image, field, value, base) {
-      const record = state.images[image.key];
+      const record = state.images[image.key] ?? state.images[image.url];
       if (!record && value === base) return;
-      state.images[image.key] = {...recordFor(image), [field]: value};
+      state.images[image.key] = withValue(record, field, value, base);
       save();
     }
     const completed = () => DATA.projects.filter(isDone).length;
@@ -422,22 +434,38 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, wordBank: WORD_BANK
     for (const t of ['project', 'picture', 'preview']) $(`tab-${t}`).addEventListener('click', () => showTab(t));
 
     // ---------- keyword chips ----------
+    // The callers bind onAdd and onRemove to the project or picture the chips were drawn for, so a word still
+    // in the box when Ryan moves on lands where he typed it, not on the next project.
     function renderChips(containerId, words, {inherited = [], onRemove, onAdd, placeholder}) {
       const input = el('input', {type: 'text', placeholder, autocomplete: 'off'});
       input.setAttribute('aria-label', placeholder);
+      const refocus = () => $(containerId).querySelector('input')?.focus();
       input.addEventListener('keydown', (event) => {
         if ((event.key === 'Enter' || event.key === ',') && input.value.trim()) {
           event.preventDefault();
-          onAdd(input.value.trim());
-        } else if (event.key === 'Backspace' && !input.value && words.length) onRemove(words.at(-1));
+          const word = input.value.trim();
+          input.value = '';
+          onAdd(word);
+          refocus();
+        } else if (event.key === 'Backspace' && !input.value && words.length) {
+          onRemove(words.at(-1));
+          refocus();
+        }
       });
-      input.addEventListener('blur', () => { if (input.value.trim()) onAdd(input.value.trim()); });
+      // leaving the box keeps the word, but quietly: no redraw under the pointer (a click on × or an idea
+      // still lands) and the focus stays where Ryan put it
+      input.addEventListener('blur', () => {
+        const word = input.value.trim();
+        if (!word) return;
+        input.value = '';
+        onAdd(word, {quiet: true});
+      });
       $(containerId).replaceChildren(
         ...inherited.map((word) => el('span', {className: 'chip inherited', textContent: word, title: 'From the project'})),
         ...words.map((word) => {
           const remove = el('button', {type: 'button', textContent: '×', title: `Remove “${word}”`});
           remove.setAttribute('aria-label', `Remove ${word}`);
-          remove.addEventListener('click', () => onRemove(word));
+          remove.addEventListener('click', () => { onRemove(word); refocus(); });
           return el('span', {className: 'chip'}, word, remove);
         }),
         input,
@@ -445,8 +473,20 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, wordBank: WORD_BANK
       return input;
     }
     const toggled = (words, word) => (words.some((w) => same(w, word)) ? words.filter((w) => !same(w, word)) : [...words, word]);
-    function setProjectTags(list) { const {project} = current(); setProject(project, 'tags', list.join(', '), project.keywords.join(', ')); renderProjectWords(); renderPreview(); }
-    function setImageTags(list) { const {project, image} = current(); setImage(image, 'tags', list.join(', '), ownKeywords(project, image).join(', ')); renderImageWords(); }
+    // a quiet change is drawn a moment later, unless Ryan is typing in those chips again
+    const later = (containerId, draw) => setTimeout(() => { if (!$(containerId).contains(document.activeElement)) draw(); }, 300);
+    function setProjectTags(list, project = current().project, {quiet = false} = {}) {
+      setProject(project, 'tags', list.join(', '), project.keywords.join(', '));
+      const draw = () => { if (current().project === project) { renderProjectWords(); renderPreview(); } };
+      if (quiet) later('project-chips', draw);
+      else draw();
+    }
+    function setImageTags(list, project = current().project, image = current().image, {quiet = false} = {}) {
+      setImage(image, 'tags', list.join(', '), ownKeywords(project, image).join(', '));
+      const draw = () => { if (current().image === image) renderImageWords(); };
+      if (quiet) later('image-chips', draw);
+      else draw();
+    }
     function ideaButton(word, pressed, onClick, rating) {
       const button = el('button', {type: 'button', textContent: word});
       button.setAttribute('aria-pressed', String(pressed));
@@ -493,10 +533,14 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, wordBank: WORD_BANK
       const words = projectTags(project);
       const input = renderChips('project-chips', words, {
         placeholder: 'Add a keyword',
-        onRemove: (word) => setProjectTags(words.filter((w) => !same(w, word))),
-        onAdd: (word) => { setProjectTags([...words, ...tags(word).filter((w) => !words.some((x) => same(x, w)))]); $('project-chips').querySelector('input')?.focus(); },
+        onRemove: (word) => setProjectTags(projectTags(project).filter((w) => !same(w, word)), project),
+        onAdd: (word, options) => {
+          const now = projectTags(project);
+          setProjectTags([...now, ...tags(word).filter((w) => !now.some((x) => same(x, w)))], project, options);
+        },
       });
-      const changed = projectRecord(project).tags !== undefined;
+      const record = projectRecord(project);
+      const changed = isCleared(record, 'tags') || Boolean(String(record.tags ?? '').trim());
       $('project-keywords-hint').textContent = words.length
         ? (changed ? 'Your keywords on this desk. Every picture in the project gets them.' : 'The keywords the site has for this project today.')
         : 'No keywords yet. Four to eight accurate words are better than many.';
@@ -504,48 +548,75 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, wordBank: WORD_BANK
       return input;
     }
 
+    // A post's text keeps the tags src/lib/safe-output.js storyHtml keeps on the server: an h1 becomes an h2
+    // and an h5 or h6 an h4, as the page shows them; a block of text (a div, a table cell) becomes a
+    // paragraph, so lines don't run together; pictures, scripts and pasted styles go; other tags go, their words stay.
+    const ALLOWED = new Set(['P', 'H2', 'H3', 'H4', 'STRONG', 'B', 'EM', 'I', 'A', 'UL', 'OL', 'LI', 'BR', 'BLOCKQUOTE', 'HR']);
+    const RENAME = {H1: 'H2', H5: 'H4', H6: 'H4'};
+    const BLOCKS = new Set(['DIV', 'SECTION', 'ARTICLE', 'HEADER', 'FOOTER', 'ADDRESS', 'PRE', 'TABLE', 'THEAD', 'TBODY', 'TFOOT', 'TR', 'TD', 'TH', 'FIGCAPTION', 'DL', 'DT', 'DD']);
+    const DROP = new Set(['SCRIPT', 'STYLE', 'IFRAME', 'OBJECT', 'EMBED', 'TEMPLATE', 'SVG', 'MATH', 'IMG', 'PICTURE', 'VIDEO', 'AUDIO', 'CANVAS', 'NOSCRIPT', 'FORM', 'INPUT', 'BUTTON', 'SELECT', 'TEXTAREA']);
+    // a link goes to a web address or to a page of this site; nothing that a browser could read as another host
+    const safeHref = (href) => {
+      const value = String(href ?? '').trim();
+      if (/[\u0000-\u001f\u007f\\]/.test(value)) return false;
+      return /^https?:\/\/[^/]/i.test(value) || /^\/(?!\/)/.test(value);
+    };
+    const holdsBlocks = (node) => [...node.children].some((c) => /^(P|H[1-6]|UL|OL|BLOCKQUOTE|HR|FIGURE|TABLE|DIV)$/.test(c.tagName) || c.classList.contains('pics'));
+    // `pictures(media)`: what a <figure data-media> becomes (the desk's picture block); without it the figure stays, empty
+    function tidy(root, pictures = null) {
+      for (const child of [...root.childNodes]) {
+        if (child.nodeType === 8) { child.remove(); continue; }
+        if (child.nodeType !== 1) continue;
+        const tag = child.tagName.toUpperCase();
+        const media = child.dataset?.media;
+        if ((tag === 'FIGURE' || child.classList.contains('pics')) && media !== undefined && /^[\d,\s]+$/.test(media)) {
+          if (pictures) child.replaceWith(pictures(media));
+          else if (tag === 'FIGURE') { child.replaceChildren(); for (const attr of [...child.attributes]) if (attr.name !== 'data-media') child.removeAttribute(attr.name); }
+          continue;
+        }
+        if (DROP.has(tag)) { child.remove(); continue; }
+        tidy(child, pictures);
+        if (RENAME[tag]) {
+          const next = document.createElement(RENAME[tag]);
+          next.append(...child.childNodes);
+          child.replaceWith(next);
+        } else if (BLOCKS.has(tag)) {
+          if (holdsBlocks(child) || child.parentNode?.closest?.('p, li, h2, h3, h4, blockquote')) child.replaceWith(...child.childNodes, ...(holdsBlocks(child) ? [] : [document.createElement('br')]));
+          else { const p = document.createElement('p'); p.append(...child.childNodes); child.replaceWith(p); }
+        } else if (!ALLOWED.has(tag)) child.replaceWith(...child.childNodes);
+        else for (const attr of [...child.attributes]) if (!(tag === 'A' && attr.name === 'href' && safeHref(attr.value))) child.removeAttribute(attr.name);
+      }
+    }
     // the post's own text: WordPress HTML shown as paragraphs; <figure data-media> become fixed picture blocks
-    const ALLOWED = new Set(['P', 'H2', 'H3', 'H4', 'STRONG', 'B', 'EM', 'I', 'A', 'UL', 'OL', 'LI', 'BR', 'BLOCKQUOTE']);
     function storyHtml(project, html) {
       const blocks = String(html).replace(/\r\n/g, '\n').split(/\n{2,}/).map((chunk) => chunk.trim()).filter((chunk) => chunk && chunk !== '&nbsp;');
-      const wrapped = blocks.map((chunk) => (/^<(p|h[1-6]|ul|ol|blockquote|figure|div)\b/i.test(chunk) ? chunk : `<p>${chunk.replace(/\n/g, '<br>')}</p>`)).join('');
+      const wrapped = blocks.map((chunk) => (/^<(p|h[1-6]|ul|ol|blockquote|figure|div|hr|table)\b/i.test(chunk) ? chunk : `<p>${chunk.replace(/\n/g, '<br>')}</p>`)).join('');
       const template = document.createElement('template');
       template.innerHTML = wrapped;
-      const clean = (node) => {
-        for (const child of [...node.childNodes]) {
-          if (child.nodeType !== 1) continue;
-          if (child.tagName === 'FIGURE' && child.dataset.media !== undefined) {
-            const block = el('span', {className: 'pics', contentEditable: 'false'});
-            block.dataset.media = child.dataset.media;
-            for (const index of child.dataset.media.split(',')) {
-              const src = project.thumbs[index.trim()];
-              block.append(src ? el('img', {src, alt: '', loading: 'lazy'}) : el('span', {textContent: `picture ${Number(index) + 1}`}));
-            }
-            child.replaceWith(block);
-          } else if (!ALLOWED.has(child.tagName)) {
-            clean(child);
-            child.replaceWith(...child.childNodes);
-          } else {
-            for (const attr of [...child.attributes]) if (!(child.tagName === 'A' && attr.name === 'href')) child.removeAttribute(attr.name);
-            clean(child);
-          }
+      tidy(template.content, (media) => {
+        const block = el('span', {className: 'pics', contentEditable: 'false'});
+        block.dataset.media = media;
+        for (const index of media.split(',')) {
+          const src = project.thumbs[index.trim()];
+          block.append(src ? el('img', {src, alt: '', loading: 'lazy'}) : el('span', {textContent: `picture ${Number(index) + 1}`}));
         }
-      };
-      clean(template.content);
+        return block;
+      });
       return template.innerHTML;
     }
-    // back to what the archive stores: paragraphs as HTML, picture blocks as <figure data-media>
+    // back to what the archive stores: paragraphs as HTML, picture blocks as <figure data-media>, nothing pasted along
     function storyToContent() {
       const copy = $('story').cloneNode(true);
       for (const block of copy.querySelectorAll('.pics')) { const figure = document.createElement('figure'); figure.dataset.media = block.dataset.media; block.replaceWith(figure); }
-      for (const node of copy.querySelectorAll('div')) { const p = document.createElement('p'); p.append(...node.childNodes); node.replaceWith(p); }
+      tidy(copy);
       return copy.innerHTML.replace(/<figure data-media="([^"]*)"><\/figure>/g, '\n\n<figure data-media="$1"></figure>\n\n').replace(/<\/p>/g, '</p>\n\n').replace(/\n{3,}/g, '\n\n').trim();
     }
     let storyPictures = 0;
     function renderStory() {
       const {project} = current();
       const record = projectRecord(project);
-      $('story').innerHTML = storyHtml(project, record.content !== undefined ? record.content : project.content);
+      // a field Ryan is typing in keeps his caret, also when a copy from his account arrives meanwhile
+      if (document.activeElement !== $('story')) $('story').innerHTML = storyHtml(project, record.content !== undefined ? record.content : project.content);
       storyPictures = (String(project.content).match(/<figure data-media=/g) ?? []).length;
       $('story-reset').hidden = record.content === undefined;
     }
@@ -578,7 +649,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, wordBank: WORD_BANK
     function renderProject() {
       const {project} = current();
       const summary = summaryOf(project);
-      $('summary').value = summary;
+      if (document.activeElement !== $('summary')) $('summary').value = summary;
       $('summary-hint').textContent = summary
         ? 'Shown on the wall and under the title on the page.'
         : (project.excerpt ? `Without one, the wall shows WordPress's excerpt: “${project.excerpt.slice(0, 140)}${project.excerpt.length > 140 ? '…' : ''}”` : 'Shown on the wall and under the title on the page.');
@@ -606,14 +677,17 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, wordBank: WORD_BANK
       renderChips('image-chips', words, {
         inherited: projectTags(project),
         placeholder: 'Add a keyword for this picture',
-        onRemove: (word) => setImageTags(words.filter((w) => !same(w, word))),
-        onAdd: (word) => { setImageTags([...words, ...tags(word).filter((w) => !words.some((x) => same(x, w)))]); $('image-chips').querySelector('input')?.focus(); },
+        onRemove: (word) => setImageTags(imageTags(project, image).filter((w) => !same(w, word)), project, image),
+        onAdd: (word, options) => {
+          const now = imageTags(project, image);
+          setImageTags([...now, ...tags(word).filter((w) => !now.some((x) => same(x, w)))], project, image, options);
+        },
       });
       $('image-ideas').replaceChildren(...image.suggestions.map((w) => ideaButton(w, words.some((x) => same(x, w)), () => setImageTags(toggled(imageTags(current().project, current().image), w)))));
     }
     function renderPicture() {
       const {image} = current();
-      $('description').value = descriptionOf(image);
+      if (document.activeElement !== $('description')) $('description').value = descriptionOf(image);
       renderImageWords();
       renderCredit();
       wpRows('wp-picture', [
@@ -639,10 +713,11 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, wordBank: WORD_BANK
       const {project, image} = current();
       const own = recordFor(image).credit ?? {};
       const shared = projectRecord(project).credit ?? {};
-      $('credit-image-name').value = own.name ?? '';
-      $('credit-image-url').value = own.url ?? '';
-      $('credit-project-name').value = shared.name ?? '';
-      $('credit-project-url').value = shared.url ?? '';
+      const fill = (id, value) => { if (document.activeElement !== $(id)) $(id).value = value; };
+      fill('credit-image-name', own.name ?? '');
+      fill('credit-image-url', own.url ?? '');
+      fill('credit-project-name', shared.name ?? '');
+      fill('credit-project-url', shared.url ?? '');
       $('credit-image-name').placeholder = ARCHIVE_CREDITS[image.key]?.name || shared.name || 'Name as it should appear';
       $('credit-panel').open = isModelling(project) || Boolean(creditFor(project, image));
       refreshCredit();
@@ -777,7 +852,8 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, wordBank: WORD_BANK
       $('note').textContent = `${project.title} is done.`;
     }
     $('done').addEventListener('click', markDone);
-    $('reopen').addEventListener('click', () => { const {project} = current(); state.projects[project.id] = {...state.projects[project.id], reviewed: false}; save(); render(); });
+    // reopening is work too: `reopenedAt` makes the record count as changed, so it is stamped and wins merges
+    $('reopen').addEventListener('click', () => { const {project} = current(); state.projects[project.id] = {...state.projects[project.id], reviewed: false, reopenedAt: Date.now()}; save(); render(); });
     $('previous').addEventListener('click', () => goProject(-1));
     $('next-project').addEventListener('click', () => goProject(1));
     $('project-picker').addEventListener('change', (event) => { state.cursor = flat.findIndex(({projectIndex}) => projectIndex === Number(event.target.value)); save(); render(); });
@@ -789,6 +865,8 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, wordBank: WORD_BANK
       $('note').textContent = 'Lead picture chosen: it heads the page, the card and the wall.';
     });
     addEventListener('keydown', (event) => {
+      // not while a dialog or the overview is open: the desk behind it is out of sight
+      if (document.querySelector('dialog[open]') || $('overview')?.hidden === false) return;
       if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') { event.preventDefault(); markDone(); }
       if (event.altKey && event.key === 'ArrowLeft') { event.preventDefault(); goProject(-1); }
       if (event.altKey && event.key === 'ArrowRight') { event.preventDefault(); goProject(1); }

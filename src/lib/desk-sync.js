@@ -60,7 +60,10 @@ function push() {
     try {
       const merged = await cloud.save((remote) => ({ ...mergeStates(desk.state, remote, existing), summary: overviewSummary() }));
       remoteCopy = merged;
-      if (!sameWork(merged, desk.state)) apply(merged, { keepPlace: true });
+      // merged again with what Ryan typed while the save was on its way, so those keystrokes win
+      const next = mergeStates(desk.state, merged, existing);
+      if (!sameWork(next, desk.state)) apply(next, { keepPlace: true });
+      if (!sameWork(next, merged)) push();
       show({ kind: 'saved', at: Date.now() });
     } catch (error) {
       show(error.code === 'permission-denied' ? { kind: 'denied' } : { kind: 'error', message: error.code === 'too-big' ? error.message : error.code ?? error.message });
