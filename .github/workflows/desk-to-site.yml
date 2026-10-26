@@ -5,9 +5,12 @@
 #   workflow on main (GitHub's OIDC token names the repo, the workflow and the branch), then brings it
 #   into the archive data with scripts/import-image-keywords.mjs.
 # - Pushes the changed data to a desk/ branch with one open pull request, "Your desk changes", and adds a
-#   comment per push with what changed. Push and PR use DESK_TOKEN (Ryan's fine-grained token), so the PR
-#   gets its preview from preview.yml like any other; it goes live only when Ryan merges it.
-# - Nothing changed on the desk, or the open PR already has it: nothing happens.
+#   comment per push with what changed. The push and the PR use DESK_TOKEN (Ryan's fine-grained token), so
+#   the PR gets its preview from preview.yml like any other; it goes live only when Ryan merges it.
+# - Nothing changed: nothing happens. The desk back to what the site has: the open desk PR is closed.
+# - No npm install and no tests here: the importer needs no packages, so no third-party code runs next to
+#   the desk or the token. preview.yml builds, checks and tests the pull request.
+# - The nightly run waits quietly until DESK_TOKEN exists and reddy.world answers; a send by hand says why.
 name: Desk to site
 
 on:
@@ -27,79 +30,112 @@ jobs:
   send:
     runs-on: ubuntu-latest
     steps:
-      - name: The token for the push
-        env:
-          DESK_TOKEN: ${{ secrets.DESK_TOKEN }}
-        run: |
-          if [ -z "$DESK_TOKEN" ]; then
-            echo "::error::The repository secret DESK_TOKEN is missing: see the steps in Ryan-Reddy/portfolio.reddy.world#62"
-            exit 1
-          fi
-
       - uses: actions/checkout@v5
         with:
-          token: ${{ secrets.DESK_TOKEN }}
           fetch-depth: 0
+          persist-credentials: false
 
       - uses: actions/setup-node@v5
         with:
           node-version: '22'
-          cache: 'npm'
 
-      - run: npm ci
+      - name: Ready to send?
+        id: ready
+        shell: bash
+        env:
+          DESK_TOKEN: ${{ secrets.DESK_TOKEN }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          if [ -n "$DESK_TOKEN" ]; then echo "go=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          msg="The repository secret DESK_TOKEN is missing: see the steps in Ryan-Reddy/reddy.world#205"
+          if [ "$EVENT" = schedule ]; then echo "::notice::$msg"; else echo "::error::$msg"; exit 1; fi
 
       - name: Fetch the desk from Ryan's account
+        id: desk
+        if: steps.ready.outputs.go == 'true'
+        shell: bash
+        env:
+          EVENT: ${{ github.event_name }}
         run: |
           oidc=$(curl -sSf -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=reddy.world-desk" | jq -r .value)
-          curl -sSf -H "Authorization: Bearer $oidc" https://reddy.world/api/desk-state -o "$RUNNER_TEMP/desk.json"
+          code=$(curl -sS -o "$RUNNER_TEMP/desk.json" -w '%{http_code}' -H "Authorization: Bearer $oidc" https://reddy.world/api/desk-state)
+          if [ "$code" = 200 ]; then echo "go=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          msg="reddy.world/api/desk-state answered $code (404: no desk saved in the account yet, or the function is not deployed)"
+          if [ "$EVENT" = schedule ] && [ "$code" = 404 ]; then echo "::notice::$msg"; else echo "::error::$msg"; exit 1; fi
 
+      # bash here means -eo pipefail: a failing import stops the run instead of hiding behind tee
       - name: Bring the desk into the archive data
-        run: node scripts/import-image-keywords.mjs "$RUNNER_TEMP/desk.json" | tee "$RUNNER_TEMP/report.txt"
+        if: steps.desk.outputs.go == 'true'
+        shell: bash
+        run: node scripts/import-image-keywords.mjs "$RUNNER_TEMP/desk.json" 2>&1 | tee "$RUNNER_TEMP/report.txt"
 
+      # only the workflow's own pull request counts: in this repository (not a fork), with its title, by Ryan's token
       - name: The open desk pull request
         id: pr
+        if: steps.desk.outputs.go == 'true'
+        shell: bash
         env:
-          GH_TOKEN: ${{ secrets.DESK_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          open=$(gh pr list --state open --json headRefName --jq '[.[] | select(.headRefName | startswith("desk/"))][0].headRefName // empty')
-          echo "open=$open" >> "$GITHUB_OUTPUT"
-          echo "branch=${open:-desk/to-site-$(date -u +%Y%m%d-%H%M)}" >> "$GITHUB_OUTPUT"
+          gh pr list --state open --json number,headRefName,isCrossRepository,title,author --jq '
+            [.[] | select(.isCrossRepository == false and .title == "Your desk changes" and (.headRefName | startswith("desk/")) and .author.login == "Ryan-Reddy")][0]
+            | if . then "number=\(.number)\nbranch=\(.headRefName)" else "number=\nbranch=" end' >> "$GITHUB_OUTPUT"
 
       - name: What changed
         id: changed
+        if: steps.desk.outputs.go == 'true'
+        shell: bash
         env:
-          OPEN: ${{ steps.pr.outputs.open }}
+          GH_TOKEN: ${{ secrets.DESK_TOKEN }}
+          NUMBER: ${{ steps.pr.outputs.number }}
+          OPEN: ${{ steps.pr.outputs.branch }}
         run: |
-          if [ -z "$(git status --porcelain src/data)" ]; then echo "Nothing on the desk differs from the site."; exit 0; fi
-          if [ -n "$OPEN" ] && git diff --quiet "origin/$OPEN" -- src/data; then echo "The open pull request already has these changes."; exit 0; fi
+          if [ -z "$(git status --porcelain src/data)" ]; then
+            echo "Nothing on the desk differs from the site."
+            # the desk is back to what the site has: merging the open desk PR would publish what Ryan took back
+            if [ -n "$NUMBER" ]; then gh pr close "$NUMBER" --delete-branch --comment "Closed by Send to site: the desk now matches the site, so there is nothing left to send."; fi
+            exit 0
+          fi
+          if [ -n "$OPEN" ]; then
+            git fetch -q origin "$OPEN"
+            if git diff --quiet "origin/$OPEN" -- src/data; then echo "The open pull request already has these changes."; exit 0; fi
+            # a commit made on the desk PR by hand is never thrown away
+            others=$(git log "origin/main..origin/$OPEN" --format='%ae' | grep -v '^41898341+github-actions\[bot\]@users.noreply.github.com$' || true)
+            if [ -n "$others" ]; then
+              gh pr comment "$NUMBER" --body "Send to site has new desk changes, but this pull request has commits that did not come from the desk, so I left it as it is. Merge or close it, then send again."
+              echo "::error::The open desk pull request has commits from elsewhere; it was not overwritten"
+              exit 1
+            fi
+          fi
           echo "yes=true" >> "$GITHUB_OUTPUT"
-
-      # The importer's own tests; preview.yml builds and checks the pages on the pull request
-      - if: steps.changed.outputs.yes == 'true'
-        run: npm test
 
       - name: Push, and open or update the pull request
         if: steps.changed.outputs.yes == 'true'
+        shell: bash
         env:
           GH_TOKEN: ${{ secrets.DESK_TOKEN }}
-          BRANCH: ${{ steps.pr.outputs.branch }}
-          OPEN: ${{ steps.pr.outputs.open }}
+          NUMBER: ${{ steps.pr.outputs.number }}
+          OPEN: ${{ steps.pr.outputs.branch }}
           RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
+          branch="${OPEN:-desk/to-site-$(date -u +%Y%m%d-%H%M)}"
           git config user.name 'github-actions[bot]'
           git config user.email '41898341+github-actions[bot]@users.noreply.github.com'
-          git switch -c "$BRANCH"
+          git switch -c "$branch"
           git add src/data
-          git commit -q -m "Desk changes, $(date -u '+%Y-%m-%d %H:%M') UTC" -m "$(cat "$RUNNER_TEMP/report.txt")"
-          git push --force -q origin "$BRANCH"
+          git commit -q -m "Desk changes, $(date -u '+%Y-%m-%d %H:%M') UTC" -m "$(head -c 20000 "$RUNNER_TEMP/report.txt")"
+          # Ryan's token for this push only: the pull request then gets its preview from preview.yml
+          git push --force -q "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "HEAD:refs/heads/$branch"
+          # a comment holds at most 65,536 characters: a long report is cut, the run log has all of it
           {
             echo "Sent from the image desk: [run]($RUN)"
             echo
             echo '```'
-            cat "$RUNNER_TEMP/report.txt"
+            head -c 60000 "$RUNNER_TEMP/report.txt"
+            if [ "$(wc -c < "$RUNNER_TEMP/report.txt")" -gt 60000 ]; then echo; echo '… the rest is in the run log'; fi
             echo '```'
           } > "$RUNNER_TEMP/comment.md"
-          if [ -z "$OPEN" ]; then
+          if [ -z "$NUMBER" ]; then
             cat > "$RUNNER_TEMP/body.md" <<'EOF'
           Your changes from the image desk (https://reddy.world/private/portfolio/), sent with "Send to site".
 
@@ -114,6 +150,7 @@ jobs:
 
           Sending again before merging updates this pull request; each send adds a comment with what changed.
           EOF
-            gh pr create --base main --head "$BRANCH" --title "Your desk changes" --body-file "$RUNNER_TEMP/body.md"
+            url=$(gh pr create --base main --head "$branch" --title "Your desk changes" --body-file "$RUNNER_TEMP/body.md")
+            NUMBER="${url##*/}"
           fi
-          gh pr comment "$BRANCH" --body-file "$RUNNER_TEMP/comment.md"
+          gh pr comment "$NUMBER" --body-file "$RUNNER_TEMP/comment.md"

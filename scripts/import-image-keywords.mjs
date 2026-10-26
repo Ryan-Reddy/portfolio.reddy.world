@@ -37,7 +37,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { isFileNameCaption, isMachineAlt, fallbackAlt } from '../src/lib/alt-text.js';
 import { httpUrl, storyHtml } from '../src/lib/safe-output.js';
-import { curatedPost } from '../src/lib/archive-curation.js';
+import { curatedPost, isPublicArchivePost } from '../src/lib/archive-curation.js';
 
 export { isFileNameCaption };
 
@@ -160,14 +160,21 @@ export function applyDesk(state, data) {
     const [key, slug] = String(projectId).split('/');
     return data[key]?.posts.find((post) => post.slug === slug);
   };
-  // the records per project; a picture saved by an early desk under its url alone is found by its url
+  // a field Ryan emptied on purpose is named in the record's `cleared` (the desk's rule)
+  const isCleared = (record, field) => Array.isArray(record?.cleared) && record.cleared.includes(field);
+  // the records per project; a picture saved by an early desk under its url alone belongs to every public
+  // project that shows that picture, as on the desk (never to a hidden post that happens to hold it too)
   const work = new Map(Object.entries(state.projects).map(([id, record]) => [id, { record: record ?? {}, images: new Map() }]));
-  for (const [key, record] of Object.entries(state.images)) {
-    let [projectId, url] = key.includes('::') ? key.split('::') : [undefined, key];
-    projectId ??= KEYS.flatMap((k) => data[k].posts.filter((post) => post.media.some((m) => m.url === url)).map((post) => `${k}/${post.slug}`))[0];
-    if (!projectId) { report.unmatched.push(key); continue; }
+  const addImage = (projectId, url, record) => {
     if (!work.has(projectId)) work.set(projectId, { record: {}, images: new Map() });
     work.get(projectId).images.set(url, record ?? {});
+  };
+  for (const [key, record] of Object.entries(state.images)) {
+    if (key.includes('::')) { const [projectId, url] = key.split('::'); addImage(projectId, url, record); continue; }
+    const owners = KEYS.flatMap((k) => data[k].posts.filter((post) => isPublicArchivePost(k, post) && post.media.some((m) => m.url === key)).map((post) => `${k}/${post.slug}`));
+    if (!owners.length) { report.unmatched.push(key); continue; }
+    // a record under the full key wins over the early url-only one
+    for (const projectId of owners) if (!state.images[`${projectId}::${key}`]) addImage(projectId, key, record);
   }
 
   for (const [projectId, { record, images }] of work) {
@@ -176,9 +183,11 @@ export function applyDesk(state, data) {
     const portfolio = projectId.split('/')[0];
     const before = JSON.stringify({ keywords: post.keywords, summary: post.summary, edited_content: post.edited_content });
     const archiveWords = post.keywords ?? [];
-    const projectWords = filled(record.tags) ? tagsOf(record.tags, report.dropped) : null;
-    if (projectWords?.length) post.keywords = projectWords;
-    if (filled(record.summary)) {
+    const projectWords = isCleared(record, 'tags') ? [] : filled(record.tags) ? tagsOf(record.tags, report.dropped) : null;
+    if (projectWords) post.keywords = projectWords;
+    if (isCleared(record, 'summary')) {
+      if (post.summary !== undefined) { delete post.summary; report.summaries++; }
+    } else if (filled(record.summary)) {
       const summary = clean(record.summary);
       if (summary !== post.summary) { post.summary = summary; report.summaries++; }
     }
@@ -195,27 +204,38 @@ export function applyDesk(state, data) {
     for (const url of images.keys()) if (!urls.includes(url)) report.unmatched.push(`${projectId}::${url}`);
     for (const url of urls) {
       const own = images.get(url) ?? {};
+      // the picture as the post keeps it (not its featured copy, which carries no words of its own)
+      const base = post.media.find((m) => m.url === url && m.type === 'image');
       const credit = creditOf(own.credit) ?? creditOf(record.credit);
-      const ownWords = filled(own.tags) ? tagsOf(own.tags, report.dropped) : null;
-      const description = filled(own.description) && !isFileNameCaption(own.description, url) ? clean(own.description) : '';
-      if (!projectWords?.length && !ownWords && !description && !credit) continue;
+      const ownWords = isCleared(own, 'tags') ? [] : filled(own.tags) ? tagsOf(own.tags, report.dropped) : null;
+      // a description that is only what the post already says (an early desk saved the WordPress caption
+      // just by showing the picture) is not Ryan's word and changes nothing
+      const already = [base.description, base.caption, base.alt].map(clean).filter(Boolean);
+      const typed = filled(own.description) && !isFileNameCaption(own.description, url) ? clean(own.description) : '';
+      const description = typed && !already.includes(typed) ? typed : '';
+      const clearDescription = isCleared(own, 'description') && Boolean(clean(base.description));
+      if (!projectWords && !ownWords && !description && !clearDescription && !credit) continue;
       const records = [post.featured, ...post.media].filter((m) => m?.url === url);
       const position = (shown.findIndex((m) => m.url === url) + 1) || (urls.indexOf(url) + 1);
+      // the picture's own words: Ryan's, else the ones it had beyond the project's (old) keywords
+      const mine = ownWords ?? (base.keywords ?? []).filter((word) => !archiveWords.some((shared) => shared.toLowerCase() === word.toLowerCase()));
+      const keywords = tagsOf([...sharedWords, ...mine], report.dropped);
       let changed = false;
       let credited = false;
       for (const media of records) {
         const was = JSON.stringify(media);
-        if (projectWords?.length || ownWords) {
-          // the picture's own words: Ryan's, else the ones it has beyond the project's (old) keywords
-          const mine = ownWords ?? (media.keywords ?? []).filter((word) => !archiveWords.some((shared) => shared.toLowerCase() === word.toLowerCase()));
-          const keywords = tagsOf([...sharedWords, ...mine], report.dropped);
+        if (projectWords || ownWords) {
           if (keywords.length) media.keywords = keywords;
+          else delete media.keywords;
         }
         if (description) {
           media.description = description;
           media.alt = description;
-        } else if (clean(media.alt) ? isMachineAlt(media.alt, url, post.title) : media.keywords?.length) {
-          media.alt = fallbackAlt(post.title, position, media.keywords ?? []);
+        } else if (clearDescription) {
+          delete media.description;
+          media.alt = fallbackAlt(post.title, position, keywords);
+        } else if (clean(media.alt) ? isMachineAlt(media.alt, url, post.title) : keywords.length) {
+          media.alt = fallbackAlt(post.title, position, keywords);
         }
         const altBefore = JSON.parse(was).alt ?? '';
         if (media.alt !== altBefore && !report.alts.some((a) => a.key === `${projectId}::${url}` && a.after === media.alt)) report.alts.push({ key: `${projectId}::${url}`, before: altBefore, after: media.alt });
@@ -251,7 +271,10 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   before: ${before}
   after:  ${after}`);
   if (report.dropped.length) console.log(`${report.dropped.length} keywords left out, they are web addresses: ${report.dropped.join(' | ')}`);
-  if (report.unmatched.length) {
+  // from the desk, a picture or project that left the archive is listed and the rest still goes through
+  // (desk-to-site.yml shows the list in its pull request); an export with one stops, as before
+  if (report.unmatched.length && fromDesk) console.log(`${report.unmatched.length} records on the desk are not in the archive (renamed or hidden since), left out:\n${report.unmatched.join('\n')}`);
+  else if (report.unmatched.length) {
     console.error(`${report.unmatched.length} pictures in the export are not in the archive data (renamed or hidden since the export):\n${report.unmatched.join('\n')}`);
     process.exit(1);
   }

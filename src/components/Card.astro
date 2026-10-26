@@ -5,7 +5,9 @@ const { post, showPortfolio = false } = Astro.props;
 const imgs = photos(post);
 // the post's chosen featured image, as on WordPress
 const cover = post.featured && { ...picture(post.featured), alt: altFor(post, post.featured, 0) };
-const search = [post.title, post.excerpt, ...post.categories, ...post.tags].join(' ').toLowerCase();
+// Ryan's summary from the image desk, else WordPress's excerpt (as rss.xml and the project page)
+const blurb = post.summary || post.excerpt;
+const search = [post.title, blurb, ...post.categories, ...post.tags].join(' ').toLowerCase();
 ---
 <a
   class="card"
@@ -33,7 +35,7 @@ const search = [post.title, post.excerpt, ...post.categories, ...post.tags].join
       {!showPortfolio && post.kinds[0] && <span>&bull; {KIND_LABEL[post.kinds[0]]}</span>}
     </div>
     <h2 class="card-title">{post.title.trim()}</h2>
-    <p class="card-excerpt">{post.excerpt}</p>
+    <p class="card-excerpt">{blurb}</p>
     <div class="card-tags">
       {post.kinds.slice(0, 3).map((k) => <span class="card-tag">{KIND_LABEL[k]}</span>)}
     </div>

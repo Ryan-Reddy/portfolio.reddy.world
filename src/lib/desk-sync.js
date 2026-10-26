@@ -60,17 +60,22 @@ function push() {
 async function saveNow() {
   clearTimeout(timer);
   if (!cloud || !user || (remoteCopy && sameWork(desk.state, remoteCopy))) return;
-  {
-    if (!navigator.onLine) return show({ kind: 'offline' });
-    show({ kind: 'saving' });
-    try {
-      const merged = await cloud.save((remote) => ({ ...mergeStates(desk.state, remote, existing), summary: overviewSummary() }));
-      remoteCopy = merged;
-      if (!sameWork(merged, desk.state)) apply(merged, { keepPlace: true });
-      show({ kind: 'saved', at: Date.now() });
-    } catch (error) {
-      show(error.code === 'permission-denied' ? { kind: 'denied' } : { kind: 'error', message: error.code === 'too-big' ? error.message : error.code ?? error.message });
-    }
+  if (!navigator.onLine) return show({ kind: 'offline' });
+  show({ kind: 'saving' });
+  try {
+    // the /private ticket's summary is made from what is written, the merged copy
+    const merged = await cloud.save((remote) => {
+      const copy = mergeStates(desk.state, remote, existing);
+      return { ...copy, summary: overviewSummary(copy) };
+    });
+    remoteCopy = merged;
+    // merged again with what Ryan typed while the save was on its way, so those keystrokes win
+    const next = mergeStates(desk.state, merged, existing);
+    if (!sameWork(next, desk.state)) apply(next, { keepPlace: true });
+    if (!sameWork(next, merged)) push();
+    show({ kind: 'saved', at: Date.now() });
+  } catch (error) {
+    show(error.code === 'permission-denied' ? { kind: 'denied' } : { kind: 'error', message: error.code === 'too-big' ? error.message : error.code ?? error.message });
   }
 }
 
@@ -105,11 +110,11 @@ window.deskSync = {
 addEventListener('online', push);
 
 // what /private shows on its ticket for the desk
-function overviewSummary() {
-  const sum = summarize(desk.DATA.projects, desk.state, { credits });
-  return { done: sum.done, total: sum.total, next: sum.next?.title ?? null, drafts: drafts().length, savedAt: Date.now() };
+function overviewSummary(state = desk.state) {
+  const sum = summarize(desk.DATA.projects, state, { credits });
+  return { done: sum.done, total: sum.total, next: sum.next?.title ?? null, drafts: drafts(state).length, savedAt: Date.now() };
 }
-const drafts = () => Object.entries(desk.state.articles ?? {}).filter(([, article]) => article && !article.deleted)
+const drafts = (state = desk.state) => Object.entries(state.articles ?? {}).filter(([, article]) => article && !article.deleted)
   .sort(([, a], [, b]) => (b.created ?? 0) - (a.created ?? 0));
 
 // ---------- the overview ----------

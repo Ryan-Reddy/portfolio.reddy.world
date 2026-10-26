@@ -304,3 +304,20 @@ test('articles: a draft is stamped and merges entry by entry; a newer delete win
   // the overview is unchanged by articles: they are not projects
   assert.equal(summarize(DATA, again).total, DATA.length);
 });
+
+test('Reopen on a project the archive counts as done survives a merge with an unstamped copy', () => {
+  const here = fresh();
+  const snap = snapshotOf(here);
+  here.projects[B] = { reviewed: false, reopenedAt: T0 };
+  assert.equal(stamp(here, snap, T1), true, 'reopening is stamped');
+  const legacy = { ...fresh(), projects: { [B]: { tags: '' } } };
+  assert.equal(mergeStates(here, legacy).projects[B].reviewed, false);
+  assert.equal(mergeStates(legacy, here).projects[B].reviewed, false);
+});
+
+test('overview keywords: a blank old record shows the archive count; a cleared one shows none', () => {
+  const seeded = DATA.map((project) => (project.id === B ? { ...project, keywords: ['decor', 'light'], done: true } : project));
+  const row = (projects) => summarize(seeded, { ...fresh(), projects }).portfolios[0].rows.find((r) => r.id === B);
+  assert.equal(row({ [B]: { tags: '' } }).keywords, 2);
+  assert.equal(row({ [B]: { tags: '', cleared: ['tags'] } }).keywords, 0);
+});
