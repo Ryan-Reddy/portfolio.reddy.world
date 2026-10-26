@@ -2,8 +2,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { applyKeywords, isFileNameCaption, creditOf } from './import-image-keywords.mjs';
+import { applyKeywords, applyDesk, isFileNameCaption, creditOf } from './import-image-keywords.mjs';
 import { fallbackAlt, isMachineAlt } from '../src/lib/alt-text.js';
+import { curatedPost } from '../src/lib/archive-curation.js';
 
 const read = (p) => JSON.parse(readFileSync(new URL(p, import.meta.url), 'utf-8'));
 const sample = () => read('./fixtures/image-desk-export.sample.json');
@@ -229,4 +230,69 @@ test('the fallback alt: title case for an all-capitals title, no keyword that is
   assert.equal(isMachineAlt('Merchandise, photo 3 — brand activation, fun, shop', '/x/95-3.jpeg', 'MERCHANDISE'), true);
   assert.equal(isMachineAlt('MERCHANDISE — brand activation, fun, shop', '/x/95-3.jpeg', 'MERCHANDISE'), true);
   assert.equal(isMachineAlt('Giant swings with cosmic swingers by ReddyMaekers.', '/x/a.jpg', 'Giant swings'), false);
+});
+
+// ---------- the desk itself (Send to site): only what Ryan changed, his value replaces the archive's ----------
+const LIGHT = '/portfolio/images/rmaekers/2019/02/fullsizeoutput_34a4.jpeg';
+const desk = (projects = {}, images = {}) => ({ projects, images, cursor: 0, session: 0 });
+const post = (data, key, slug) => data[key].posts.find((p) => p.slug === slug);
+
+test('the desk: a keyword Ryan removed goes from the post and its pictures; his picture words stay his', () => {
+  const data = archive();
+  const report = applyDesk(desk({ 'rmaekers/lightsurface-mk1-set': { tags: 'vbx, Light, light installation' } }), data);
+  assert.deepEqual(post(data, 'rmaekers', 'lightsurface-mk1-set').keywords, ['vbx', 'Light', 'light installation']);
+  assert.deepEqual(media(data, 'rmaekers', 'lightsurface-mk1-set', LIGHT).keywords, ['vbx', 'Light', 'light installation']);
+  assert.equal(report.projects, 1);
+  applyDesk(desk({}, { [`rmaekers/lightsurface-mk1-set::${LIGHT}`]: { tags: 'blue light' } }), data);
+  assert.deepEqual(media(data, 'rmaekers', 'lightsurface-mk1-set', LIGHT).keywords, ['vbx', 'Light', 'light installation', 'blue light']);
+});
+
+test('the desk: blank fields (written by merely showing a project) change nothing', () => {
+  const data = archive();
+  const before = JSON.stringify(data);
+  const report = applyDesk(desk({ 'rmaekers/lightsurface-mk1-set': { tags: '', reviewed: false, summary: ' ' } }, { [`rmaekers/lightsurface-mk1-set::${LIGHT}`]: { description: '', tags: '' } }), data);
+  assert.equal(JSON.stringify(data), before);
+  assert.equal(report.projects + report.pictures, 0);
+});
+
+test('the desk: projects not marked done are read too, and a summary is written as typed', () => {
+  const data = archive();
+  applyDesk(desk({ 'rmaekers/by-the-creek-festival': { summary: '  A stage   by the creek.  ' } }), data);
+  assert.equal(post(data, 'rmaekers', 'by-the-creek-festival').summary, 'A stage by the creek.');
+});
+
+test('the desk: the post text is cleaned to the allowed tags and shown as it stands, without the curation again', () => {
+  const data = archive();
+  const p = post(data, 'rrproductions', 'making-of-a-kaleidoscope');
+  const shown = curatedPost('rrproductions', p).content;
+  applyDesk(desk({ 'rrproductions/making-of-a-kaleidoscope': { content: `<p class="x">New first line <a href="javascript:x()">no</a></p><script>bad()</script>\n\n${shown}` } }), data);
+  assert.match(p.edited_content, /^<p>New first line <a>no<\/a><\/p>/);
+  assert.doesNotMatch(p.edited_content, /script|ryanvanlil/);
+  // the page shows the edited text; the cut (the materialenmix link) is not needed again and does not throw
+  assert.equal(curatedPost('rrproductions', p).content, p.edited_content);
+});
+
+test('the desk: text that only differs in spacing from the page is not written; twice changes nothing', () => {
+  const data = archive();
+  const p = post(data, 'rmaekers', 'lightsurface-mk1-set');
+  applyDesk(desk({ 'rmaekers/lightsurface-mk1-set': { content: `  ${curatedPost('rmaekers', p).content}\n\n` } }), data);
+  assert.equal(p.edited_content, undefined);
+  const state = desk({ 'rmaekers/lightsurface-mk1-set': { tags: 'vbx, Light', summary: 'Light set', hero: LIGHT, credit: { name: 'A. Photographer' } } }, { [`rmaekers/lightsurface-mk1-set::${LIGHT}`]: { description: 'Blue light over a crowd', tags: 'crowd' } });
+  applyDesk(state, data);
+  const once = JSON.stringify(data);
+  const again = applyDesk(state, data);
+  assert.equal(JSON.stringify(data), once);
+  assert.equal(again.projects + again.pictures + again.heroes + again.credits + again.summaries + again.texts, 0);
+});
+
+test('the desk: a description becomes the alt text; a project credit reaches every picture', () => {
+  const data = archive();
+  applyDesk(desk({ 'vaguelyvulgar/photo-cv': { credit: { name: 'Studio Name', url: 'https://example.com' } } }, { [`vaguelyvulgar/photo-cv::${FIRST}`]: { description: 'Ryan in a white shirt' } }), data);
+  const m = media(data, 'vaguelyvulgar', 'photo-cv', FIRST);
+  assert.equal(m.alt, 'Ryan in a white shirt');
+  assert.deepEqual(media(data, 'vaguelyvulgar', 'photo-cv', SECOND).credit, { name: 'Studio Name', url: 'https://example.com/' });
+});
+
+test('the desk: something that is not a desk is refused', () => {
+  assert.throws(() => applyDesk({ version: 4, images: {} }, archive()), /not an image desk/);
 });

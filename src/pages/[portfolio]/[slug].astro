@@ -18,9 +18,9 @@ const imgs = photos(post);
 const videos = post.media.filter((m) => m.type === 'video');
 const files = post.media.filter((m) => m.type === 'file');
 const name = titleCase(post.title);
-// the summary in Ryan's words, then what kind of work it was, under which name, and when
+// the summary in Ryan's words (the desk's, else WordPress's excerpt), then what kind of work it was, under which name, and when
 const context = contextOf(post);
-const description = `${(post.excerpt || name).replace(/[.!?…]?$/, (end) => end || '.')} ${context}.`.slice(0, 300);
+const description = `${(post.summary || post.excerpt || name).replace(/[.!?…]?$/, (end) => end || '.')} ${context}.`.slice(0, 300);
 const pageUrl = `${SITE}${post.path}`;
 
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
@@ -149,7 +149,7 @@ const article = isPost ? { published: post.published, modified: post.modified, s
 
     {comp && (
       <div class="comp-lead" style={`--lead-r: ${leadRatio}`}>
-        <header class="comp-title"><h1 class="modal-title">{post.title.trim()}</h1></header>
+        <header class="comp-title"><h1 class="modal-title">{post.title.trim()}</h1>{post.summary && <p class="post-summary">{post.summary}</p>}</header>
         <div class="comp-photo" set:html={leadHtml} />
         {post.measurements?.length > 0 && (
           <section class="comp-facts" aria-labelledby="measurements">
@@ -167,6 +167,7 @@ const article = isPost ? { published: post.published, modified: post.modified, s
         {post.kinds.length > 0 && <span>&bull; {post.kinds.map((k) => KIND_LABEL[k]).join(', ')}</span>}
       </div>
       <h1 class="modal-title">{post.title.trim()}</h1>
+      {post.summary && <p class="post-summary">{post.summary}</p>}
       {post.tags.length > 0 && (
         <div class="card-tags">{post.tags.map((t) => themeByTag[t]
           ? <a class="card-tag" href={`${BASE}/theme/${t}/`}>#{themeByTag[t].label}</a>

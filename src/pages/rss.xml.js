@@ -18,7 +18,8 @@ export function GET() {
       `<link>${url}</link>`,
       `<guid isPermaLink="true">${url}</guid>`,
       `<pubDate>${rfc822(post.published)}</pubDate>`,
-      `<description>${esc(post.excerpt)}</description>`,
+      // the wall shows this under the title: Ryan's summary from the image desk, else WordPress's excerpt
+      `<description>${esc(post.summary || post.excerpt)}</description>`,
       `<category>${esc(portfolioById[post.portfolio].name)}</category>`,
       ...post.categories.map((c) => `<category>${esc(c)}</category>`),
       image,

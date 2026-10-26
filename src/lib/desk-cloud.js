@@ -39,6 +39,8 @@ export const LIMIT = 900000;
 export const watchUser = (callback) => onAuthStateChanged(auth, callback);
 export const signIn = () => signInWithPopup(auth, new GoogleAuthProvider());
 export const signOutHere = () => signOut(auth);
+/** Ryan's sign-in token, for reddy.world's /api/desk-to-site ("Send to site"). */
+export const idToken = () => auth.currentUser?.getIdToken() ?? Promise.resolve(null);
 
 const parse = (snap) => {
   if (!snap.exists()) return null;

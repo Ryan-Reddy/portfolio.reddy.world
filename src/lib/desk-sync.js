@@ -54,7 +54,13 @@ function apply(merged, { keepPlace }) {
 function push() {
   clearTimeout(timer);
   if (!cloud || !user || (remoteCopy && sameWork(desk.state, remoteCopy))) return;
-  timer = setTimeout(async () => {
+  timer = setTimeout(saveNow, 1200);
+}
+
+async function saveNow() {
+  clearTimeout(timer);
+  if (!cloud || !user || (remoteCopy && sameWork(desk.state, remoteCopy))) return;
+  {
     if (!navigator.onLine) return show({ kind: 'offline' });
     show({ kind: 'saving' });
     try {
@@ -65,7 +71,28 @@ function push() {
     } catch (error) {
       show(error.code === 'permission-denied' ? { kind: 'denied' } : { kind: 'error', message: error.code === 'too-big' ? error.message : error.code ?? error.message });
     }
-  }, 1200);
+  }
+}
+
+// "Send to site": reddy.world's /api/desk-to-site (functions/desk.js there) starts the portfolio repo's
+// desk-to-site workflow, which reads this desk from the account and opens a pull request with a preview.
+// Off reddy.world (a PR preview of this repo) there is no such address: the workflow's page is the way.
+const RUN_PAGE = 'https://github.com/Ryan-Reddy/portfolio.reddy.world/actions/workflows/desk-to-site.yml';
+const DESK_PRS = 'https://github.com/Ryan-Reddy/portfolio.reddy.world/pulls?q=is%3Apr+is%3Aopen+head%3Adesk%2F';
+async function send() {
+  if (!cloud || !user) return { kind: 'signin' };
+  await saveNow();
+  if (status.kind !== 'saved') return { kind: 'unsaved', line: document.querySelector('[data-desk-saved]')?.textContent ?? '' };
+  let response;
+  try {
+    response = await fetch('/api/desk-to-site', { method: 'POST', headers: { Authorization: `Bearer ${await cloud.idToken()}` } });
+  } catch {
+    return { kind: 'manual', url: RUN_PAGE };
+  }
+  if (response.status === 404) return { kind: 'manual', url: RUN_PAGE };
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) return { kind: 'failed', message: body.error ?? `HTTP ${response.status}`, url: RUN_PAGE };
+  return { kind: 'sent', prs: DESK_PRS, run: body.run ?? RUN_PAGE };
 }
 
 window.deskSync = {
@@ -73,6 +100,7 @@ window.deskSync = {
   saved: () => { renderOverview(); push(); },
   // Load export: replaces the loaded projects' records (the page then calls save(), which writes through)
   load: (state, loaded) => applyExport(state, loaded, Date.now()),
+  send,
 };
 addEventListener('online', push);
 

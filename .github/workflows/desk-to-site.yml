@@ -1,0 +1,119 @@
+# "Send to site" on the image desk: Ryan's desk changes as one pull request with a preview.
+# - Started by the desk's button through reddy.world's /api/desk-to-site (functions/desk.js in
+#   Ryan-Reddy/reddy.world), by hand here ("Run workflow"), and every night.
+# - Fetches the desk from Ryan's account through reddy.world's /api/desk-state, which answers only this
+#   workflow on main (GitHub's OIDC token names the repo, the workflow and the branch), then brings it
+#   into the archive data with scripts/import-image-keywords.mjs.
+# - Pushes the changed data to a desk/ branch with one open pull request, "Your desk changes", and adds a
+#   comment per push with what changed. Push and PR use DESK_TOKEN (Ryan's fine-grained token), so the PR
+#   gets its preview from preview.yml like any other; it goes live only when Ryan merges it.
+# - Nothing changed on the desk, or the open PR already has it: nothing happens.
+name: Desk to site
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 4 * * *'
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: desk-to-site
+  cancel-in-progress: false
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - name: The token for the push
+        env:
+          DESK_TOKEN: ${{ secrets.DESK_TOKEN }}
+        run: |
+          if [ -z "$DESK_TOKEN" ]; then
+            echo "::error::The repository secret DESK_TOKEN is missing: see the steps in Ryan-Reddy/portfolio.reddy.world#62"
+            exit 1
+          fi
+
+      - uses: actions/checkout@v5
+        with:
+          token: ${{ secrets.DESK_TOKEN }}
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Fetch the desk from Ryan's account
+        run: |
+          oidc=$(curl -sSf -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=reddy.world-desk" | jq -r .value)
+          curl -sSf -H "Authorization: Bearer $oidc" https://reddy.world/api/desk-state -o "$RUNNER_TEMP/desk.json"
+
+      - name: Bring the desk into the archive data
+        run: node scripts/import-image-keywords.mjs "$RUNNER_TEMP/desk.json" | tee "$RUNNER_TEMP/report.txt"
+
+      - name: The open desk pull request
+        id: pr
+        env:
+          GH_TOKEN: ${{ secrets.DESK_TOKEN }}
+        run: |
+          open=$(gh pr list --state open --json headRefName --jq '[.[] | select(.headRefName | startswith("desk/"))][0].headRefName // empty')
+          echo "open=$open" >> "$GITHUB_OUTPUT"
+          echo "branch=${open:-desk/to-site-$(date -u +%Y%m%d-%H%M)}" >> "$GITHUB_OUTPUT"
+
+      - name: What changed
+        id: changed
+        env:
+          OPEN: ${{ steps.pr.outputs.open }}
+        run: |
+          if [ -z "$(git status --porcelain src/data)" ]; then echo "Nothing on the desk differs from the site."; exit 0; fi
+          if [ -n "$OPEN" ] && git diff --quiet "origin/$OPEN" -- src/data; then echo "The open pull request already has these changes."; exit 0; fi
+          echo "yes=true" >> "$GITHUB_OUTPUT"
+
+      # The importer's own tests; preview.yml builds and checks the pages on the pull request
+      - if: steps.changed.outputs.yes == 'true'
+        run: npm test
+
+      - name: Push, and open or update the pull request
+        if: steps.changed.outputs.yes == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.DESK_TOKEN }}
+          BRANCH: ${{ steps.pr.outputs.branch }}
+          OPEN: ${{ steps.pr.outputs.open }}
+          RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898341+github-actions[bot]@users.noreply.github.com'
+          git switch -c "$BRANCH"
+          git add src/data
+          git commit -q -m "Desk changes, $(date -u '+%Y-%m-%d %H:%M') UTC" -m "$(cat "$RUNNER_TEMP/report.txt")"
+          git push --force -q origin "$BRANCH"
+          {
+            echo "Sent from the image desk: [run]($RUN)"
+            echo
+            echo '```'
+            cat "$RUNNER_TEMP/report.txt"
+            echo '```'
+          } > "$RUNNER_TEMP/comment.md"
+          if [ -z "$OPEN" ]; then
+            cat > "$RUNNER_TEMP/body.md" <<'EOF'
+          Your changes from the image desk (https://reddy.world/private/portfolio/), sent with "Send to site".
+
+          ## Done when
+          - [ ] The preview (the bot's link below) shows the changes on the project pages and the wall feed
+          - [ ] Ryan merges this pull request: that puts them live
+
+          ## How to check
+          1. Open the preview link the bot posts below.
+          2. Open a project you changed (the comments list them): the summary sits under the title, the text and pictures are yours.
+          3. The wall reads `rss.xml` on the preview: your summary is the project's `<description>`.
+
+          Sending again before merging updates this pull request; each send adds a comment with what changed.
+          EOF
+            gh pr create --base main --head "$BRANCH" --title "Your desk changes" --body-file "$RUNNER_TEMP/body.md"
+          fi
+          gh pr comment "$BRANCH" --body-file "$RUNNER_TEMP/comment.md"

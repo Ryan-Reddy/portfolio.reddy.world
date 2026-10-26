@@ -548,6 +548,15 @@ body {
   line-height: 1.2;
 }
 
+/* the short summary in Ryan's words, written on the image desk */
+.post-summary {
+  font-size: 1.15rem;
+  line-height: 1.6;
+  color: var(--fg);
+  margin: 0 0 1rem;
+  max-width: 60ch;
+}
+
 .modal-meta {
   display: flex;
   align-items: center;
