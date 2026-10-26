@@ -109,6 +109,8 @@ const articles = defineCollection({
     related: reference('software').optional(),
     // the sitemap's lastmod
     updated: z.coerce.date(),
+    // the desk draft it was published from (scripts/desk-articles.mjs), so Send to site keeps the two tied
+    desk: z.string().optional(),
   }).refine((d) => d.kind !== 'interview' || Boolean(d.person && d.byline), { message: 'an interview names its person and its byline' }),
 });
 

@@ -90,7 +90,7 @@ jobs:
           NUMBER: ${{ steps.pr.outputs.number }}
           OPEN: ${{ steps.pr.outputs.branch }}
         run: |
-          if [ -z "$(git status --porcelain src/data)" ]; then
+          if [ -z "$(git status --porcelain src/data src/content/articles)" ]; then
             echo "Nothing on the desk differs from the site."
             # the desk is back to what the site has: merging the open desk PR would publish what Ryan took back
             if [ -n "$NUMBER" ]; then gh pr close "$NUMBER" --delete-branch --comment "Closed by Send to site: the desk now matches the site, so there is nothing left to send."; fi
@@ -98,7 +98,7 @@ jobs:
           fi
           if [ -n "$OPEN" ]; then
             git fetch -q origin "$OPEN"
-            if git diff --quiet "origin/$OPEN" -- src/data; then echo "The open pull request already has these changes."; exit 0; fi
+            if git diff --quiet "origin/$OPEN" -- src/data src/content/articles && [ -z "$(git ls-files --others --exclude-standard src/content/articles)" ]; then echo "The open pull request already has these changes."; exit 0; fi
             # a commit made on the desk PR by hand is never thrown away
             others=$(git log "origin/main..origin/$OPEN" --format='%ae' | grep -v '^41898341+github-actions\[bot\]@users.noreply.github.com$' || true)
             if [ -n "$others" ]; then
@@ -122,7 +122,7 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898341+github-actions[bot]@users.noreply.github.com'
           git switch -c "$branch"
-          git add src/data
+          git add -A src/data src/content/articles
           git commit -q -m "Desk changes, $(date -u '+%Y-%m-%d %H:%M') UTC" -m "$(head -c 20000 "$RUNNER_TEMP/report.txt")"
           # Ryan's token for this push only: the pull request then gets its preview from preview.yml
           git push --force -q "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "HEAD:refs/heads/$branch"

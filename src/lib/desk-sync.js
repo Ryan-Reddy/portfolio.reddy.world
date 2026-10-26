@@ -182,7 +182,7 @@ function renderArticles() {
   const when = (ms) => new Date(ms).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
   const rows = drafts().map(([id, article]) => {
     const button = el('button', { type: 'button', className: 'ov-row' }, el('span', { className: 'ov-dot', ariaHidden: 'true' }),
-      el('strong', {}, String(article.title ?? '').trim() || 'Untitled article'), el('small', {}, `Draft${article.at ? ` · saved ${when(article.at)}` : ''}`));
+      el('strong', {}, String(article.title ?? '').trim() || 'Untitled article'), el('small', {}, `${article.status === 'ready' ? 'Ready for the site' : 'Draft'}${article.at ? ` · saved ${when(article.at)}` : ''}`));
     button.addEventListener('click', () => { closeOverview(); desk.openArticle(id); });
     return el('li', {}, button);
   });

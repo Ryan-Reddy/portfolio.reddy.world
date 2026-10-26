@@ -3,6 +3,8 @@ import { deskProjects, ratingCandidates, WORD_BANK } from '../lib/desk-keywords.
 import { ideasFor, normalize, stems, RISING } from '../lib/keyword-ratings.js';
 import ratings from '../data/keyword-ratings.json';
 import { archiveCredits } from '../lib/desk-credits.js';
+import { getCollection } from 'astro:content';
+import { KINDS } from '../lib/article-kinds.js';
 
 // Every word idea in one list, each rated (scripts/keyword-ratings.mjs fetches the numbers at build time):
 // per project the words and where they came from; each word's rating once, in `ratings`.
@@ -21,7 +23,9 @@ const projects = deskList.map((project) => {
 });
 const ratingsInfo = {updatedAt: ratings.updatedAt, bing: Object.keys(ratings.bing ?? {}).length > 0, rising: RISING};
 const count = projects.reduce((sum, project) => sum + project.images.length, 0);
-const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRatings }).replace(/</g, '\\u003c');
+// what an article can be, and the case studies it can belong to (src/content/articles/, src/lib/article-kinds.js)
+const software = (await getCollection('software')).sort((a, b) => a.data.order - b.data.order).map(({ id, data }) => ({ id, title: data.title }));
+const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRatings, kinds: KINDS, software }).replace(/</g, '\\u003c');
 ---
 <!doctype html>
 <html lang="en">
@@ -178,12 +182,19 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
 
     /* an article: how it reads on the left, the editor on the right */
     .workbench[hidden] { display: none; }
-    .reading { overflow-y: auto; padding: 1.5rem clamp(1rem, 4vw, 3rem); display: grid; align-content: start; gap: .6rem; max-width: 48rem; }
-    .reading .when { font-family: ui-monospace, Consolas, monospace; font-size: .75rem; color: rgba(245,245,240,.7); }
-    .reading-title { margin: 0; font-family: var(--display); font-size: clamp(2rem, 4vw, 2.75rem); font-weight: 600; line-height: 1.15; color: var(--gold); }
-    .reading .sum { margin: 0; font-size: 1.15rem; line-height: 1.6; }
-    .reading-text { font-size: 1.05rem; line-height: 1.8; }
+    /* the reading view looks like the article's page (src/components/Article.astro, the paper colours of software.css) */
+    .reading { overflow-y: auto; padding: 1.5rem clamp(1rem, 4vw, 3rem) 3rem; display: grid; align-content: start; gap: .7rem; background: #f8f4e9; color: #24211c; }
+    .reading > * { max-width: 46rem; }
+    .reading .when { font-family: ui-monospace, Consolas, monospace; font-size: .72rem; color: #6d675c; }
+    .reading-title { margin: 0; font-family: var(--display); font-size: clamp(2rem, 4vw, 2.9rem); font-weight: 600; line-height: 1.1; color: #24211c; }
+    .reading .dek { margin: 0; font-family: var(--display); font-style: italic; font-size: 1.35rem; color: #3b362e; }
+    .reading .sum { margin: 0; font-size: 1.1rem; line-height: 1.6; }
+    .reading .empty-note { color: #8a8376; }
+    .reading-text { font-size: 1.02rem; line-height: 1.7; }
     .reading-text h2, .reading-text h3, .reading-text h4 { font-family: var(--display); }
+    .reading-text a, .reading .dek a { color: #8b3a1a; }
+    .row2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: .6rem; }
+    .state[data-ready="true"] { border-color: var(--gold); color: var(--gold); }
     .panel.article-panel { grid-template-rows: auto minmax(0, 1fr); }
     .ov-articles ul { list-style: none; margin: .4rem 0; padding: 0; display: grid; gap: .3rem; }
     .ov-articles h3 { margin: .6rem 0 0; font-family: var(--display); font-size: 1.35rem; font-weight: 600; }
@@ -380,12 +391,34 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       <div class="head">
         <small>Article</small>
         <h1 id="article-heading"></h1>
-        <div class="meta"><span id="article-when"></span><span class="state">Draft: only you see it</span></div>
+        <div class="meta"><span id="article-when"></span><span class="state" id="article-state">Draft: only you see it</span></div>
       </div>
       <div class="tab">
         <section class="block">
           <label for="article-title">Title</label>
           <input id="article-title" autocomplete="off" placeholder="The article's title">
+        </section>
+        <section class="block row2">
+          <label>Kind <select id="article-kind"></select></label>
+          <label>Language <select id="article-lang"><option value="en">English</option><option value="nl">Nederlands</option></select></label>
+          <label>Year <input id="article-year" type="number" min="1990" max="2100" inputmode="numeric"></label>
+        </section>
+        <section class="block" id="article-person">
+          <h2>The person you interviewed</h2>
+          <label>The words before their name <input id="article-byline" autocomplete="off" placeholder="Inzichten van, In conversation with…"></label>
+          <div class="row2">
+            <label>Name <input id="person-name" autocomplete="off"></label>
+            <label>Their profile <input id="person-profile" inputmode="url" autocomplete="off" placeholder="https://…"></label>
+          </div>
+          <label>Role <input id="person-role" autocomplete="off" placeholder="As they describe it"></label>
+          <div class="row2">
+            <label>Organisation <input id="person-org" autocomplete="off"></label>
+            <label>Its site <input id="person-org-url" inputmode="url" autocomplete="off" placeholder="https://…"></label>
+          </div>
+          <p class="hint">The organisation's name in the role links to its site.</p>
+        </section>
+        <section class="block">
+          <label>Belongs to a case study <select id="article-related"><option value="">None</option></select></label>
         </section>
         <section class="block">
           <label for="article-summary">Short summary</label>
@@ -398,9 +431,9 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
         </section>
         <section class="block">
           <h2>Publishing</h2>
-          <p class="hint">A draft is saved to your account and never goes to the site, not even with Send to site.</p>
-          <button id="publish-article" type="button" disabled>Publish</button>
-          <p class="hint">Publishing comes with the place for stories on the site: <a href="https://github.com/Ryan-Reddy/reddy.world/issues/183" target="_blank" rel="noreferrer">decision 4 on #183</a>.</p>
+          <p class="hint" id="publish-hint"></p>
+          <div class="bottom"><button id="publish-article" class="primary" type="button">Publish</button><button id="unpublish-article" class="quiet" type="button" hidden>Back to draft</button></div>
+          <p class="hint" id="article-address"></p>
         </section>
         <div class="bottom"><button id="delete-article" class="quiet" type="button">Delete this draft</button></div>
         <p class="note" id="article-note" aria-live="polite"></p>
@@ -1079,7 +1112,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     function fillPicker() {
       const groups = [];
       const own = drafts();
-      if (own.length) groups.push(el('optgroup', {label: 'Your articles (drafts)'}, ...own.map(([id, article]) => new Option(`${articleTitle(article)} · draft`, `article:${id}`))));
+      if (own.length) groups.push(el('optgroup', {label: 'Your articles'}, ...own.map(([id, article]) => new Option(`${articleTitle(article)} · ${article.status === 'ready' ? 'ready' : 'draft'}`, `article:${id}`))));
       groups.push(el('optgroup', {label: 'Projects'}, ...DATA.projects.map((project, index) => new Option(`${project.title} · ${project.portfolio}`, String(index)))));
       $('project-picker').replaceChildren(...groups);
     }
@@ -1098,18 +1131,97 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       const text = el('div', {className: 'reading-text'});
       text.innerHTML = cleanHtml(article.content);
       const summary = String(article.summary ?? '').trim();
+      const person = (article.kind ?? 'story') === 'interview' && article.person?.name ? article.person : null;
+      const dek = person && el('p', {className: 'dek', textContent: `${String(article.byline ?? '').trim()} ${person.name}${person.role ? `, ${person.role}` : ''}`.trim()});
       $('reading').replaceChildren(
-        el('span', {className: 'when', textContent: `Draft · started ${started(article)}`}),
+        el('span', {className: 'when', textContent: `${DATA.kinds?.[article.kind ?? 'story']?.label ?? 'Story'} · ${article.status === 'ready' ? 'ready for the site' : 'draft'} · started ${started(article)}`}),
         el('h2', {className: 'reading-title', textContent: articleTitle(article)}),
-        summary ? el('p', {className: 'sum', textContent: summary}) : el('p', {className: 'sum empty-note', textContent: 'No summary yet.'}),
+        dek,
+        summary ? el('p', {className: 'sum', textContent: summary}) : el('p', {className: 'sum empty-note', textContent: 'No summary yet: the wall shows the first words of the text.'}),
         text,
       );
       $('article-heading').textContent = articleTitle(article);
       $('article-when').textContent = `Started ${started(article)}`;
       document.title = `${articleTitle(article)} (draft) — Portfolio desk`;
     }
+    // ---------- what the article needs on the site: kind, language, year, the person, the case study ----------
+    const kinds = DATA.kinds ?? {};
+    $('article-kind').replaceChildren(...Object.entries(kinds).map(([id, kind]) => new Option(kind.label, id)));
+    $('article-related').append(...(DATA.software ?? []).map((item) => new Option(item.title, item.id)));
+    const kindOf = (article) => article.kind ?? 'story';
+    // the address it gets: from the title, as the site writes addresses; fixed once it is published
+    const slugOf = (article) => article.slug || String(article.title ?? '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80);
+    const plainText = (html) => String(html ?? '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
+    // ready to publish: a title, enough words for a search result (50 characters, from the summary and the text),
+    // and for an interview the person
+    function missingFor(article) {
+      const missing = [];
+      if (!String(article.title ?? '').trim()) missing.push('a title');
+      if ((String(article.summary ?? '').trim() + ' ' + plainText(article.content)).trim().length < 50) missing.push('a few more words (50 characters)');
+      if (kindOf(article) === 'interview' && !(article.person?.name?.trim() && article.person?.role?.trim() && String(article.byline ?? '').trim())) missing.push('the person: their name, role and the words before their name');
+      return missing;
+    }
+    function renderPublish() {
+      const article = openArticleRecord();
+      if (!article) return;
+      const ready = article.status === 'ready';
+      const missing = missingFor(article);
+      $('article-state').textContent = ready ? 'Ready for the site' : 'Draft: only you see it';
+      $('article-state').dataset.ready = String(ready);
+      $('publish-article').hidden = ready;
+      $('unpublish-article').hidden = !ready;
+      $('publish-article').disabled = missing.length > 0;
+      $('publish-hint').textContent = ready
+        ? 'Ready: your next Send to site puts it on the site as a pull request with a preview, live when you merge it. Back to draft takes it off the site again with the send after.'
+        : missing.length ? `A draft is saved to your account and never goes to the site. To publish it needs ${missing.join(', ')}.` : 'A draft is saved to your account and never goes to the site until you publish it.';
+      const slug = slugOf(article);
+      $('article-address').textContent = slug ? `Its address: reddy.world/portfolio/${kinds[kindOf(article)]?.path ?? 'stories'}/${slug}/` : '';
+      $('article-person').hidden = kindOf(article) !== 'interview';
+    }
+    function setPerson(field, value) {
+      const article = state.articles[state.article];
+      state.articles[state.article] = {...article, person: {...article.person, [field]: value}};
+      save();
+      renderReading();
+      renderPublish();
+    }
+    $('article-kind').addEventListener('change', () => { setArticle('kind', $('article-kind').value); renderPublish(); });
+    $('article-lang').addEventListener('change', () => setArticle('lang', $('article-lang').value));
+    $('article-year').addEventListener('input', () => setArticle('year', Number($('article-year').value) || undefined));
+    $('article-byline').addEventListener('input', () => { setArticle('byline', $('article-byline').value); renderPublish(); });
+    $('article-related').addEventListener('change', () => setArticle('related', $('article-related').value || undefined));
+    for (const [id, field] of [['person-name', 'name'], ['person-role', 'role'], ['person-org', 'org'], ['person-org-url', 'orgUrl'], ['person-profile', 'profile']]) {
+      $(id).addEventListener('input', () => setPerson(field, $(id).value));
+    }
+    $('publish-article').addEventListener('click', () => {
+      const article = state.articles[state.article];
+      if (missingFor(article).length) return;
+      // the address and the day it was first published stay as they are from now on
+      state.articles[state.article] = {...article, status: 'ready', slug: slugOf(article), readyAt: article.readyAt ?? Date.now()};
+      save();
+      renderPublish();
+      $('article-note').textContent = 'Published on the desk: Send to site puts it on the site.';
+    });
+    $('unpublish-article').addEventListener('click', () => {
+      state.articles[state.article] = {...state.articles[state.article], status: 'draft'};
+      save();
+      renderPublish();
+      $('article-note').textContent = 'Back to draft: the next Send to site takes it off the site if it was there.';
+    });
     function renderArticleMode() {
       const article = openArticleRecord();
+      const fill = (id, value) => { if (document.activeElement !== $(id)) $(id).value = value ?? ''; };
+      $('article-kind').value = kindOf(article);
+      $('article-lang').value = article.lang ?? 'en';
+      fill('article-year', article.year ?? new Date(article.created ?? Date.now()).getFullYear());
+      fill('article-byline', article.byline);
+      fill('person-name', article.person?.name);
+      fill('person-role', article.person?.role);
+      fill('person-org', article.person?.org);
+      fill('person-org-url', article.person?.orgUrl);
+      fill('person-profile', article.person?.profile);
+      $('article-related').value = article.related ?? '';
+      renderPublish();
       // a field Ryan is typing in keeps his caret: only the others are filled again
       if (document.activeElement !== $('article-title')) $('article-title').value = article.title ?? '';
       if (document.activeElement !== $('article-summary')) $('article-summary').value = article.summary ?? '';
@@ -1123,6 +1235,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       state.articles[state.article] = {...state.articles[state.article], [field]: value};
       save();
       renderReading();
+      renderPublish();
     }
     $('article-title').addEventListener('input', () => {
       setArticle('title', $('article-title').value);
@@ -1134,7 +1247,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     $('article-text').addEventListener('input', () => setArticle('content', cleanHtml($('article-text').innerHTML)));
     function newArticle() {
       const id = `a${Date.now().toString(36)}`;
-      state.articles[id] = {title: '', summary: '', content: '', status: 'draft', created: Date.now()};
+      state.articles[id] = {title: '', summary: '', content: '', status: 'draft', kind: 'story', lang: 'en', year: new Date().getFullYear(), created: Date.now()};
       state.article = id;
       save();
       render();
