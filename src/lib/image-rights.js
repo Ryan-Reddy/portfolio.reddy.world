@@ -19,6 +19,9 @@ export const WEB_STATEMENT = 'https://reddy.world/';
 const NOT_RYANS = [
   // Maup: kept in the repo, not Ryan's work, never shown (src/lib/archive-curation.js)
   /^\/portfolio\/images\/maup\//,
+  // The two airport photos on Fenne Roefs' interview: found by Ryan, not his own (Ryan, 2026-10-26: "airport
+  // photo i found on google, free to use"); reddy.world/terms says how to have a picture credited or taken down
+  /^\/portfolio\/images\/articles\/fenne-roefs-mijksenaar\/p(airport1|schiphol2)\b/,
   // The modelling pictures are photographs OF Ryan, taken by other people; the photographer's
   // credit comes from the image desk
   /^\/portfolio\/images\/vaguelyvulgar\//,

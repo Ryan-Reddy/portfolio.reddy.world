@@ -25,7 +25,10 @@ const ratingsInfo = {updatedAt: ratings.updatedAt, bing: Object.keys(ratings.bin
 const count = projects.reduce((sum, project) => sum + project.images.length, 0);
 // what an article can be, and the case studies it can belong to (src/content/articles/, src/lib/article-kinds.js)
 const software = (await getCollection('software')).sort((a, b) => a.data.order - b.data.order).map(({ id, data }) => ({ id, title: data.title }));
-const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRatings, kinds: KINDS, software }).replace(/</g, '\\u003c');
+// drafts prepared in the repo, by desk id (src/data/article-seeds/<id>.json): each shows up once on the desk
+const seeds = Object.fromEntries(Object.entries(import.meta.glob('../data/article-seeds/*.json', { eager: true, import: 'default' }))
+  .map(([file, seed]) => [file.split('/').pop().replace(/\.json$/, ''), seed]));
+const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRatings, kinds: KINDS, software, seeds }).replace(/</g, '\\u003c');
 ---
 <!doctype html>
 <html lang="en">
@@ -489,6 +492,12 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       } catch { return {...empty}; }
     };
     const state = read();
+    // A draft prepared in the repo joins Ryan's drafts once, before the account copy merges in (desk-sync.js).
+    // Unstamped, so a draft he deleted on another device stays deleted in the merge.
+    state.articles ??= {};
+    for (const [id, seed] of Object.entries(DATA.seeds ?? {})) {
+      if (!(id in state.articles)) state.articles[id] = {...seed, status: 'draft', created: Date.now()};
+    }
     const flat = DATA.projects.flatMap((project, projectIndex) => project.images.map((image, imageIndex) => ({project, projectIndex, image, imageIndex})));
     const $ = (id) => document.getElementById(id);
     const el = (tag, props = {}, ...children) => { const node = Object.assign(document.createElement(tag), props); node.append(...children.filter((c) => c !== null && c !== undefined && c !== false)); return node; };
@@ -1179,7 +1188,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     const photoUrls = new Map();
     function photoImg(picture, alt) {
       const img = el('img', {alt: alt ?? '', loading: 'lazy'});
-      const known = photoUrls.get(picture.path);
+      const known = picture.src ?? photoUrls.get(picture.path); // a seeded draft's picture is already on the site
       if (known) img.src = known;
       else if (window.deskSync?.picture) window.deskSync.picture(picture.path).then((url) => { if (url) { photoUrls.set(picture.path, url); img.src = url; } }).catch(() => {});
       return img;
