@@ -1,7 +1,7 @@
 // The desk's copy in Ryan's account: Firestore `private-desk/image-desk` in project getreddyworld, the same
 // project, sign-in and owner-only rules as reddy.world/private (firestore.rules in Ryan-Reddy/reddy.world).
 //
-// The desk is served at reddy.world/portfolio/image-metadata/, the same origin as /private, so this app with
+// The desk is served at reddy.world/private/portfolio/ (reddy.world moves it there), the same origin as /private, so this app with
 // the same config sees the Google sign-in Ryan already has there. On another address (a PR preview of this
 // repo) it is simply signed out and the desk keeps saving in the browser, as before.
 import { initializeApp, getApps, getApp } from 'firebase/app';

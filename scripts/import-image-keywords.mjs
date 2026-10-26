@@ -1,5 +1,5 @@
 // Brings the keywords and descriptions Ryan wrote on the image desk
-// (/portfolio/image-metadata/, kept only in his browser until he presses Export)
+// (reddy.world/private/portfolio/, saved in his account; or an export of it)
 // into the archive data, so the pages, the sitemap and JSON-LD carry them.
 //
 //   node scripts/import-image-keywords.mjs reddy-world-image-metadata.json [--dry-run]
