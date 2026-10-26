@@ -1,0 +1,11 @@
+---
+// The interview articles at /portfolio/interviews/<slug>/ (src/content/articles/, kind: interview)
+import Article from '../../components/Article.astro';
+import { articlePaths } from '../../lib/articles.js';
+
+export async function getStaticPaths() {
+  return articlePaths('interview');
+}
+const { entry } = Astro.props;
+---
+<Article entry={entry} />

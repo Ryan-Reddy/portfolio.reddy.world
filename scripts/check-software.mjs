@@ -1,8 +1,9 @@
-// Checks the built software case studies the way a crawler sees them: the raw HTML, no
-// JavaScript (reddy.world#135). Run after `npm run build`; fails with a list of problems.
+// Checks the built software case studies and articles the way a crawler sees them: the raw HTML,
+// no JavaScript (reddy.world#135). Run after `npm run build`; fails with a list of problems.
 //
 //   node scripts/check-software.mjs
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { KINDS } from '../src/lib/article-kinds.js';
 
 const DIST = new URL('../dist/', import.meta.url);
 const SITE = 'https://reddy.world/portfolio';
@@ -58,6 +59,58 @@ for (const page of slugs.map((s) => `${s}/`)) {
   if (page && !llms.includes(`(${SITE}/${where})`)) say('not in llms.txt');
 }
 
+// The articles (src/content/articles/, reddy.world#183): crawlable in their own language; an interview
+// names its person; one that belongs to a case study is linked from it; on the feed the wall reads
+const feed = read('rss.xml');
+let articleCount = 0;
+for (const kindPath of Object.values(KINDS).map((k) => k.path)) {
+  if (!existsSync(new URL(`${kindPath}/`, DIST))) continue;
+  for (const slug of readdirSync(new URL(`${kindPath}/`, DIST), { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name)) {
+    articleCount++;
+    const where = `${kindPath}/${slug}/`;
+    const html = read(`${where}index.html`);
+    const say = (msg) => problems.push(`${where}: ${msg}`);
+
+    const title = html.match(/<title>([^<]*)<\/title>/)?.[1];
+    if (!title) say('no <title>');
+    else if (titles.has(title)) say(`same title as ${titles.get(title)}`);
+    else titles.set(title, where);
+    const description = html.match(/<meta name="description" content="([^"]*)"/)?.[1] ?? '';
+    if (description.length < 50) say(`description missing or short (${description.length} characters)`);
+    if (!html.includes(`<link rel="canonical" href="${SITE}/${where}">`)) say('no self canonical');
+    const h1 = (html.match(/<h1[\s>]/g) ?? []).length;
+    if (h1 !== 1) say(`${h1} <h1> elements, want 1`);
+    const lang = html.match(/<html lang="([^"]+)"/)?.[1];
+    if (!lang) say('no <html lang>');
+    else if (lang !== 'en' && !/<header class="site-header"[^>]*\slang="en"/.test(html)) say(`the page is lang="${lang}" but its English header is not marked lang="en"`);
+    if (kindPath === 'interviews' && !(html.match(/<h2[\s>]/g) ?? []).length) say('an interview with no questions (## headings)');
+    for (const img of html.match(/<img\b[^>]*>/g) ?? []) {
+      const missing = ['alt', 'width', 'height', 'srcset'].filter((a) => !attr(img, a));
+      if (missing.length) say(`<img src="${attr(img, 'src')}"> has no ${missing.join(', ')}`);
+      for (const src of [attr(img, 'src'), ...(attr(img, 'srcset') ?? '').split(',').map((s) => s.trim().split(' ')[0])].filter(Boolean)) {
+        if (src.startsWith('/portfolio/') && !existsSync(new URL(src.slice('/portfolio/'.length), DIST))) say(`picture not in the build: ${src}`);
+      }
+    }
+
+    let ld = [];
+    try { ld = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].flatMap((m) => [JSON.parse(m[1])].flat()); } catch (e) { say(`JSON-LD does not parse: ${e.message}`); }
+    const work = ld.find((x) => x['@type'] === 'Article' || x['@type'] === 'CreativeWork');
+    if (!work) say('no Article in the JSON-LD');
+    else {
+      if (work.author?.['@id'] !== PERSON_ID) say(`JSON-LD author is not ${PERSON_ID}`);
+      if (work.inLanguage !== lang) say(`JSON-LD inLanguage "${work.inLanguage}" is not the page's "${lang}"`);
+      if (kindPath === 'interviews' && !work.contributor?.name) say('JSON-LD names no interviewee (contributor)');
+      const caseUrl = work.isPartOf?.url;
+      if (caseUrl && !read(`${caseUrl.slice(SITE.length + 1)}index.html`).includes(`href="/portfolio/${where}"`)) say(`${caseUrl} does not link here`);
+    }
+    if (!ld.some((x) => x['@type'] === 'BreadcrumbList')) say('no BreadcrumbList');
+
+    if (!sitemap.includes(`<loc>${SITE}/${where}</loc>`)) say('not in the sitemap');
+    if (!llms.includes(`(${SITE}/${where})`)) say('not in llms.txt');
+    if (!feed.includes(`<link>${SITE}/${where}</link>`)) say('not in rss.xml (the wall)');
+  }
+}
+
 const overview = read('software/index.html');
 if (!overview.includes('name="robots" content="noindex, follow"')) problems.push('software overview: not marked noindex');
 if (!overview.includes('https://reddy.world/?at=work')) problems.push('software overview: does not hand off to the wall');
@@ -79,4 +132,4 @@ if (problems.length) {
   console.error(`check-software: ${problems.length} problems\n- ${problems.join('\n- ')}`);
   process.exit(1);
 }
-console.log(`check-software: wall handoff and ${slugs.length} case studies pass`);
+console.log(`check-software: wall handoff, ${slugs.length} case studies and ${articleCount} articles pass`);

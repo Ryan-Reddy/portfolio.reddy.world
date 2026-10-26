@@ -1,4 +1,4 @@
-import { defineCollection } from 'astro:content';
+import { defineCollection, reference } from 'astro:content';
 import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
 
@@ -65,4 +65,53 @@ const software = defineCollection({
   }),
 });
 
-export const collections = { software };
+// One article per file (reddy.world#183, decision 4 B): interviews, stories, case studies, projects,
+// recipes, writing and poems, at /portfolio/<kind's path>/<file name>/ (src/lib/article-kinds.js).
+// Nothing is written on the page but Ryan's own words and, in an interview, the interviewee's answers.
+const articles = defineCollection({
+  loader: glob({ pattern: '*.md', base: './src/content/articles' }),
+  schema: z.object({
+    kind: z.enum(['interview', 'story', 'case-study', 'project', 'recipe', 'writing', 'poem']),
+    title: z.string(),
+    // the title's language when it differs from the article's
+    titleLang: z.string().optional(),
+    // the <title>, when the title is too long for a search result
+    seoTitle: z.string().optional(),
+    description: z.string().min(50).max(160),
+    // the line on the wall, in Ryan's words; the description when there is none
+    summary: z.string().optional(),
+    // the article's language; the page is marked with it
+    lang: z.string().default('en'),
+    // an interview: the words before the person's name (as the transcript has them), and the person
+    byline: z.string().optional(),
+    person: z.object({
+      name: z.string(),
+      role: z.string(),
+      roleLang: z.string().optional(),
+      org: z.string().optional(),
+      orgUrl: z.url().optional(),
+      // words of the role that link to where they stand on the organisation's own site; no words are added
+      roleLinks: z.record(z.string(), z.url()).optional(),
+      // the organisation's own profiles (as its site links them), for the structured data
+      orgSameAs: z.array(z.url()).optional(),
+      // the person's own profile (as Ryan gives it): the name links there, and the structured data
+      profile: z.url().optional(),
+    }).optional(),
+    year: z.number().int(),
+    // when it went online: the feed's date (the update when there is none)
+    published: z.coerce.date().optional(),
+    // the picture across the top, in public/images/articles/<slug>/, alt in the article's language;
+    // `share`: a JPEG copy for link cards (LinkedIn and others read JPEG and PNG, not always WebP)
+    hero: z.object({ file: z.string(), alt: z.string().min(1), share: z.string().optional() }).optional(),
+    // Ryan's own words above the article, quoted and dated in the PR that adds them
+    intro: z.object({ text: z.string(), lang: z.string().default('en') }).optional(),
+    // the case study it belongs to, when there is one (an interview done for it)
+    related: reference('software').optional(),
+    // the sitemap's lastmod
+    updated: z.coerce.date(),
+    // the desk draft it was published from (scripts/desk-articles.mjs), so Send to site keeps the two tied
+    desk: z.string().optional(),
+  }).refine((d) => d.kind !== 'interview' || Boolean(d.person && d.byline), { message: 'an interview names its person and its byline' }),
+});
+
+export const collections = { software, articles };

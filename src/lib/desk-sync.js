@@ -54,18 +54,70 @@ function apply(merged, { keepPlace }) {
 function push() {
   clearTimeout(timer);
   if (!cloud || !user || (remoteCopy && sameWork(desk.state, remoteCopy))) return;
-  timer = setTimeout(async () => {
-    if (!navigator.onLine) return show({ kind: 'offline' });
-    show({ kind: 'saving' });
-    try {
-      const merged = await cloud.save((remote) => ({ ...mergeStates(desk.state, remote, existing), summary: overviewSummary() }));
-      remoteCopy = merged;
-      if (!sameWork(merged, desk.state)) apply(merged, { keepPlace: true });
-      show({ kind: 'saved', at: Date.now() });
-    } catch (error) {
-      show(error.code === 'permission-denied' ? { kind: 'denied' } : { kind: 'error', message: error.code === 'too-big' ? error.message : error.code ?? error.message });
-    }
-  }, 1200);
+  timer = setTimeout(saveNow, 1200);
+}
+
+async function saveNow() {
+  clearTimeout(timer);
+  if (!cloud || !user || (remoteCopy && sameWork(desk.state, remoteCopy))) return;
+  if (!navigator.onLine) return show({ kind: 'offline' });
+  show({ kind: 'saving' });
+  try {
+    // the /private ticket's summary is made from what is written, the merged copy
+    const merged = await cloud.save((remote) => {
+      const copy = mergeStates(desk.state, remote, existing);
+      return { ...copy, summary: overviewSummary(copy) };
+    });
+    remoteCopy = merged;
+    // merged again with what Ryan typed while the save was on its way, so those keystrokes win
+    const next = mergeStates(desk.state, merged, existing);
+    if (!sameWork(next, desk.state)) apply(next, { keepPlace: true });
+    if (!sameWork(next, merged)) push();
+    show({ kind: 'saved', at: Date.now() });
+  } catch (error) {
+    show(error.code === 'permission-denied' ? { kind: 'denied' } : { kind: 'error', message: error.code === 'too-big' ? error.message : error.code ?? error.message });
+  }
+}
+
+// "Send to site": reddy.world's /api/desk-to-site (functions/desk.js there) starts the portfolio repo's
+// desk-to-site workflow, which reads this desk from the account and opens a pull request with a preview.
+// Off reddy.world (a PR preview of this repo) there is no such address: the workflow's page is the way.
+const RUN_PAGE = 'https://github.com/Ryan-Reddy/portfolio.reddy.world/actions/workflows/desk-to-site.yml';
+const DESK_PRS = 'https://github.com/Ryan-Reddy/portfolio.reddy.world/pulls?q=is%3Apr+is%3Aopen+head%3Adesk%2F';
+async function send() {
+  if (!cloud || !user) return { kind: 'signin' };
+  await saveNow();
+  if (status.kind !== 'saved') return { kind: 'unsaved', line: document.querySelector('[data-desk-saved]')?.textContent ?? '' };
+  let response;
+  try {
+    response = await fetch('/api/desk-to-site', { method: 'POST', headers: { Authorization: `Bearer ${await cloud.idToken()}` } });
+  } catch {
+    return { kind: 'manual', url: RUN_PAGE };
+  }
+  if (response.status === 404) return { kind: 'manual', url: RUN_PAGE };
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) return { kind: 'failed', message: body.error ?? `HTTP ${response.status}`, url: RUN_PAGE };
+  return { kind: 'sent', prs: DESK_PRS, run: body.run ?? RUN_PAGE };
+}
+
+// An article's pictures: uploaded to reddy.world's /api/desk-upload (functions/desk.js there), private in the
+// project's Storage until the article is published; shown on the desk from there with Ryan's sign-in.
+async function upload(file) {
+  if (!cloud || !user) throw new Error('sign in first: pictures are kept in your account');
+  const response = await fetch('/api/desk-upload', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${await cloud.idToken()}`, 'Content-Type': file.type || 'application/octet-stream', 'X-File-Name': encodeURIComponent(file.name) },
+    body: file,
+  });
+  if (response.status === 404) throw new Error('pictures are added on reddy.world itself, not on a preview');
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(body.error ?? `HTTP ${response.status}`);
+  return { path: body.path, name: body.name };
+}
+async function picture(path) {
+  if (!cloud || !user) return null;
+  const response = await fetch(`/api/desk-upload?path=${encodeURIComponent(path)}`, { headers: { Authorization: `Bearer ${await cloud.idToken()}` } });
+  return response.ok ? URL.createObjectURL(await response.blob()) : null;
 }
 
 window.deskSync = {
@@ -73,14 +125,19 @@ window.deskSync = {
   saved: () => { renderOverview(); push(); },
   // Load export: replaces the loaded projects' records (the page then calls save(), which writes through)
   load: (state, loaded) => applyExport(state, loaded, Date.now()),
+  send,
+  upload,
+  picture,
 };
 addEventListener('online', push);
 
 // what /private shows on its ticket for the desk
-function overviewSummary() {
-  const sum = summarize(desk.DATA.projects, desk.state, { credits });
-  return { done: sum.done, total: sum.total, next: sum.next?.title ?? null, savedAt: Date.now() };
+function overviewSummary(state = desk.state) {
+  const sum = summarize(desk.DATA.projects, state, { credits });
+  return { done: sum.done, total: sum.total, next: sum.next?.title ?? null, drafts: drafts(state).length, savedAt: Date.now() };
 }
+const drafts = (state = desk.state) => Object.entries(state.articles ?? {}).filter(([, article]) => article && !article.deleted)
+  .sort(([, a], [, b]) => (b.created ?? 0) - (a.created ?? 0));
 
 // ---------- the overview ----------
 const label = { done: 'Done', started: 'Started', todo: 'Not started' };
@@ -101,6 +158,7 @@ function bar(part) {
 function openProject(index) {
   const start = desk.flat.findIndex((item) => item.projectIndex === index);
   if (start >= 0) desk.state.cursor = start;
+  desk.state.article = null;
   closeOverview();
   desk.render();
 }
@@ -136,6 +194,27 @@ function renderOverview() {
       el('ul', {}, ...rows));
     return details;
   }));
+  renderArticles();
+}
+
+// the articles Ryan is writing for the wall: drafts until he publishes them
+function renderArticles() {
+  const box = $('ov-articles');
+  if (!box) return;
+  const when = (ms) => new Date(ms).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  const rows = drafts().map(([id, article]) => {
+    const button = el('button', { type: 'button', className: 'ov-row' }, el('span', { className: 'ov-dot', ariaHidden: 'true' }),
+      el('strong', {}, String(article.title ?? '').trim() || 'Untitled article'), el('small', {}, `${article.status === 'ready' ? 'Ready for the site' : 'Draft'}${article.at ? ` · saved ${when(article.at)}` : ''}`));
+    button.addEventListener('click', () => { closeOverview(); desk.openArticle(id); });
+    return el('li', {}, button);
+  });
+  const add = el('button', { type: 'button' }, '＋ New article');
+  add.addEventListener('click', () => { closeOverview(); desk.newArticle(); });
+  box.replaceChildren(
+    el('h3', {}, 'Your articles'),
+    rows.length ? el('ul', {}, ...rows) : el('p', { className: 'ov-line' }, 'No drafts yet. A new article stays a draft, only for you, until you publish it.'),
+    add,
+  );
 }
 
 function openOverview() {
@@ -162,6 +241,10 @@ show({ kind: 'local' });
 
 // ---------- the account copy ----------
 let unwatch = null;
+// The edit bar on the project pages (src/lib/edit-bar.js) loads only where this flag is set: in a browser
+// whose account has read the desk, which only Ryan's can (the rules are owner-only)
+const OWNER_FLAG = 'reddy-desk-owner';
+const owner = (yes) => { try { if (yes) localStorage.setItem(OWNER_FLAG, '1'); else localStorage.removeItem(OWNER_FLAG); } catch {} };
 import('./desk-cloud.js').then((module) => {
   cloud = module;
   cloud.watchUser((signedIn) => {
@@ -169,19 +252,24 @@ import('./desk-cloud.js').then((module) => {
     unwatch = null;
     user = signedIn;
     first = true;
-    if (!user) return show({ kind: 'local' });
+    if (!user) { owner(false); return show({ kind: 'local' }); }
     show({ kind: 'checking' });
     remoteCopy = null;
     unwatch = cloud.watchRemote((remote, updated) => {
+      owner(true);
       remoteCopy = remote;
       const merged = mergeStates(desk.state, remote, existing);
       if (!sameWork(merged, desk.state) || (first && remote && merged.cursor !== desk.state.cursor)) {
-        apply(merged, { keepPlace: !first });
+        // opened on one project (the edit bar's "Open in the desk"): stay there
+        apply(merged, { keepPlace: !first || desk.pinned });
       }
       const behind = !remote || !sameWork(merged, remote);
       first = false;
       if (behind) push();
       else if (status.kind === 'checking' || status.kind === 'saved') show({ kind: 'saved', at: updated ?? Date.now() });
-    }, (error) => show(error.code === 'permission-denied' ? { kind: 'denied' } : { kind: 'error', message: error.code ?? error.message }));
+    }, (error) => {
+      if (error.code === 'permission-denied') owner(false);
+      show(error.code === 'permission-denied' ? { kind: 'denied' } : { kind: 'error', message: error.code ?? error.message });
+    });
   });
 }).catch((error) => show({ kind: 'error', message: `could not load the account code: ${error.message}` }));

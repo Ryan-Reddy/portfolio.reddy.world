@@ -1,0 +1,11 @@
+---
+// The writing articles at /portfolio/writing/<slug>/ (src/content/articles/, kind: writing)
+import Article from '../../components/Article.astro';
+import { articlePaths } from '../../lib/articles.js';
+
+export async function getStaticPaths() {
+  return articlePaths('writing');
+}
+const { entry } = Astro.props;
+---
+<Article entry={entry} />

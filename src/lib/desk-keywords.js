@@ -1,7 +1,18 @@
-// The image desk's projects and its first two suggestion columns (/portfolio/image-metadata/).
+// The image desk's projects and its first two suggestion columns (built at /portfolio/image-metadata/, served at reddy.world/private/portfolio/).
 // Shared by the page and by scripts/keyword-ratings.mjs, which rates the same words at build time.
-import { portfolios, photos, picture, SITE, KIND_LABEL } from './portfolios.js';
+import { portfolios, photos, picture, SITE, KIND_LABEL, formatDate } from './portfolios.js';
+import { BRAND } from './brands.js';
 import { isMachineAlt } from './alt-text.js';
+import rmaekers from '../data/rmaekers.json';
+import rrproductions from '../data/rrproductions.json';
+import vaguelyvulgar from '../data/vaguelyvulgar.json';
+
+// The archive's own records, before curation (src/lib/archive-curation.js): what WordPress had, shown
+// on the desk under "From WordPress". The post's text is shown as the page has it, after curation.
+const RAW = Object.fromEntries([rmaekers, rrproductions, vaguelyvulgar].map((data) => [data.id, data]));
+const rawPost = (portfolioId, id) => RAW[portfolioId]?.posts.find((post) => String(post.id) === String(id));
+const fileName = (url) => String(url ?? '').split('/').pop();
+const plain = (html) => String(html ?? '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
 
 const SEARCH_INTENT = {
   rmaekers: ['production studio Amsterdam', 'experiential design studio Amsterdam', 'creative fabrication Amsterdam', 'brand activations Amsterdam', 'exhibition stand design Amsterdam'],
@@ -77,11 +88,30 @@ export function deskProjects() {
     const projectPhotos = photos(post);
     const handwritten = projectPhotos.map((image, index) => ({index, text: handwrittenDescription(image, post.title)})).filter(({text}) => text);
     const originalSuggestions = metadataKeywords(handwritten.map(({text}) => text));
+    const raw = rawPost(portfolio.id, post.id) ?? post;
+    const keywords = (raw.keywords ?? []).map(useful).filter(Boolean);
+    // every picture the text can place (<figure data-media="3">), by its index in the post's media
+    const thumbs = Object.fromEntries((raw.media ?? []).map((m, i) => [i, m]).filter(([, m]) => m.type === 'image').map(([i, m]) => [i, picture(m).src]));
     return {
       id: `${portfolio.id}/${post.slug}`,
       portfolio: portfolio.name,
       title: post.title.trim(),
       href: `${SITE}${post.path}`,
+      // what the archive already says, so the desk opens on it instead of on nothing (Ryan, 2026-10-26:
+      // "i cant see what keywords etc are already in the image")
+      keywords,
+      // the projects whose words were imported from an earlier desk count as done
+      done: keywords.length > 0,
+      summary: useful(raw.summary),
+      excerpt: plain(post.excerpt),
+      content: String(post.content ?? ''),
+      thumbs,
+      // how the wall names it: the brand as caption, the year, the kind of work
+      label: BRAND[portfolio.id] ?? portfolio.name,
+      year: post.undated ? '' : String(post.date ?? '').slice(0, 4),
+      dateLabel: post.undated ? '' : formatDate(post.date),
+      kinds: post.kinds.map((kind) => KIND_LABEL[kind]),
+      wordpress: { categories: raw.categories ?? [], tags: raw.tags ?? [], excerpt: plain(raw.excerpt) },
       // the picture that leads the project today (its card, its page, the wall); Ryan can choose another
       hero: post.featured?.url ?? '',
       originalSuggestions,
@@ -102,6 +132,12 @@ export function deskProjects() {
           width: pic.width,
           height: pic.height,
           existingDescription: handwrittenDescription(image, post.title),
+          // what the picture carries today, and what WordPress had
+          alt: useful(image.alt),
+          description: useful(image.description),
+          keywords: (image.keywords ?? []).map(useful).filter(Boolean),
+          credit: image.credit ?? null,
+          wordpress: { title: useful(image.title), caption: useful(image.caption), alt: useful(image.alt), file: fileName(image.wp_url || image.url) },
           nearby: nearby.map(({index: sourceIndex, text}) => ({image: sourceIndex + 1, text})),
           nearbySuggestions,
           suggestions: unique([...nearbySuggestions, mediaTitle(image.title), ...IMAGE_VOCABULARY]),

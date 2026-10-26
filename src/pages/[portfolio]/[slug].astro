@@ -5,6 +5,7 @@ import { absUrl } from '../../lib/media-url.js';
 import { imageRights } from '../../lib/image-rights.js';
 import { subjectImageObject } from '../../lib/model-page.js';
 import { httpUrl } from '../../lib/safe-output.js';
+import { fitTitle, fitDescription, DESCRIPTION_MIN } from '../../lib/snippet.js';
 import { portfolios, formatDate, photos, altFor, contextOf, picture, contactUrl, titleCase, PERSON_ID, ORIGIN, SITE, BASE, themeByTag, KIND_LABEL, portfolioLabel } from '../../lib/portfolios.js';
 
 export function getStaticPaths() {
@@ -18,9 +19,14 @@ const imgs = photos(post);
 const videos = post.media.filter((m) => m.type === 'video');
 const files = post.media.filter((m) => m.type === 'file');
 const name = titleCase(post.title);
-// the summary in Ryan's words, then what kind of work it was, under which name, and when
+// the summary in Ryan's words (the desk's, else WordPress's excerpt), then what kind of work it was, under which name, and when,
+// cut at a word to what a search result shows (src/lib/snippet.js). Too short: a short summary takes the
+// excerpt after it, then the month joins the year; whatever fits first.
 const context = contextOf(post);
-const description = `${(post.excerpt || name).replace(/[.!?…]?$/, (end) => end || '.')} ${context}.`.slice(0, 300);
+const withMonth = context.replace(/, \d{4}$/, `, ${formatDate(post.date)}`);
+const summaryAndExcerpt = post.summary && post.excerpt ? `${post.summary.trim().replace(/[.!?…]?$/, (stop) => stop || '.')} ${post.excerpt}` : '';
+const tries = [[post.summary, post.excerpt, name], [summaryAndExcerpt, post.excerpt, name]].flatMap((words) => [fitDescription(words, context), ...(post.undated ? [] : [fitDescription(words, withMonth)])]);
+const description = tries.find((text) => text.length >= DESCRIPTION_MIN) ?? tries.reduce((a, b) => (b.length > a.length ? b : a));
 const pageUrl = `${SITE}${post.path}`;
 
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
@@ -141,15 +147,15 @@ const jsonLd = [
 ];
 const article = isPost ? { published: post.published, modified: post.modified, section: post.categories[0] || p.name, tags: post.tags } : undefined;
 ---
-<Base title={`${name} — ${p.brand} | Ryan Reddy`} description={description} image={shareImage} active={p.id} jsonLd={jsonLd} type={isPost ? 'article' : 'website'} article={article}>
-  <article class:list={['project-page', { 'comp-card': comp }]}>
+<Base title={fitTitle(`${name} — ${p.brand} | Ryan Reddy`, `${name} — ${p.brand}`, name)} description={description} image={shareImage} active={p.id} jsonLd={jsonLd} type={isPost ? 'article' : 'website'} article={article}>
+  <article class:list={['project-page', { 'comp-card': comp }]} data-desk-project={`${p.id}/${post.slug}`}>
     <nav class="breadcrumb" aria-label="Breadcrumb">
       <a href={`${BASE}/`}>Portfolio</a> <span aria-hidden="true">/</span> <a href={`${BASE}/${p.id}/`}>{p.name}</a>
     </nav>
 
     {comp && (
       <div class="comp-lead" style={`--lead-r: ${leadRatio}`}>
-        <header class="comp-title"><h1 class="modal-title">{post.title.trim()}</h1></header>
+        <header class="comp-title"><h1 class="modal-title">{post.title.trim()}</h1>{post.summary && <p class="post-summary">{post.summary}</p>}</header>
         <div class="comp-photo" set:html={leadHtml} />
         {post.measurements?.length > 0 && (
           <section class="comp-facts" aria-labelledby="measurements">
@@ -167,6 +173,7 @@ const article = isPost ? { published: post.published, modified: post.modified, s
         {post.kinds.length > 0 && <span>&bull; {post.kinds.map((k) => KIND_LABEL[k]).join(', ')}</span>}
       </div>
       <h1 class="modal-title">{post.title.trim()}</h1>
+      {post.summary && <p class="post-summary">{post.summary}</p>}
       {post.tags.length > 0 && (
         <div class="card-tags">{post.tags.map((t) => themeByTag[t]
           ? <a class="card-tag" href={`${BASE}/theme/${t}/`}>#{themeByTag[t].label}</a>
@@ -176,7 +183,7 @@ const article = isPost ? { published: post.published, modified: post.modified, s
 
     {hero && (
       <figure class="post-hero">
-        <img src={hero.src} srcset={hero.srcset} sizes="(max-width: 900px) 100vw, 852px" width={hero.width} height={hero.height} alt={hero.alt} fetchpriority="high" decoding="async">
+        <img src={hero.src} srcset={hero.srcset} sizes="(max-width: 900px) 100vw, 852px" width={hero.width} height={hero.height} alt={hero.alt} fetchpriority="high" decoding="async" data-desk-picture={featured.url}>
         {(featured.caption || featured.credit?.name) && <Fragment set:html={captionHtml(featured)} />}
       </figure>
     )}

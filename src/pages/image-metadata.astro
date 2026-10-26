@@ -1,16 +1,31 @@
 ---
 import { deskProjects, ratingCandidates, WORD_BANK } from '../lib/desk-keywords.js';
-import { ratedFor, stems } from '../lib/keyword-ratings.js';
+import { ideasFor, normalize, stems, RISING } from '../lib/keyword-ratings.js';
 import ratings from '../data/keyword-ratings.json';
 import { archiveCredits } from '../lib/desk-credits.js';
+import { getCollection } from 'astro:content';
+import { KINDS } from '../lib/article-kinds.js';
 
-// the third column: the project's words with a rating, plus related words that rate higher (scripts/keyword-ratings.mjs)
+// Every word idea in one list, each rated (scripts/keyword-ratings.mjs fetches the numbers at build time):
+// per project the words and where they came from; each word's rating once, in `ratings`.
 const deskList = deskProjects();
 const vocabulary = new Set(deskList.flatMap((project) => ratingCandidates(project).flatMap(stems)));
-const projects = deskList.map((project) => ({...project, rated: ratedFor(ratingCandidates(project), ratings, {vocabulary, relatedFrom: project.intent})}));
-const ratingsInfo = {updatedAt: ratings.updatedAt, bing: Object.keys(ratings.bing ?? {}).length > 0};
+const ideaRatings = {};
+const bank = WORD_BANK.flatMap((list) => list.words);
+const projects = deskList.map((project) => {
+  const ideas = ideasFor([
+    { source: 'yours', words: project.originalSuggestions },
+    { source: 'search', words: project.searchSuggestions },
+    { source: 'bank', words: bank },
+  ], ratings, { vocabulary, relatedFrom: project.intent });
+  for (const { sources, ...rating } of ideas) ideaRatings[normalize(rating.tag)] ??= rating;
+  return { ...project, ideas: ideas.map((idea) => [idea.tag, idea.sources]) };
+});
+const ratingsInfo = {updatedAt: ratings.updatedAt, bing: Object.keys(ratings.bing ?? {}).length > 0, rising: RISING};
 const count = projects.reduce((sum, project) => sum + project.images.length, 0);
-const queue = JSON.stringify({ projects, count, ratingsInfo, wordBank: WORD_BANK }).replace(/</g, '\\u003c');
+// what an article can be, and the case studies it can belong to (src/content/articles/, src/lib/article-kinds.js)
+const software = (await getCollection('software')).sort((a, b) => a.data.order - b.data.order).map(({ id, data }) => ({ id, title: data.title }));
+const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRatings, kinds: KINDS, software }).replace(/</g, '\\u003c');
 ---
 <!doctype html>
 <html lang="en">
@@ -18,198 +33,446 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, wordBank: WORD_BANK
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
-  <title>Image SEO focus mode — reddy.world</title>
-  <style>
-    :root { color-scheme: dark; font-family: Inter, system-ui, sans-serif; background: #0f0f0f; color: #f5f5f0; --gold: #c7a86d; --line: #41413e; }
+  <title>Portfolio desk — reddy.world</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600&display=swap">
+  <style is:global>
+    /* The desk: the picture on the left, one tab at a time on the right (Project · Picture · Preview).
+       Colours and type follow reddy.world (public/css/mainCSS.css there), so the previews look like the wall. */
+    :root {
+      color-scheme: dark;
+      --bg: #0f0f0f; --surface: #1a1a1a; --raised: #222220; --fg: #f5f5f0; --muted: #a9a69f; --line: #3a3a37;
+      --gold: #c7a86d; --gold-ink: #0f0f0f; --chip: #2b251a; --chip-ink: #e7cf9d;
+      --display: 'Cormorant Garamond', Georgia, serif; --body: Inter, system-ui, sans-serif;
+      font-family: var(--body); background: var(--bg); color: var(--fg);
+    }
     * { box-sizing: border-box; }
     body { margin: 0; overflow: hidden; }
-    button, input, textarea, select { font: inherit; }
-    :global(button), .project-link { min-height: 2.75rem; border: 1px solid var(--gold); padding: .65rem .9rem; color: var(--gold); background: transparent; cursor: pointer; text-decoration: none; }
-    :global(button.primary) { color: #0f0f0f; background: var(--gold); font-weight: 750; }
-    :global(button:hover), :global(button:focus-visible), .project-link:hover, .project-link:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
-    .top { height: 4.5rem; padding: .7rem 1rem; display: grid; grid-template-columns: minmax(10rem, 1fr) minmax(12rem, 2fr) auto; gap: 1rem; align-items: center; border-bottom: 1px solid var(--line); }
-    .brand { min-width: 0; }
-    .brand strong { display: block; font-family: Georgia, serif; font-size: 1.3rem; }
-    .brand small, #score { color: #aaa; }
-    .progress { display: grid; grid-template-columns: 1fr auto; gap: .35rem .75rem; align-items: center; }
-    .bar { grid-column: 1 / -1; height: .35rem; background: #2a2a28; }
+    button, input, textarea, select { font: inherit; color: inherit; }
+    button { min-height: 2.5rem; border: 1px solid var(--gold); padding: .5rem .85rem; color: var(--gold); background: transparent; cursor: pointer; }
+    button.primary { color: var(--gold-ink); background: var(--gold); font-weight: 650; }
+    button:disabled { opacity: .45; cursor: not-allowed; }
+    button.quiet { border-color: var(--line); color: var(--fg); }
+    button.link { min-height: 0; padding: 0; border: 0; color: var(--gold); font-size: .8rem; text-decoration: underline; text-underline-offset: 2px; }
+    button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible, [contenteditable]:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+    a { color: var(--gold); }
+    input, textarea, select { width: 100%; background: var(--surface); border: 1px solid #5a5a56; padding: .6rem .7rem; }
+    textarea { min-height: 4.5rem; resize: vertical; line-height: 1.45; }
+    label { display: grid; gap: .35rem; font-weight: 600; font-size: .9rem; }
+    .hint { color: var(--muted); font-size: .8rem; line-height: 1.4; font-weight: 400; margin: 0; }
+
+    /* header */
+    .top { height: 4rem; padding: .5rem 1rem; display: flex; align-items: center; gap: .75rem; border-bottom: 1px solid var(--line); }
+    .top .brand { font-family: var(--display); font-size: 1.35rem; font-weight: 600; white-space: nowrap; }
+    .nav { display: flex; align-items: center; gap: .4rem; min-width: 0; flex: 1 1 26rem; }
+    .nav select { min-width: 0; }
+    .nav button { flex: 0 0 auto; padding-inline: .6rem; }
+    .progress { display: grid; gap: .2rem; min-width: 11rem; font-size: .82rem; }
+    .bar { height: .3rem; background: #2a2a28; }
     .bar span { display: block; height: 100%; width: 0; background: var(--gold); transition: width .2s ease; }
-    .top-actions { display: flex; gap: .5rem; }
-    .workbench { height: calc(100dvh - 4.5rem); display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(22rem, .8fr); }
-    .stage { position: relative; min-width: 0; display: grid; place-items: center; padding: 1.25rem 1.25rem 6.25rem; background: #090909; }
-    .stage > img { display: block; max-width: 100%; max-height: calc(100dvh - 12rem); object-fit: contain; background: #151515; }
-    .counter { position: absolute; top: 1rem; left: 1rem; padding: .35rem .55rem; color: #eee; background: rgba(0,0,0,.75); font-variant-numeric: tabular-nums; }
-    .hero-pick { position: absolute; top: .75rem; right: 1rem; min-height: 2.5rem; background: rgba(0,0,0,.75); }
-    .hero-pick[aria-pressed="true"] { color: #0f0f0f; background: var(--gold); font-weight: 750; }
-    :global(.filmstrip button[data-hero="true"]) { position: relative; border-color: var(--gold); }
-    :global(.filmstrip button[data-hero="true"])::after { content: '★'; position: absolute; top: .1rem; right: .25rem; color: var(--gold); font-size: .9rem; text-shadow: 0 0 3px #000; }
-    .filmstrip { position: absolute; inset: auto 0 0; min-width: 0; height: 5.25rem; padding: .55rem .75rem; display: flex; align-items: center; gap: .45rem; overflow-x: auto; overflow-y: hidden; background: rgba(10,10,10,.94); border-top: 1px solid var(--line); }
-    :global(.filmstrip button) { flex: 0 0 auto; width: 4.25rem; height: 4.05rem; min-height: 0; padding: .15rem; overflow: hidden; border-color: #555; }
-    :global(.filmstrip button[aria-current="true"]) { border-color: var(--gold); outline: 2px solid var(--gold); outline-offset: -3px; }
-    :global(.filmstrip img) { display: block; width: 100%; height: 100%; object-fit: cover; }
-    .panel { min-width: 0; overflow-y: auto; border-left: 1px solid var(--line); padding: 1.1rem; display: grid; align-content: start; gap: .85rem; }
-    .project-head { display: grid; gap: .55rem; }
-    .project-head h1 { margin: 0; font-family: Georgia, serif; font-size: clamp(1.5rem, 3vw, 2.1rem); line-height: 1.05; }
-    .project-row { display: flex; gap: .6rem; align-items: center; }
-    #project-picker { min-width: 0; width: 100%; color: #f5f5f0; background: #1a1a1a; border: 1px solid #666; padding: .65rem; }
-    label { display: grid; gap: .4rem; font-weight: 700; }
-    label small, .hint { color: #aaa; font-weight: 400; line-height: 1.35; }
-    input, textarea { width: 100%; color: #f5f5f0; background: #1a1a1a; border: 1px solid #666; padding: .75rem; }
-    input:focus, textarea:focus, select:focus { outline: 2px solid var(--gold); outline-offset: 2px; }
-    textarea { min-height: 5.5rem; resize: vertical; line-height: 1.45; }
-    .inherited { min-height: 1.5rem; display: flex; flex-wrap: wrap; gap: .35rem; }
-    :global(.chip) { padding: .2rem .45rem; background: #2b251a; color: #e7cf9d; font-size: .8rem; }
-    .suggestion-block { display: grid; gap: .4rem; }
-    .suggestion-head { display: flex; justify-content: space-between; gap: .75rem; color: #aaa; font-size: .78rem; }
-    .suggestion-head + .suggestion-head { margin-top: .35rem; }
-    .mini-actions { display: flex; flex-wrap: wrap; gap: .65rem; }
-    .suggestions { display: flex; flex-wrap: wrap; gap: .35rem; }
-    :global(.suggestion-set) { display: inline-flex; align-items: stretch; border: 1px solid #555; border-radius: 999px; overflow: hidden; }
-    :global(button.suggestion) { min-height: 0; padding: .3rem .5rem; border: 0; color: #d7d7d1; font-size: .78rem; }
-    :global(button.suggestion[aria-pressed="true"]) { border-color: var(--gold); color: #111; background: var(--gold); }
-    :global(button.scope) { min-height: 0; padding: .25rem .38rem; border: 0; border-left: 1px solid #555; color: #bbb; font-size: .68rem; }
-    :global(button.scope:hover), :global(button.scope:focus-visible) { color: #111; background: var(--gold); outline: 0; }
-    button.add-all { min-height: 0; padding: 0; border: 0; color: var(--gold); font-size: .78rem; }
-    :global(.rating) { display: inline-flex; align-items: center; padding: 0 .45rem; border-left: 1px solid #555; color: var(--gold); font-size: .68rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
-    :global(.rating[data-level="none"]) { color: #888; }
-    :global(.rating-empty) { color: #888; font-size: .78rem; }
-    details.rated-ideas > summary { cursor: pointer; margin-bottom: .4rem; color: #aaa; font-size: .78rem; }
-    details.word-bank > summary { cursor: pointer; margin-bottom: .4rem; color: #aaa; font-size: .78rem; }
-    details.how-to-pick { color: #bbb; font-size: .78rem; line-height: 1.4; }
-    details.how-to-pick summary { cursor: pointer; color: var(--gold); }
-    details.how-to-pick ul { margin: .4rem 0; padding-left: 1.1rem; display: grid; gap: .25rem; }
-    details.how-to-pick small { color: #888; }
-    .effective { color: #aaa; font-size: .78rem; line-height: 1.4; }
-    .nearby { display: grid; gap: .3rem; color: #bbb; font-size: .78rem; line-height: 1.35; }
-    :global(.nearby q) { color: #ddd; }
-    details.description { border-block: 1px solid #292927; padding-block: .45rem; }
-    details.description summary { cursor: pointer; color: #ddd; font-weight: 700; }
-    details.description label { margin-top: .6rem; }
-    .credit-fields { margin: .6rem 0 0; padding: .45rem .6rem .6rem; border: 1px solid #3a3a38; display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: .5rem; }
-    .credit-fields legend { padding: 0 .3rem; color: #ddd; font-size: .8rem; font-weight: 700; }
-    details.credit .credit-fields label { margin-top: 0; align-content: end; }
-    details.credit input { font-weight: 400; }
-    details.credit .effective { margin: .5rem 0; }
-    .controls { display: grid; grid-template-columns: 1fr 1fr 1.35fr; gap: .55rem; }
-    .celebrate { min-height: 1.5rem; color: var(--gold); font-weight: 700; }
-    kbd { border: 1px solid #555; padding: .1rem .3rem; font-size: .78rem; color: #bbb; }
-    dialog { max-width: 34rem; color: #f5f5f0; background: #151515; border: 1px solid var(--gold); }
+    .saved { color: var(--muted); font-size: .72rem; display: flex; gap: .4rem; align-items: center; }
+    .saved button { min-height: 0; padding: .05rem .4rem; font-size: .72rem; }
+    .actions { display: flex; gap: .4rem; align-items: center; margin-left: auto; }
+    details.more { position: relative; }
+    details.more > summary { list-style: none; cursor: pointer; border: 1px solid var(--line); padding: .5rem .8rem; min-height: 2.5rem; display: flex; align-items: center; }
+    details.more > summary::-webkit-details-marker { display: none; }
+    details.more[open] > .menu { position: absolute; right: 0; top: calc(100% + .3rem); z-index: 5; display: grid; gap: .3rem; padding: .5rem; min-width: 12rem; background: var(--raised); border: 1px solid var(--line); }
+    .menu button { text-align: left; border-color: var(--line); color: var(--fg); }
+
+    /* workbench */
+    .workbench { height: calc(100dvh - 4rem); display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(24rem, 1fr); grid-template-rows: minmax(0, 1fr); }
+    .stage { min-width: 0; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; background: #090909; }
+    .stage-bar { display: flex; align-items: center; gap: .6rem; padding: .55rem .8rem; border-bottom: 1px solid var(--line); font-size: .85rem; }
+    .stage-bar .count { color: var(--muted); font-variant-numeric: tabular-nums; }
+    .stage-bar .spacer { flex: 1; }
+    .stage-bar a { white-space: nowrap; }
+    button.lead[aria-pressed="true"] { color: var(--gold-ink); background: var(--gold); font-weight: 650; }
+    /* the picture fits the space left between the bar and the filmstrip, whatever its shape */
+    .picture { position: relative; min-height: 0; overflow: hidden; }
+    .picture img { position: absolute; inset: 0; margin: auto; display: block; max-width: calc(100% - 2rem); max-height: calc(100% - 2rem); object-fit: contain; background: #151515; }
+    .filmstrip { display: flex; gap: .4rem; padding: .5rem .75rem; overflow-x: auto; border-top: 1px solid var(--line); }
+    .filmstrip button { flex: 0 0 auto; width: 4.2rem; height: 3.6rem; min-height: 0; padding: .12rem; border-color: #555; position: relative; }
+    .filmstrip button[aria-current="true"] { border-color: var(--gold); outline: 2px solid var(--gold); outline-offset: -3px; }
+    .filmstrip button[data-lead="true"]::after { content: '★'; position: absolute; top: .05rem; right: .2rem; color: var(--gold); text-shadow: 0 0 3px #000; font-size: .85rem; }
+    .filmstrip img { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+    /* panel and tabs */
+    .panel { min-width: 0; min-height: 0; display: grid; grid-template-rows: auto auto minmax(0, 1fr); border-left: 1px solid var(--line); }
+    .head { padding: .8rem 1rem .4rem; display: grid; gap: .2rem; }
+    .head small { color: var(--muted); }
+    .head h1 { margin: 0; font-family: var(--display); font-size: clamp(1.5rem, 2.6vw, 2.1rem); font-weight: 600; line-height: 1.05; text-wrap: balance; }
+    .head .meta { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; color: var(--muted); font-size: .8rem; }
+    .state { padding: .1rem .5rem; border: 1px solid var(--line); font-size: .75rem; }
+    .state[data-done="true"] { border-color: var(--gold); color: var(--gold); }
+    .tabs { display: flex; gap: 0; padding: 0 1rem; border-bottom: 1px solid var(--line); }
+    .tabs button { border: 0; border-bottom: 2px solid transparent; color: var(--muted); min-height: 2.6rem; padding: .4rem .9rem; }
+    .tabs button[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--gold); font-weight: 600; }
+    .tab { overflow-y: auto; padding: 1rem; display: grid; align-content: start; gap: 1.1rem; }
+    .tab[hidden] { display: none; }
+    section.block { display: grid; gap: .5rem; }
+    section.block > h2 { margin: 0; font-size: .78rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+
+    /* keyword chips */
+    .chips { display: flex; flex-wrap: wrap; gap: .35rem; align-items: center; padding: .4rem; min-height: 2.8rem; background: var(--surface); border: 1px solid #5a5a56; }
+    .chip { display: inline-flex; align-items: center; gap: .25rem; padding: .2rem .25rem .2rem .55rem; background: var(--chip); color: var(--chip-ink); font-size: .82rem; }
+    .chip button { min-height: 0; padding: 0 .3rem; border: 0; color: var(--chip-ink); font-size: .95rem; line-height: 1; }
+    .chip.inherited { background: transparent; border: 1px dashed #5a5a56; color: var(--muted); padding-right: .55rem; }
+    .chips input { flex: 1 1 8rem; min-width: 8rem; border: 0; padding: .3rem; background: transparent; }
+    .chips input:focus-visible { outline: 0; }
+    .ideas { display: flex; flex-wrap: wrap; gap: .35rem; }
+    .idea { display: inline-flex; align-items: stretch; border: 1px solid #555; border-radius: 999px; overflow: hidden; }
+    .idea button { min-height: 0; padding: .28rem .55rem; border: 0; color: #d7d7d1; font-size: .78rem; }
+    .idea button[aria-pressed="true"] { color: var(--gold-ink); background: var(--gold); }
+    .idea .rating { display: inline-flex; align-items: center; padding: 0 .45rem; border-left: 1px solid #555; color: var(--gold); font-size: .68rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .idea .rating[data-level="none"] { color: #888; }
+    .idea[data-rising="true"] { border-color: var(--gold); }
+    .subtabs button:disabled { opacity: .4; }
+    details.drawer { border: 1px solid var(--line); }
+    details.drawer > summary { cursor: pointer; padding: .55rem .7rem; font-size: .85rem; font-weight: 600; }
+    details.drawer > div { padding: 0 .7rem .7rem; display: grid; gap: .55rem; }
+    .subtabs { display: flex; flex-wrap: wrap; gap: .3rem; }
+    .subtabs button { min-height: 0; padding: .25rem .6rem; font-size: .78rem; border-color: var(--line); color: var(--muted); }
+    .subtabs button[aria-pressed="true"] { border-color: var(--gold); color: var(--gold); }
+    .row-label { color: var(--muted); font-size: .75rem; }
+
+    /* the post's own text */
+    .story { min-height: 10rem; max-height: 26rem; overflow-y: auto; padding: .7rem .85rem; background: var(--surface); border: 1px solid #5a5a56; line-height: 1.55; font-size: .92rem; }
+    .story p { margin: 0 0 .7em; }
+    .story h2, .story h3, .story h4 { font-family: var(--display); margin: .6em 0 .3em; }
+    .pics { display: inline-flex; gap: .2rem; align-items: center; margin: .15rem 0; padding: .2rem; border: 1px solid var(--line); background: #111; user-select: none; vertical-align: middle; }
+    .pics img { width: 2.4rem; height: 1.8rem; object-fit: cover; display: block; }
+
+    /* what WordPress had */
+    dl.wp { margin: 0; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: .35rem .6rem; font-size: .82rem; align-items: baseline; }
+    dl.wp dt { color: var(--muted); }
+    dl.wp dd { margin: 0; overflow-wrap: anywhere; }
+    .bottom { display: flex; gap: .5rem; flex-wrap: wrap; }
+    .note { color: var(--gold); min-height: 1.2rem; font-size: .85rem; }
+
+    /* previews: reddy.world's own look (overview.ts .tile/.work/.cap and .lead-row; [slug].astro) */
+    .preview { display: grid; gap: .5rem; }
+    .preview > h3 { margin: 0; font-size: .78rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+    .wall { background: #0f0f0f; border: 1px solid var(--line); padding: 1rem; display: grid; gap: 1rem; }
+    .tile { position: relative; width: min(100%, 20rem); overflow: hidden; background: #1a1a1a; }
+    .tile img { display: block; width: 100%; height: 100%; object-fit: cover; }
+    .tile .cap { position: absolute; inset: auto 0 0; padding: 1.6rem .7rem .55rem; background: linear-gradient(transparent, rgba(0,0,0,.82)); display: grid; gap: .1rem; }
+    .tile .cap .t { font-family: var(--display); font-size: 1.15rem; font-weight: 600; line-height: 1.1; color: #f5f5f0; }
+    .tile .cap .m { font-size: .72rem; color: rgba(245,245,240,.75); }
+    .lead-row { display: grid; grid-template-columns: 3fr 2fr; gap: 1rem; border-top: 2px solid #f5f5f0; border-bottom: 1px solid rgba(245,245,240,.25); padding: .8rem 0; }
+    .lead-row .lead-pic { overflow: hidden; background: #1a1a1a; }
+    .lead-row .lead-pic img { display: block; width: 100%; height: 100%; object-fit: cover; }
+    .lead-text { display: grid; align-content: start; gap: .35rem; }
+    .lead-text .kicker { font-size: .68rem; letter-spacing: .08em; text-transform: uppercase; color: rgba(245,245,240,.6); }
+    .lead-text .title { font-family: var(--display); font-size: 1.7rem; font-weight: 600; line-height: 1.05; margin: 0; }
+    .lead-text .line { font-family: var(--display); font-style: italic; font-size: 1.1rem; }
+    .lead-text .desc { color: rgba(245,245,240,.7); font-size: .85rem; line-height: 1.45; margin: 0; }
+    .lead-text .go { color: var(--gold); font-size: .82rem; }
+    .panel-lines { display: grid; gap: .25rem; border-left: 2px solid var(--gold); padding-left: .7rem; }
+    .panel-lines strong { font-family: var(--display); font-size: 1.35rem; font-weight: 600; }
+    .panel-lines span { color: rgba(245,245,240,.7); font-size: .82rem; }
+    .page { background: #0f0f0f; border: 1px solid var(--line); padding: 1rem; display: grid; gap: .45rem; }
+    .page .crumb { font-size: .72rem; color: rgba(245,245,240,.6); }
+    .page .when { font-family: ui-monospace, Consolas, monospace; font-size: .75rem; color: rgba(245,245,240,.7); }
+    .page h4 { margin: 0; font-family: var(--display); font-size: 2rem; font-weight: 600; line-height: 1.05; color: var(--gold); }
+    .page .sum { margin: 0; font-size: .95rem; line-height: 1.5; }
+    .page figure { margin: .3rem 0 0; }
+    .page figure img { display: block; width: 100%; max-height: 18rem; object-fit: cover; }
+    .page figcaption { font-size: .75rem; color: rgba(245,245,240,.7); margin-top: .3rem; }
+    .empty-note { color: #888; font-style: italic; }
+
+    /* an article: how it reads on the left, the editor on the right */
+    .workbench[hidden] { display: none; }
+    /* the reading view looks like the article's page (src/components/Article.astro, the paper colours of software.css) */
+    .reading { overflow-y: auto; padding: 1.5rem clamp(1rem, 4vw, 3rem) 3rem; display: grid; align-content: start; gap: .7rem; background: #f8f4e9; color: #24211c; }
+    .reading > * { max-width: 46rem; }
+    .reading .when { font-family: ui-monospace, Consolas, monospace; font-size: .72rem; color: #6d675c; }
+    .reading-title { margin: 0; font-family: var(--display); font-size: clamp(2rem, 4vw, 2.9rem); font-weight: 600; line-height: 1.1; color: #24211c; }
+    .reading .dek { margin: 0; font-family: var(--display); font-style: italic; font-size: 1.35rem; color: #3b362e; }
+    .reading .sum { margin: 0; font-size: 1.1rem; line-height: 1.6; }
+    .reading .empty-note { color: #8a8376; }
+    .reading-text { font-size: 1.02rem; line-height: 1.7; }
+    .reading-text h2, .reading-text h3, .reading-text h4 { font-family: var(--display); }
+    .reading-text a, .reading .dek a { color: #8b3a1a; }
+    .row2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: .6rem; }
+    .pic-list { display: grid; gap: .6rem; }
+    .pic-row { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); gap: .6rem; padding: .5rem; border: 1px solid var(--line); }
+    .pic-row img { width: 5.5rem; height: 4.2rem; object-fit: cover; background: #111; }
+    .pic-row textarea { min-height: 3.4rem; }
+    .pic-row .row { display: flex; flex-wrap: wrap; gap: .3rem; }
+    .pic-row .row button { min-height: 2rem; padding: .2rem .55rem; font-size: .78rem; }
+    .pic-row button[aria-pressed="true"] { color: var(--gold-ink); background: var(--gold); }
+    .add-pics { display: inline-flex; align-items: center; min-height: 2.5rem; padding: .5rem .85rem; border: 1px solid var(--gold); color: var(--gold); cursor: pointer; width: max-content; }
+    .add-pics:focus-within { outline: 2px solid var(--gold); outline-offset: 2px; }
+    .reading figure { margin: .4rem 0; }
+    .reading figure img, .reading .lead img { display: block; width: 100%; max-height: 28rem; object-fit: cover; }
+    .state[data-ready="true"] { border-color: var(--gold); color: var(--gold); }
+    .panel.article-panel { grid-template-rows: auto minmax(0, 1fr); }
+    .ov-articles ul { list-style: none; margin: .4rem 0; padding: 0; display: grid; gap: .3rem; }
+    .ov-articles h3 { margin: .6rem 0 0; font-family: var(--display); font-size: 1.35rem; font-weight: 600; }
+
+    dialog { max-width: 36rem; color: var(--fg); background: #151515; border: 1px solid var(--gold); }
     dialog.map-dialog { width: min(64rem, calc(100% - 2rem)); max-width: none; max-height: calc(100dvh - 2rem); }
     .map-tools { position: sticky; top: 0; display: flex; gap: .6rem; padding-bottom: .75rem; background: #151515; }
-    .map-tools input { flex: 1; }
     .keyword-map { display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: .45rem; }
-    :global(.keyword-row) { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: .3rem; padding: .45rem; border: 1px solid #3a3a38; }
-    :global(.keyword-row strong), :global(.keyword-row small) { display: block; overflow-wrap: anywhere; }
-    :global(.keyword-row small) { margin-top: .15rem; color: #aaa; }
+    .keyword-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: .3rem; padding: .45rem; border: 1px solid #3a3a38; }
+    .keyword-row small { display: block; color: var(--muted); }
     dialog::backdrop { background: rgba(0,0,0,.75); }
-    @media (max-width: 760px) {
+
+    /* the overview (src/lib/desk-sync.js draws it) */
+    .overview { position: fixed; inset: 0; z-index: 10; overflow-y: auto; background: var(--bg); }
+    .overview[hidden] { display: none; }
+    .ov-wrap { max-width: 44rem; margin: 0 auto; padding: 1.5rem 1rem 4rem; display: grid; gap: .9rem; }
+    .ov-head { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+    .ov-head h2 { margin: 0; font-family: var(--display); font-size: 2rem; font-weight: 600; }
+    .ov-next { min-height: 4rem; font-size: 1.25rem; text-align: left; }
+    .ov-big { margin: .5rem 0 0; font-size: 1.15rem; font-weight: 600; }
+    .ov-line { margin: 0; color: #ccc; line-height: 1.45; }
+    .ov-bar { display: flex; height: .7rem; background: #2a2a28; }
+    .ov-bar .ov-done { background: var(--gold); }
+    .ov-bar .ov-started { background: #7a6a48; }
+    .ov-portfolio { border-top: 1px solid var(--line); padding: .7rem 0; }
+    .ov-portfolio summary { cursor: pointer; display: grid; gap: .45rem; }
+    .ov-portfolio summary span { display: flex; justify-content: space-between; gap: 1rem; }
+    .ov-portfolio summary small { color: var(--muted); }
+    .ov-portfolio ul { list-style: none; margin: .6rem 0 0; padding: 0; display: grid; gap: .3rem; }
+    .ov-row { width: 100%; min-height: 0; display: grid; grid-template-columns: .8rem 1fr; gap: .1rem .6rem; text-align: left; border-color: #3a3a38; color: var(--fg); }
+    .ov-row small { grid-column: 2; color: var(--muted); }
+    .ov-dot { width: .7rem; height: .7rem; margin-top: .3rem; border: 1px solid var(--gold); border-radius: 50%; }
+    .ov-dot.ov-done { background: var(--gold); }
+    .ov-dot.ov-started { background: #7a6a48; }
+
+    @media (max-width: 900px) {
       body { overflow: auto; }
-      .top { height: auto; grid-template-columns: 1fr; }
-      .top-actions { flex-wrap: wrap; }
-      .workbench { height: auto; grid-template-columns: 1fr; }
-      .stage { min-height: 55dvh; }
-      .stage > img { max-height: 43dvh; }
-      .filmstrip { height: 4.75rem; }
-      .panel { overflow: visible; border: 0; border-top: 1px solid var(--line); }
+      .top { height: auto; flex-wrap: wrap; row-gap: .5rem; }
+      .top .brand { display: none; }
+      .nav { flex: 1 1 100%; }
+      .progress { flex: 1 1 10rem; min-width: 0; }
+      .workbench { height: auto; grid-template-columns: 1fr; grid-template-rows: auto; }
+      .stage { height: 52dvh; }
+      .stage-bar { padding: .4rem .6rem; gap: .5rem; }
+      .stage-bar .count { white-space: nowrap; }
+      .stage-bar button.lead { min-height: 2.2rem; padding: .3rem .6rem; font-size: .82rem; }
+      .panel { border-left: 0; border-top: 1px solid var(--line); }
+      .tab { overflow: visible; }
+      .lead-row { grid-template-columns: 1fr; }
     }
     @media (prefers-reduced-motion: reduce) { .bar span { transition: none; } }
   </style>
 </head>
 <body>
   <header class="top">
-    <div class="brand"><strong>Project SEO pass</strong><small id="score">One set of words per project</small></div>
-    <div class="progress"><span id="progress-label">0 of {projects.length} projects</span><span id="remaining">{projects.length} to go</span><div class="bar"><span id="bar"></span></div><span class="saved-line"><span data-desk-saved aria-live="polite">Saved in this browser</span><button data-desk-signin type="button" hidden>Sign in</button></span></div>
-    <div class="top-actions"><button id="open-overview" type="button">Overview</button><button id="map" type="button">Keyword map</button><button id="help" type="button">Keys</button><button id="load" type="button">Load export</button><input id="load-file" type="file" accept=".json,application/json" hidden><button id="export" class="primary" type="button">Export</button></div>
+    <span class="brand">Portfolio desk</span>
+    <nav class="nav" aria-label="Projects">
+      <button id="previous" class="quiet" type="button" title="Previous project (Alt+←)">←</button>
+      <select id="project-picker" aria-label="Project"></select>
+      <button id="next-project" class="quiet" type="button" title="Next project (Alt+→)">→</button>
+      <button id="new-article" class="quiet" type="button" title="A new article for the wall, kept as a draft">＋ Article</button>
+    </nav>
+    <div class="progress">
+      <span id="progress-label"></span>
+      <div class="bar"><span id="bar"></span></div>
+      <span class="saved"><span data-desk-saved aria-live="polite">Saved in this browser</span><button data-desk-signin type="button" hidden>Sign in</button></span>
+    </div>
+    <div class="actions">
+      <button id="open-overview" type="button">Overview</button>
+      <button id="send" class="primary" type="button">Send to site</button>
+      <details class="more"><summary>More</summary>
+        <div class="menu">
+          <button id="map" type="button">Keyword map</button>
+          <button id="help" type="button">How this desk works</button>
+          <button id="export" type="button">Export a copy</button>
+          <button id="load" type="button">Load an export</button>
+          <input id="load-file" type="file" accept=".json,application/json" hidden>
+        </div>
+      </details>
+    </div>
   </header>
 
-  <main class="workbench">
-    <section class="stage" aria-label="Picture being described">
-      <span class="counter" id="image-counter"></span>
-      <img id="picture" alt="Picture to describe">
-      <button id="make-hero" class="hero-pick" type="button" aria-pressed="false">☆ Make this the lead picture</button>
-      <nav class="filmstrip" id="filmstrip" aria-label="All images in this project"></nav>
+  <main class="workbench" id="project-bench">
+    <section class="stage" aria-label="Pictures of this project">
+      <div class="stage-bar">
+        <span class="count" id="image-counter"></span>
+        <span class="spacer"></span>
+        <button id="make-hero" class="lead" type="button" aria-pressed="false">☆ Make this the lead picture</button>
+        <a id="project-link" target="_blank" rel="noreferrer">Open the page ↗</a>
+      </div>
+      <div class="picture"><img id="picture" alt=""></div>
+      <nav class="filmstrip" id="filmstrip" aria-label="All pictures in this project"></nav>
     </section>
-    <form class="panel" id="editor">
-      <div class="project-head">
+
+    <section class="panel" aria-label="This project">
+      <div class="head">
         <small id="portfolio"></small>
         <h1 id="project-title"></h1>
-        <div class="project-row"><select id="project-picker" aria-label="Jump to project"></select><a id="project-link" class="project-link" target="_blank" rel="noreferrer">Open ↗</a></div>
+        <div class="meta"><span id="project-when"></span><span class="state" id="project-state"></span></div>
+      </div>
+      <div class="tabs" role="tablist" aria-label="What to work on">
+        <button role="tab" id="tab-project" aria-controls="pane-project" aria-selected="true" type="button">Project</button>
+        <button role="tab" id="tab-picture" aria-controls="pane-picture" aria-selected="false" type="button">Picture</button>
+        <button role="tab" id="tab-preview" aria-controls="pane-preview" aria-selected="false" type="button">Preview</button>
       </div>
 
-      <label>Shared keywords · added to every image in this project
-        <input id="project-tags" autocomplete="off" placeholder="stage, night, Amsterdam, wood">
-        <small id="project-scope-help">Choose these once; every image in this project inherits them.</small>
-      </label>
-      <div class="suggestion-block">
-        <div class="suggestion-head"><span>Your handwritten vocabulary from this post</span><button class="add-all" id="add-original-suggestions" type="button">Add your words</button></div>
-        <div class="suggestions" id="project-original-suggestions"></div>
-        <div class="suggestion-head"><span>Customer-search ideas for this project</span></div>
-        <div class="suggestions" id="project-search-suggestions"></div>
-      </div>
-      <details class="word-bank">
-        <summary>Word bank · how studios like yours describe their work</summary>
-        <div class="suggestion-block" id="word-bank"></div>
-      </details>
-      <details class="rated-ideas" open>
-        <summary>Search-rated ideas · ●●● = most read about</summary>
-        <div class="suggestion-block">
-        <div class="suggestions" id="project-rated-suggestions"></div>
-        <div class="suggestion-head"><span>Related, more read about</span></div>
-        <div class="suggestions" id="project-rated-related"></div>
-        <details class="how-to-pick">
-          <summary>How to pick · what the dots mean</summary>
-          <ul>
-            <li>The right people over many people: a word a client types when they need you (festival decor Amsterdam) beats a big, broad word (festival).</li>
-            <li>Local: put Amsterdam in one or two words, and add the Dutch word where clients search in Dutch.</li>
-            <li>Few and accurate: four to eight words that are true of every picture in the project.</li>
-            <li>Dots: readers of the topic's Wikipedia page in 30 days, English and Dutch (● 100+, ●● 1,000+, ●●● 10,000+). Interest in the topic, not searches for these exact words; a big number also means more competition.</li>
-          </ul>
-          <small id="rated-source"></small>
+      <div class="tab" role="tabpanel" id="pane-project" aria-labelledby="tab-project">
+        <section class="block">
+          <label for="summary">Short summary</label>
+          <textarea id="summary" placeholder="One or two lines in your own words"></textarea>
+          <p class="hint" id="summary-hint"></p>
+        </section>
+
+        <section class="block">
+          <h2>Keywords for every picture in this project</h2>
+          <div class="chips" id="project-chips"></div>
+          <p class="hint" id="project-keywords-hint"></p>
+          <details class="drawer" id="ideas">
+            <summary>Ideas</summary>
+            <div>
+              <div class="subtabs" id="idea-tabs"></div>
+              <div id="idea-list" class="ideas"></div>
+              <p class="hint" id="idea-hint"></p>
+            </div>
+          </details>
+        </section>
+
+        <section class="block">
+          <h2>The post's text</h2>
+          <div class="story" id="story" contenteditable="true" role="textbox" aria-multiline="true" aria-label="The post's text"></div>
+          <p class="hint">Edit the words; the picture blocks keep the pictures in place. <button class="link" id="story-reset" type="button">Undo my changes to the text</button></p>
+        </section>
+
+        <details class="drawer">
+          <summary>From WordPress</summary>
+          <div><dl class="wp" id="wp-project"></dl></div>
         </details>
-        </div>
-      </details>
-      <div class="inherited" id="inherited" aria-label="Project tags applied to this picture"></div>
 
-      <details class="description" id="description-panel">
-        <summary>Later round · star or outlier image</summary>
-        <label>What is visible in this picture?
-          <textarea id="description" placeholder="A concise description for someone who cannot see it…"></textarea>
-        </label>
-        <label>Extra keywords only for this image
-          <input id="image-tags" autocomplete="off" placeholder="close-up, blue light, Ryan welding">
-          <small>Optional for a standout image or one that differs from the rest.</small>
-        </label>
-        <div class="suggestion-block">
-          <div class="suggestion-head"><span>Your nearest handwritten descriptions</span><span class="mini-actions"><button class="add-all" id="add-nearby-suggestions" type="button">Add nearby words</button><button class="add-all" id="clear-image-tags" type="button">Clear image tags</button></span></div>
-          <div class="nearby" id="nearby"></div>
-          <div class="suggestion-head"><span>Nearby vocabulary + visual choices</span></div>
-          <div class="suggestions" id="image-suggestions"></div>
+        <div class="bottom">
+          <button id="done" class="primary" type="button">Done, next project →</button>
+          <button id="reopen" class="quiet" type="button" hidden>Not done yet</button>
         </div>
-      </details>
-      <details class="description credit" id="credit-panel">
-        <summary id="credit-summary">Photographer credit</summary>
-        <p class="hint" id="credit-open"></p>
-        <fieldset class="credit-fields"><legend>Every picture in this project by</legend>
-          <label><span>Photographer</span><input id="credit-project-name" autocomplete="off" placeholder="Name as it should appear"></label>
-          <label><span>Site <small>· optional</small></span><input id="credit-project-url" inputmode="url" autocomplete="off" placeholder="https://…"></label>
-        </fieldset>
-        <fieldset class="credit-fields"><legend>This picture by · instead of the project's</legend>
-          <label><span>Photographer</span><input id="credit-image-name" autocomplete="off" placeholder="Name as it should appear"></label>
-          <label><span>Site <small>· optional</small></span><input id="credit-image-url" inputmode="url" autocomplete="off" placeholder="https://…"></label>
-        </fieldset>
-        <p class="effective" id="credit-shown" aria-live="polite"></p>
-        <button id="next-uncredited" type="button">Next picture without a photographer →</button>
-      </details>
-      <div class="effective" id="effective" aria-live="polite"></div>
+        <p class="note" id="note" aria-live="polite"></p>
+      </div>
 
-      <div class="controls"><button id="previous" type="button">← Previous project</button><button id="skip" type="button">Skip project</button><button id="next" class="primary" type="submit">Project tagged + next →</button></div>
-      <div class="celebrate" id="celebrate" aria-live="polite"></div>
-      <p class="hint"><kbd>Enter</kbd> in shared keywords or <kbd>Ctrl</kbd> + <kbd>Enter</kbd>: finish project + next · click thumbnails to inspect the set · everything autosaves</p>
-    </form>
+      <div class="tab" role="tabpanel" id="pane-picture" aria-labelledby="tab-picture" hidden>
+        <section class="block">
+          <label for="description">What someone who can't see this picture should hear</label>
+          <textarea id="description" placeholder="Who or what is in it, and where"></textarea>
+          <p class="hint">This is the picture's alt text on the site.</p>
+        </section>
+        <section class="block">
+          <h2>Keywords for this picture only</h2>
+          <div class="chips" id="image-chips"></div>
+          <p class="hint">Dashed: the project's keywords, which every picture already has.</p>
+          <div class="ideas" id="image-ideas"></div>
+        </section>
+        <details class="drawer" id="credit-panel">
+          <summary id="credit-summary">Photographer</summary>
+          <div>
+            <label>This picture by <input id="credit-image-name" autocomplete="off" placeholder="Name as it should appear"></label>
+            <label>Their site <input id="credit-image-url" inputmode="url" autocomplete="off" placeholder="https://…"></label>
+            <label>Every picture in this project by <input id="credit-project-name" autocomplete="off" placeholder="Name as it should appear"></label>
+            <label>Their site <input id="credit-project-url" inputmode="url" autocomplete="off" placeholder="https://…"></label>
+            <p class="hint" id="credit-shown" aria-live="polite"></p>
+            <button id="next-uncredited" type="button">Next picture without a photographer →</button>
+          </div>
+        </details>
+        <details class="drawer" open>
+          <summary>From WordPress</summary>
+          <div><dl class="wp" id="wp-picture"></dl></div>
+        </details>
+      </div>
+
+      <div class="tab" role="tabpanel" id="pane-preview" aria-labelledby="tab-preview" hidden>
+        <div class="preview">
+          <h3>On the wall</h3>
+          <div class="wall" id="preview-wall"></div>
+        </div>
+        <div class="preview">
+          <h3>On its page</h3>
+          <div class="page" id="preview-page"></div>
+        </div>
+      </div>
+    </section>
   </main>
 
-  <dialog id="keyword-map" class="map-dialog"><h2>Current keyword map</h2><p>Words already present in the archive plus anything saved in this browser. Counts show how many projects currently use each phrase.</p><div class="map-tools"><input id="map-filter" type="search" placeholder="Filter keywords…" aria-label="Filter keyword map"><button id="close-map" type="button">Close</button></div><div class="keyword-map" id="map-list"></div></dialog>
-  <dialog id="keys"><h2>One clean pass</h2><p>Choose shared words for the whole project, then press <kbd>Enter</kbd> or <strong>Project tagged + next</strong>. Every image in that project inherits them.</p><p>Use the thumbnails to understand the full set. Individual descriptions and extra tags remain under <strong>Later round · star or outlier image</strong>; you can ignore those for now.</p><p>Suggestions are optional. A smaller accurate set is better than keyword stuffing.</p><p>The ★ marks the project's lead picture. Open another thumbnail and press <strong>Make this the lead picture</strong> to choose it; it heads the project page, its card and the wall after the next import.</p><button id="close-keys" class="primary" type="button">Got it</button></dialog>
+  <main class="workbench" id="article-bench" hidden>
+    <section class="stage" aria-label="How the article reads">
+      <div class="stage-bar"><span class="count">How it reads on its page</span><span class="spacer"></span><button id="back-to-projects" class="quiet" type="button">← Back to the projects</button></div>
+      <article class="reading" id="reading"></article>
+    </section>
+    <section class="panel article-panel" aria-label="This article">
+      <div class="head">
+        <small>Article</small>
+        <h1 id="article-heading"></h1>
+        <div class="meta"><span id="article-when"></span><span class="state" id="article-state">Draft: only you see it</span></div>
+      </div>
+      <div class="tab">
+        <section class="block">
+          <label for="article-title">Title</label>
+          <input id="article-title" autocomplete="off" placeholder="The article's title">
+        </section>
+        <section class="block row2">
+          <label>Kind <select id="article-kind"></select></label>
+          <label>Language <select id="article-lang"><option value="en">English</option><option value="nl">Nederlands</option></select></label>
+          <label>Year <input id="article-year" type="number" min="1990" max="2100" inputmode="numeric"></label>
+        </section>
+        <section class="block" id="article-person">
+          <h2>The person you interviewed</h2>
+          <label>The words before their name <input id="article-byline" autocomplete="off" placeholder="Inzichten van, In conversation with…"></label>
+          <div class="row2">
+            <label>Name <input id="person-name" autocomplete="off"></label>
+            <label>Their profile <input id="person-profile" inputmode="url" autocomplete="off" placeholder="https://…"></label>
+          </div>
+          <label>Role <input id="person-role" autocomplete="off" placeholder="As they describe it"></label>
+          <div class="row2">
+            <label>Organisation <input id="person-org" autocomplete="off"></label>
+            <label>Its site <input id="person-org-url" inputmode="url" autocomplete="off" placeholder="https://…"></label>
+          </div>
+          <p class="hint">The organisation's name in the role links to its site.</p>
+        </section>
+        <section class="block">
+          <label>Belongs to a case study <select id="article-related"><option value="">None</option></select></label>
+        </section>
+        <section class="block">
+          <label for="article-summary">Short summary</label>
+          <textarea id="article-summary" placeholder="One or two lines in your own words: shown on the wall and under the title"></textarea>
+        </section>
+        <section class="block">
+          <h2>The text</h2>
+          <div class="story" id="article-text" contenteditable="true" role="textbox" aria-multiline="true" aria-label="The article's text"></div>
+          <p class="hint">Paragraphs, headings, bold, italic, links and lists are kept. Ctrl+B and Ctrl+I work.</p>
+        </section>
+        <section class="block" aria-labelledby="pictures-title">
+          <h2 id="pictures-title">Pictures</h2>
+          <div class="pic-list" id="pic-list"></div>
+          <label class="add-pics">＋ Add pictures <input id="pic-input" type="file" accept="image/*" multiple hidden></label>
+          <p class="hint" id="pic-hint">They stay private in your account until the article is published. ★ makes one the lead picture across the top; "In the text" puts it where your cursor is.</p>
+        </section>
+        <section class="block">
+          <h2>Publishing</h2>
+          <p class="hint" id="publish-hint"></p>
+          <div class="bottom"><button id="publish-article" class="primary" type="button">Publish</button><button id="unpublish-article" class="quiet" type="button" hidden>Back to draft</button></div>
+          <p class="hint" id="article-address"></p>
+        </section>
+        <div class="bottom"><button id="delete-article" class="quiet" type="button">Delete this draft</button></div>
+        <p class="note" id="article-note" aria-live="polite"></p>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="keyword-map" class="map-dialog"><h2>Keyword map</h2><p class="hint">Every keyword in the archive and on this desk, and how many projects use it.</p><div class="map-tools"><input id="map-filter" type="search" placeholder="Filter keywords…" aria-label="Filter keywords"><button id="close-map" type="button">Close</button></div><div class="keyword-map" id="map-list"></div></dialog>
+  <dialog id="sent" aria-labelledby="sent-title">
+    <h2 id="sent-title">Send to site</h2>
+    <p id="sent-text"></p>
+    <p><a id="sent-link" target="_blank" rel="noreferrer"></a></p>
+    <button id="close-sent" class="primary" type="button">Close</button>
+  </dialog>
+  <dialog id="keys">
+    <h2>How this desk works</h2>
+    <p>Each project opens on what the site has today. Change anything; it saves by itself, to your account when you are signed in.</p>
+    <p><strong>Project</strong>: the short summary, the keywords every picture gets, and the post's text. <strong>Picture</strong>: what the picture shows, its own keywords and its photographer. <strong>Preview</strong>: how it looks on the wall and on its page.</p>
+    <p>The ★ is the lead picture: it heads the page, the card and the wall. Keys: Alt+← and Alt+→ change project, Ctrl+Enter marks it done.</p>
+    <p><strong>＋ Article</strong> starts a new piece for the wall. It stays a draft, only for you and saved to your account, until you publish it.</p>
+    <button id="close-keys" class="primary" type="button">Got it</button>
+  </dialog>
   <script type="application/json" id="queue-data" set:html={queue}></script>
   <script type="application/json" id="credit-data" set:html={archiveCredits()}></script>
   <script is:inline>
@@ -217,8 +480,8 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, wordBank: WORD_BANK
     const STORE = 'reddy-world-image-metadata-v4';
     const PREVIOUS = 'reddy-world-image-metadata-v3';
     const OLDER = 'reddy-world-image-metadata-v2';
-    const LEGACY = 'reddy-world-image-descriptions-v1';
-    const empty = {projects: {}, images: {}, cursor: 0, session: 0};
+    // no saved place yet: the desk opens on the first project that is not done (set below)
+    const empty = {projects: {}, images: {}, session: 0};
     const read = () => {
       try {
         const saved = localStorage.getItem(STORE) || localStorage.getItem(PREVIOUS) || localStorage.getItem(OLDER) || '{}';
@@ -226,240 +489,393 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, wordBank: WORD_BANK
       } catch { return {...empty}; }
     };
     const state = read();
-    if (!Object.keys(state.images).length) {
-      try { const old = JSON.parse(localStorage.getItem(LEGACY) || '{}'); for (const [key, description] of Object.entries(old)) state.images[key] = {description, tags: ''}; } catch {}
-    }
     const flat = DATA.projects.flatMap((project, projectIndex) => project.images.map((image, imageIndex) => ({project, projectIndex, image, imageIndex})));
-    const $ = (id) => document.querySelector(`#${id}`);
-    const tags = (value = '') => [...new Map(value.split(',').map((tag) => tag.trim()).filter(Boolean).map((tag) => [tag.toLowerCase(), tag])).values()];
-    const putTags = (id, values) => { $(id).value = tags(values.join(', ')).join(', '); };
+    const $ = (id) => document.getElementById(id);
+    const el = (tag, props = {}, ...children) => { const node = Object.assign(document.createElement(tag), props); node.append(...children.filter((c) => c !== null && c !== undefined && c !== false)); return node; };
+    const tags = (value = '') => [...new Map(String(value).split(',').map((tag) => tag.trim()).filter(Boolean).map((tag) => [tag.toLowerCase(), tag])).values()];
+    const same = (a, b) => a.toLowerCase() === b.toLowerCase();
     // desk-sync.js (below) stamps each change and copies it to Ryan's account when he is signed in
-    const save = () => { window.deskSync?.stamp(state); localStorage.setItem(STORE, JSON.stringify(state)); window.deskSync?.saved(); };
+    const save = () => { window.deskSync?.stamp(state); try { localStorage.setItem(STORE, JSON.stringify(state)); } catch {} window.deskSync?.saved(); };
     const current = () => flat[state.cursor] ?? flat[0];
+    const projectRecord = (project) => state.projects[project.id] ?? {};
     const recordFor = (image) => state.images[image.key] ?? state.images[image.url] ?? {};
-    // the lead picture: Ryan's choice on this desk, else the one the post has today
-    const heroOf = (project) => state.projects[project.id]?.hero || project.hero;
-    for (const project of DATA.projects) {
-      if (state.projects[project.id]?.reviewed === undefined && project.images.every((image) => recordFor(image).reviewed)) {
-        state.projects[project.id] = {...state.projects[project.id], reviewed: true};
-      }
+
+    // What the desk shows: Ryan's change when he made one, else what the archive has today.
+    // A record is only written once he changes something, so opening a project changes nothing.
+    // A blank field counts as unchanged: earlier desks wrote blanks just by showing a project (and
+    // "Send to site" reads blanks the same way). A field Ryan empties on purpose is named in `cleared`.
+    const isCleared = (record, field) => Array.isArray(record?.cleared) && record.cleared.includes(field);
+    const pick = (record, field, base) => (isCleared(record, field) ? '' : String(record[field] ?? '').trim() ? record[field] : base);
+    // the record with its new value, `cleared` kept in step: emptying a field the archive fills clears it on purpose
+    function withValue(record, field, value, base) {
+      const cleared = (record?.cleared ?? []).filter((name) => name !== field);
+      if (!String(value ?? '').trim() && String(base ?? '').trim()) cleared.push(field);
+      const next = {...record, [field]: value};
+      if (cleared.length) next.cleared = cleared;
+      else delete next.cleared;
+      return next;
     }
-    const completed = () => DATA.projects.filter((project) => state.projects[project.id]?.reviewed).length;
+    const projectTags = (project) => tags(pick(projectRecord(project), 'tags', project.keywords.join(', ')));
+    const isDone = (project) => Boolean(projectRecord(project).reviewed ?? project.done);
+    const summaryOf = (project) => pick(projectRecord(project), 'summary', project.summary);
+    const ownKeywords = (project, image) => image.keywords.filter((word) => !project.keywords.some((shared) => same(shared, word)));
+    const imageTags = (project, image) => tags(pick(recordFor(image), 'tags', ownKeywords(project, image).join(', ')));
+    const descriptionOf = (image) => pick(recordFor(image), 'description', image.description || image.existingDescription || image.alt || '');
+    const heroOf = (project) => projectRecord(project).hero || project.hero;
+    function setProject(project, field, value, base) {
+      const record = state.projects[project.id];
+      if (!record && value === base) return;
+      state.projects[project.id] = withValue(record, field, value, base);
+      save();
+    }
+    function setImage(image, field, value, base) {
+      const record = state.images[image.key] ?? state.images[image.url];
+      if (!record && value === base) return;
+      state.images[image.key] = withValue(record, field, value, base);
+      save();
+    }
+    const completed = () => DATA.projects.filter(isDone).length;
     const firstIncomplete = () => {
-      const projectIndex = DATA.projects.findIndex((project) => !state.projects[project.id]?.reviewed);
+      const projectIndex = DATA.projects.findIndex((project) => !isDone(project));
       return projectIndex < 0 ? 0 : flat.findIndex((item) => item.projectIndex === projectIndex);
     };
     if (!Number.isInteger(state.cursor) || !flat[state.cursor]) state.cursor = Math.max(0, firstIncomplete());
-    window.imageDesk = {DATA, STORE, state, flat, render: (options) => render(options)};
+    // the edit bar on a project page links here as #project=<id>: open that project, and keep it open
+    const linked = decodeURIComponent((location.hash.match(/^#project=(.+)$/) ?? [])[1] ?? '');
+    const linkedIndex = DATA.projects.findIndex((project) => project.id === linked);
+    if (linkedIndex >= 0) {
+      state.cursor = flat.findIndex((item) => item.projectIndex === linkedIndex);
+      state.article = null;
+      history.replaceState(null, '', location.pathname + location.search);
+    }
+    window.imageDesk = {DATA, STORE, state, flat, pinned: linkedIndex >= 0, render: (options) => render(options)};
 
-    for (const [index, project] of DATA.projects.entries()) $('project-picker').add(new Option(`${project.title} · ${project.images.length}`, String(index)));
-
-    function collect() {
-      const item = current();
-      state.projects[item.project.id] = {...state.projects[item.project.id], tags: $('project-tags').value.trim()};
-      state.images[item.image.key] = {...recordFor(item.image), description: $('description').value.trim(), tags: $('image-tags').value.trim()};
-      save();
-    }
-    function changeTag(inputId, tag, toggle = false) {
-      const values = tags($(inputId).value);
-      const at = values.findIndex((value) => value.toLowerCase() === tag.toLowerCase());
-      if (at >= 0 && toggle) values.splice(at, 1);
-      else if (at < 0) values.push(tag);
-      putTags(inputId, values);
-      collect();
-      refreshKeywords();
-    }
-    function renderTagButtons(containerId, suggestions, inputId) {
-      const projectSelected = new Set(tags($('project-tags').value).map((tag) => tag.toLowerCase()));
-      const imageSelected = new Set(tags($('image-tags').value).map((tag) => tag.toLowerCase()));
-      $(containerId).replaceChildren(...suggestions.map((tag) => {
-        const wrap = Object.assign(document.createElement('span'), {className: 'suggestion-set'});
-        const button = Object.assign(document.createElement('button'), {type: 'button', className: 'suggestion', textContent: tag});
-        button.setAttribute('aria-pressed', String((inputId === 'project-tags' ? projectSelected : imageSelected).has(tag.toLowerCase())));
-        button.title = `Toggle “${tag}” in ${inputId === 'project-tags' ? 'every image in this project' : 'this image only'}`;
-        button.addEventListener('click', () => {
-          changeTag(inputId, tag, true);
-          $(inputId).focus({preventScroll: true});
-        });
-        wrap.append(button);
-        return wrap;
-      }));
-    }
-    // the third column: like renderTagButtons, with each word's rating beside it (src/lib/keyword-ratings.js)
-    function renderRatedButtons(containerId, items, emptyText) {
-      const selected = new Set(tags($('project-tags').value).map((tag) => tag.toLowerCase()));
-      if (!items.length) {
-        $(containerId).replaceChildren(Object.assign(document.createElement('span'), {className: 'rating-empty', textContent: emptyText}));
-        return;
+    // ---------- tabs ----------
+    let tab = 'project';
+    function showTab(name) {
+      tab = name;
+      for (const t of ['project', 'picture', 'preview']) {
+        $(`tab-${t}`).setAttribute('aria-selected', String(t === name));
+        $(`pane-${t}`).hidden = t !== name;
       }
-      $(containerId).replaceChildren(...items.map((item) => {
-        const wrap = Object.assign(document.createElement('span'), {className: 'suggestion-set'});
-        const button = Object.assign(document.createElement('button'), {type: 'button', className: 'suggestion', textContent: item.tag});
-        button.setAttribute('aria-pressed', String(selected.has(item.tag.toLowerCase())));
-        button.title = `Toggle “${item.tag}” in every image in this project · ${item.title}`;
-        button.addEventListener('click', () => {
-          changeTag('project-tags', item.tag, true);
-          $('project-tags').focus({preventScroll: true});
-        });
-        const badge = Object.assign(document.createElement('span'), {className: 'rating', textContent: item.badge, title: item.title});
-        badge.dataset.level = item.level === null ? 'none' : String(item.level);
-        if (item.bing !== null && item.bing !== undefined) badge.textContent += ` · Bing ${item.bing}`;
-        wrap.append(button, badge);
-        return wrap;
-      }));
+      if (name === 'preview') renderPreview();
     }
-    function renderFilmstrip(project, projectIndex, imageIndex) {
-      const start = flat.findIndex((item) => item.projectIndex === projectIndex);
-      $('filmstrip').replaceChildren(...project.images.map((image, index) => {
-        const button = Object.assign(document.createElement('button'), {type: 'button', title: `Open image ${index + 1} of ${project.images.length}`});
-        const lead = image.url === heroOf(project);
-        button.dataset.hero = String(lead);
-        button.setAttribute('aria-label', `Open image ${index + 1} of ${project.images.length}${lead ? ', the lead picture' : ''}`);
-        button.setAttribute('aria-current', String(index === imageIndex));
-        const thumbnail = Object.assign(document.createElement('img'), {src: image.src, alt: '', loading: 'lazy'});
-        button.append(thumbnail);
-        button.addEventListener('click', () => { collect(); state.cursor = start + index; render(); });
+    for (const t of ['project', 'picture', 'preview']) $(`tab-${t}`).addEventListener('click', () => showTab(t));
+
+    // ---------- keyword chips ----------
+    // The callers bind onAdd and onRemove to the project or picture the chips were drawn for, so a word still
+    // in the box when Ryan moves on lands where he typed it, not on the next project.
+    function renderChips(containerId, words, {inherited = [], onRemove, onAdd, placeholder}) {
+      const input = el('input', {type: 'text', placeholder, autocomplete: 'off'});
+      input.setAttribute('aria-label', placeholder);
+      const refocus = () => $(containerId).querySelector('input')?.focus();
+      input.addEventListener('keydown', (event) => {
+        if ((event.key === 'Enter' || event.key === ',') && input.value.trim()) {
+          event.preventDefault();
+          const word = input.value.trim();
+          input.value = '';
+          onAdd(word);
+          refocus();
+        } else if (event.key === 'Backspace' && !input.value && words.length) {
+          onRemove(words.at(-1));
+          refocus();
+        }
+      });
+      // leaving the box keeps the word, but quietly: no redraw under the pointer (a click on × or an idea
+      // still lands) and the focus stays where Ryan put it
+      input.addEventListener('blur', () => {
+        const word = input.value.trim();
+        if (!word) return;
+        input.value = '';
+        onAdd(word, {quiet: true});
+      });
+      $(containerId).replaceChildren(
+        ...inherited.map((word) => el('span', {className: 'chip inherited', textContent: word, title: 'From the project'})),
+        ...words.map((word) => {
+          const remove = el('button', {type: 'button', textContent: '×', title: `Remove “${word}”`});
+          remove.setAttribute('aria-label', `Remove ${word}`);
+          remove.addEventListener('click', () => { onRemove(word); refocus(); });
+          return el('span', {className: 'chip'}, word, remove);
+        }),
+        input,
+      );
+      return input;
+    }
+    const toggled = (words, word) => (words.some((w) => same(w, word)) ? words.filter((w) => !same(w, word)) : [...words, word]);
+    // a quiet change is drawn a moment later, unless Ryan is typing in those chips again
+    const later = (containerId, draw) => setTimeout(() => { if (!$(containerId).contains(document.activeElement)) draw(); }, 300);
+    function setProjectTags(list, project = current().project, {quiet = false} = {}) {
+      setProject(project, 'tags', list.join(', '), project.keywords.join(', '));
+      const draw = () => { if (current().project === project) { renderProjectWords(); renderPreview(); } };
+      if (quiet) later('project-chips', draw);
+      else draw();
+    }
+    function setImageTags(list, project = current().project, image = current().image, {quiet = false} = {}) {
+      setImage(image, 'tags', list.join(', '), ownKeywords(project, image).join(', '));
+      const draw = () => { if (current().image === image) renderImageWords(); };
+      if (quiet) later('image-chips', draw);
+      else draw();
+    }
+    function ideaButton(word, pressed, onClick, rating) {
+      const button = el('button', {type: 'button', textContent: word});
+      button.setAttribute('aria-pressed', String(pressed));
+      button.addEventListener('click', onClick);
+      const wrap = el('span', {className: 'idea'}, button);
+      if (rating) {
+        const badge = el('span', {className: 'rating', textContent: rating.badge + (rating.bing != null ? ` · Bing ${rating.bing}` : ''), title: rating.title});
+        badge.dataset.level = rating.level === null ? 'none' : String(rating.level);
+        wrap.append(badge);
+        wrap.dataset.rising = String(typeof rating.trend === 'number' && rating.trend >= (DATA.ratingsInfo?.rising ?? 0.25));
+      }
+      return wrap;
+    }
+
+    // ---------- the Project tab ----------
+    // Every idea in one list, all rated, most searched or read first (Ryan, 2026-10-26: "why seperated?
+    // bring them together, and please can we get them all rated?"). The filters only narrow it.
+    const IDEA_FILTERS = [
+      {id: 'all', label: 'All'},
+      {id: 'rising', label: 'Rising ↑'},
+      {id: 'yours', label: 'Your words'},
+      {id: 'search', label: 'Clients search'},
+      {id: 'related', label: 'Related'},
+      {id: 'bank', label: 'Word bank'},
+    ];
+    const FROM = {yours: 'from your captions', search: 'what clients search for', related: 'related, more read', bank: 'your word lists'};
+    const key = (word) => String(word).toLowerCase().replace(/\s+/g, ' ').trim();
+    let ideaFilter = 'all';
+    function renderIdeas() {
+      const {project} = current();
+      const chosen = projectTags(project);
+      const has = (word) => chosen.some((w) => same(w, word));
+      const add = (word) => () => setProjectTags(toggled(projectTags(current().project), word));
+      const ideas = project.ideas.map(([tag, sources]) => ({...(DATA.ratings[key(tag)] ?? {tag, badge: '', level: null, trend: null}), tag, sources}));
+      const rising = (idea) => typeof idea.trend === 'number' && idea.trend >= DATA.ratingsInfo.rising;
+      $('idea-tabs').replaceChildren(...IDEA_FILTERS.map((f) => {
+        const n = f.id === 'all' ? ideas.length : f.id === 'rising' ? ideas.filter(rising).length : ideas.filter((idea) => idea.sources.includes(f.id)).length;
+        const button = el('button', {type: 'button', textContent: `${f.label} ${n}`});
+        button.setAttribute('aria-pressed', String(f.id === ideaFilter));
+        button.disabled = !n && f.id !== 'all';
+        button.addEventListener('click', () => { ideaFilter = f.id; renderIdeas(); });
         return button;
       }));
-      requestAnimationFrame(() => $('filmstrip').querySelector('[aria-current="true"]')?.scrollIntoView({block: 'nearest', inline: 'center'}));
+      const shown = ideas.filter((idea) => ideaFilter === 'all' || (ideaFilter === 'rising' ? rising(idea) : idea.sources.includes(ideaFilter)));
+      $('idea-list').replaceChildren(...(shown.length
+        ? shown.map((idea) => ideaButton(idea.tag, has(idea.tag), add(idea.tag), idea.badge ? {...idea, title: [idea.title, idea.sources.map((s) => FROM[s]).join(', ')].filter(Boolean).join(' · ')} : null))
+        : [el('span', {className: 'hint', textContent: 'Nothing here for this project.'})]));
+      $('idea-hint').textContent = `Dots: readers of the topic on Wikipedia in 30 days (● 100+, ●● 1,000+, ●●● 10,000+). ≈: a phrase rated by its closest page. ↑: rising, a quarter or more above a year before, against Wikipedia as a whole${DATA.ratingsInfo.bing ? '; Bing: searches in the Netherlands in 4 weeks' : ''}.${DATA.ratingsInfo.updatedAt ? ` Numbers from ${new Date(DATA.ratingsInfo.updatedAt).toLocaleDateString('en-GB', {day: 'numeric', month: 'short'})}.` : ''}`;
     }
-    function refreshKeywords() {
-      const {project, image} = current();
-      const projectTags = tags($('project-tags').value);
-      const imageTags = tags($('image-tags').value);
-      $('inherited').replaceChildren(...projectTags.map((tag) => Object.assign(document.createElement('span'), {className: 'chip', textContent: tag})));
-      renderTagButtons('project-original-suggestions', project.originalSuggestions, 'project-tags');
-      renderTagButtons('project-search-suggestions', project.searchSuggestions, 'project-tags');
-      // the word bank: one row per list, each word a toggle for the whole project
-      $('word-bank').replaceChildren(...DATA.wordBank.flatMap((list, index) => {
-        const head = Object.assign(document.createElement('div'), {className: 'suggestion-head'});
-        head.append(Object.assign(document.createElement('span'), {textContent: list.source}));
-        const row = Object.assign(document.createElement('div'), {className: 'suggestions', id: `word-bank-${index}`});
-        return [head, row];
-      }));
-      DATA.wordBank.forEach((list, index) => renderTagButtons(`word-bank-${index}`, list.words, 'project-tags'));
-      renderRatedButtons('project-rated-suggestions', project.rated?.hasData ? project.rated.rated : [], 'No data yet: the ratings come with the next build.');
-      renderRatedButtons('project-rated-related', project.rated?.related ?? [], project.rated?.hasData ? 'None that more people read about.' : 'No data yet.');
-      renderTagButtons('image-suggestions', image.suggestions, 'image-tags');
-      $('nearby').replaceChildren(...(image.nearby.length
-        ? image.nearby.map(({image: number, text}) => {
-          const line = document.createElement('span');
-          line.append(`Image ${number}: `, Object.assign(document.createElement('q'), {textContent: text}));
-          return line;
-        })
-        : [Object.assign(document.createElement('span'), {textContent: 'No other handwritten description in this post yet.'})]));
-      const effective = tags([...projectTags, ...imageTags].join(', '));
-      $('effective').textContent = effective.length ? `Every image in this project exports with ${projectTags.length} shared keyword${projectTags.length === 1 ? '' : 's'}${imageTags.length ? `; this image has ${imageTags.length} extra` : ''}: ${effective.join(' · ')}` : 'No keywords yet. Pick a small, accurate shared set for this project.';
+    function renderProjectWords() {
+      const {project} = current();
+      const words = projectTags(project);
+      const input = renderChips('project-chips', words, {
+        placeholder: 'Add a keyword',
+        onRemove: (word) => setProjectTags(projectTags(project).filter((w) => !same(w, word)), project),
+        onAdd: (word, options) => {
+          const now = projectTags(project);
+          setProjectTags([...now, ...tags(word).filter((w) => !now.some((x) => same(x, w)))], project, options);
+        },
+      });
+      const record = projectRecord(project);
+      const changed = isCleared(record, 'tags') || Boolean(String(record.tags ?? '').trim());
+      $('project-keywords-hint').textContent = words.length
+        ? (changed ? 'Your keywords on this desk. Every picture in the project gets them.' : 'The keywords the site has for this project today.')
+        : 'No keywords yet. Four to eight accurate words are better than many.';
+      renderIdeas();
+      return input;
     }
-    function updateProgress() {
-      const done = completed();
-      $('progress-label').textContent = `${done} of ${DATA.projects.length} projects`;
-      $('remaining').textContent = done === DATA.projects.length ? 'Complete!' : `${DATA.projects.length - done} to go`;
-      $('bar').style.width = `${done / DATA.projects.length * 100}%`;
-      $('score').textContent = state.session ? `${state.session} project${state.session === 1 ? '' : 's'} tagged this session` : 'One set of words per project';
-      document.title = `${done}/${DATA.projects.length} projects · ${current().project.title}`;
-    }
-    function render({focus = true} = {}) {
-      const {project, projectIndex, image, imageIndex} = current();
-      const record = recordFor(image);
-      const projectRecord = state.projects[project.id] ?? {};
-      $('picture').src = image.src;
-      $('picture').srcset = image.srcset;
-      $('picture').width = image.width || 1;
-      $('picture').height = image.height || 1;
-      $('picture').alt = `${project.title}, picture ${imageIndex + 1}, ready to describe`;
-      $('portfolio').textContent = project.portfolio;
-      $('project-title').textContent = project.title;
-      $('project-picker').value = String(projectIndex);
-      $('project-link').href = project.href;
-      $('project-scope-help').textContent = `Choose these once; ${project.images.length === 1 ? 'the image' : `all ${project.images.length} images`} in this project inherit${project.images.length === 1 ? 's' : ''} them.`;
-      $('project-tags').value = projectRecord.tags ?? '';
-      $('description').value = record.description ?? image.existingDescription ?? '';
-      $('description-panel').querySelector('summary').textContent = image.existingDescription ? 'Later round · original description loaded' : 'Later round · star or outlier image';
-      $('image-tags').value = record.tags ?? '';
-      $('image-counter').textContent = `${imageIndex + 1} / ${project.images.length}`;
-      const lead = image.url === heroOf(project);
-      $('make-hero').setAttribute('aria-pressed', String(lead));
-      $('make-hero').textContent = lead ? '★ Lead picture of this project' : '☆ Make this the lead picture';
-      renderFilmstrip(project, projectIndex, imageIndex);
-      refreshKeywords();
-      renderCredit();
-      updateProgress();
-      save();
-      if (focus) $('project-tags').focus({preventScroll: true});
-    }
-    function moveProject(delta, complete = false) {
-      const {project, projectIndex} = current();
-      collect();
-      const projectRecord = state.projects[project.id];
-      if (complete && !projectRecord.reviewed) {
-        projectRecord.reviewed = true;
-        state.session++;
-        const cheers = ['Project locked in.', 'One whole image set made findable.', 'Nice. Keep rolling.', 'Shared words saved.', 'That project is tagged.'];
-        $('celebrate').textContent = cheers[state.session % cheers.length];
-      } else $('celebrate').textContent = '';
-      save();
-      const nextProject = (projectIndex + delta + DATA.projects.length) % DATA.projects.length;
-      state.cursor = flat.findIndex((item) => item.projectIndex === nextProject);
-      render();
-    }
-    function keywordRows() {
-      const map = new Map();
-      const add = (tag, projectId, imageKey) => {
-        const key = tag.toLowerCase();
-        const entry = map.get(key) ?? {tag, projects: new Set(), images: new Set()};
-        entry.projects.add(projectId);
-        if (imageKey) entry.images.add(imageKey);
-        map.set(key, entry);
-      };
-      for (const project of DATA.projects) {
-        for (const tag of [...project.currentKeywords, ...tags(state.projects[project.id]?.tags)]) add(tag, project.id);
-        for (const image of project.images) for (const tag of tags(recordFor(image).tags)) add(tag, project.id, image.key);
+
+    // A post's text keeps the tags src/lib/safe-output.js storyHtml keeps on the server: an h1 becomes an h2
+    // and an h5 or h6 an h4, as the page shows them; a block of text (a div, a table cell) becomes a
+    // paragraph, so lines don't run together; pictures, scripts and pasted styles go; other tags go, their words stay.
+    const ALLOWED = new Set(['P', 'H2', 'H3', 'H4', 'STRONG', 'B', 'EM', 'I', 'A', 'UL', 'OL', 'LI', 'BR', 'BLOCKQUOTE', 'HR']);
+    const RENAME = {H1: 'H2', H5: 'H4', H6: 'H4'};
+    const BLOCKS = new Set(['DIV', 'SECTION', 'ARTICLE', 'HEADER', 'FOOTER', 'ADDRESS', 'PRE', 'TABLE', 'THEAD', 'TBODY', 'TFOOT', 'TR', 'TD', 'TH', 'FIGCAPTION', 'DL', 'DT', 'DD']);
+    const DROP = new Set(['SCRIPT', 'STYLE', 'IFRAME', 'OBJECT', 'EMBED', 'TEMPLATE', 'SVG', 'MATH', 'IMG', 'PICTURE', 'VIDEO', 'AUDIO', 'CANVAS', 'NOSCRIPT', 'FORM', 'INPUT', 'BUTTON', 'SELECT', 'TEXTAREA']);
+    // a link goes to a web address or to a page of this site; nothing that a browser could read as another host
+    const safeHref = (href) => {
+      const value = String(href ?? '').trim();
+      if (/[\u0000-\u001f\u007f\\]/.test(value)) return false;
+      return /^https?:\/\/[^/]/i.test(value) || /^\/(?!\/)/.test(value);
+    };
+    const holdsBlocks = (node) => [...node.children].some((c) => /^(P|H[1-6]|UL|OL|BLOCKQUOTE|HR|FIGURE|TABLE|DIV)$/.test(c.tagName) || c.classList.contains('pics'));
+    // `pictures(media)`: what a <figure data-media> becomes (the desk's picture block); without it the figure stays, empty.
+    // An article's own picture is <figure data-picture="id">; `photos(id)` makes its block, else it stays a figure.
+    function tidy(root, pictures = null, photos = null) {
+      for (const child of [...root.childNodes]) {
+        if (child.nodeType === 8) { child.remove(); continue; }
+        if (child.nodeType !== 1) continue;
+        const tag = child.tagName.toUpperCase();
+        const media = child.dataset?.media;
+        if ((tag === 'FIGURE' || child.classList.contains('pics')) && media !== undefined && /^[\d,\s]+$/.test(media)) {
+          if (pictures) child.replaceWith(pictures(media));
+          else if (tag === 'FIGURE') { child.replaceChildren(); for (const attr of [...child.attributes]) if (attr.name !== 'data-media') child.removeAttribute(attr.name); }
+          continue;
+        }
+        const photo = child.dataset?.picture;
+        if ((tag === 'FIGURE' || child.classList.contains('pics')) && photo !== undefined && /^[a-z0-9]+$/i.test(photo)) {
+          if (photos) child.replaceWith(photos(photo));
+          else { const figure = document.createElement('figure'); figure.dataset.picture = photo; child.replaceWith(figure); }
+          continue;
+        }
+        if (DROP.has(tag)) { child.remove(); continue; }
+        tidy(child, pictures, photos);
+        if (RENAME[tag]) {
+          const next = document.createElement(RENAME[tag]);
+          next.append(...child.childNodes);
+          child.replaceWith(next);
+        } else if (BLOCKS.has(tag)) {
+          if (holdsBlocks(child) || child.parentNode?.closest?.('p, li, h2, h3, h4, blockquote')) child.replaceWith(...child.childNodes, ...(holdsBlocks(child) ? [] : [document.createElement('br')]));
+          else { const p = document.createElement('p'); p.append(...child.childNodes); child.replaceWith(p); }
+        } else if (!ALLOWED.has(tag)) child.replaceWith(...child.childNodes);
+        else for (const attr of [...child.attributes]) if (!(tag === 'A' && attr.name === 'href' && safeHref(attr.value))) child.removeAttribute(attr.name);
       }
-      return [...map.values()].sort((a, b) => b.projects.size - a.projects.size || b.images.size - a.images.size || a.tag.localeCompare(b.tag));
     }
-    function renderMap() {
-      const query = $('map-filter').value.trim().toLowerCase();
-      $('map-list').replaceChildren(...keywordRows().filter(({tag}) => tag.toLowerCase().includes(query)).map(({tag, projects, images}) => {
-        const row = Object.assign(document.createElement('div'), {className: 'keyword-row'});
-        const label = document.createElement('div');
-        label.append(Object.assign(document.createElement('strong'), {textContent: tag}), Object.assign(document.createElement('small'), {textContent: `${projects.size} project${projects.size === 1 ? '' : 's'}${images.size ? ` · ${images.size} individually tagged image${images.size === 1 ? '' : 's'}` : ''}`}));
-        const project = Object.assign(document.createElement('button'), {type: 'button', textContent: '+ project', title: `Add “${tag}” to every image in this project`});
-        project.addEventListener('click', () => { changeTag('project-tags', tag); renderMap(); });
-        row.append(label, project);
-        return row;
+    // the post's own text: WordPress HTML shown as paragraphs; <figure data-media> become fixed picture blocks
+    function storyHtml(project, html) {
+      const blocks = String(html).replace(/\r\n/g, '\n').split(/\n{2,}/).map((chunk) => chunk.trim()).filter((chunk) => chunk && chunk !== '&nbsp;');
+      const wrapped = blocks.map((chunk) => (/^<(p|h[1-6]|ul|ol|blockquote|figure|div|hr|table)\b/i.test(chunk) ? chunk : `<p>${chunk.replace(/\n/g, '<br>')}</p>`)).join('');
+      const template = document.createElement('template');
+      template.innerHTML = wrapped;
+      tidy(template.content, (media) => {
+        const block = el('span', {className: 'pics', contentEditable: 'false'});
+        block.dataset.media = media;
+        for (const index of media.split(',')) {
+          const src = project.thumbs[index.trim()];
+          block.append(src ? el('img', {src, alt: '', loading: 'lazy'}) : el('span', {textContent: `picture ${Number(index) + 1}`}));
+        }
+        return block;
+      });
+      return template.innerHTML;
+    }
+    // back to what the archive stores: paragraphs as HTML, picture blocks as <figure data-media>, nothing pasted along
+    function storyToContent() {
+      const copy = $('story').cloneNode(true);
+      for (const block of copy.querySelectorAll('.pics')) { const figure = document.createElement('figure'); figure.dataset.media = block.dataset.media; block.replaceWith(figure); }
+      tidy(copy);
+      return copy.innerHTML.replace(/<figure data-media="([^"]*)"><\/figure>/g, '\n\n<figure data-media="$1"></figure>\n\n').replace(/<\/p>/g, '</p>\n\n').replace(/\n{3,}/g, '\n\n').trim();
+    }
+    let storyPictures = 0;
+    function renderStory() {
+      const {project} = current();
+      const record = projectRecord(project);
+      // a field Ryan is typing in keeps his caret, also when a copy from his account arrives meanwhile
+      if (document.activeElement !== $('story')) $('story').innerHTML = storyHtml(project, record.content !== undefined ? record.content : project.content);
+      storyPictures = (String(project.content).match(/<figure data-media=/g) ?? []).length;
+      $('story-reset').hidden = record.content === undefined;
+    }
+    try { document.execCommand('defaultParagraphSeparator', false, 'p'); } catch {}
+    $('story').addEventListener('input', () => {
+      const {project} = current();
+      state.projects[project.id] = {...state.projects[project.id], content: storyToContent()};
+      $('story-reset').hidden = false;
+      save();
+      const left = $('story').querySelectorAll('.pics').length;
+      $('note').textContent = left < storyPictures ? 'A picture block left the text. “Undo my changes to the text” brings it back.' : '';
+    });
+    $('story-reset').addEventListener('click', () => {
+      const {project} = current();
+      const record = {...state.projects[project.id]};
+      delete record.content;
+      state.projects[project.id] = record;
+      save();
+      renderStory();
+    });
+
+    function wpRows(containerId, rows) {
+      $(containerId).replaceChildren(...rows.flatMap(({label, value, use}) => {
+        const text = Array.isArray(value) ? value.join(', ') : value;
+        const button = use && text ? el('button', {type: 'button', className: 'link', textContent: 'use this'}) : el('span');
+        if (use && text) button.addEventListener('click', use);
+        return [el('dt', {textContent: label}), el('dd', {textContent: text || '—'}), button];
       }));
     }
-    // Photographer credits (Ryan, 2026-10-25 on #44): a default for the project and one per picture
-    // that wins over it, saved next to the words as state.projects[id].credit and state.images[key].credit
+    function renderProject() {
+      const {project} = current();
+      const summary = summaryOf(project);
+      if (document.activeElement !== $('summary')) $('summary').value = summary;
+      $('summary-hint').textContent = summary
+        ? 'Shown on the wall and under the title on the page.'
+        : (project.excerpt ? `Without one, the wall shows WordPress's excerpt: “${project.excerpt.slice(0, 140)}${project.excerpt.length > 140 ? '…' : ''}”` : 'Shown on the wall and under the title on the page.');
+      renderProjectWords();
+      renderStory();
+      wpRows('wp-project', [
+        {label: 'Categories', value: project.wordpress.categories, use: () => setProjectTags([...projectTags(project), ...project.wordpress.categories.filter((w) => !projectTags(project).some((x) => same(x, w)))])},
+        {label: 'Tags', value: project.wordpress.tags, use: () => setProjectTags([...projectTags(project), ...project.wordpress.tags.filter((w) => !projectTags(project).some((x) => same(x, w)))])},
+        {label: 'Excerpt', value: project.wordpress.excerpt, use: () => { $('summary').value = project.wordpress.excerpt; $('summary').dispatchEvent(new Event('input')); }},
+      ]);
+      const done = isDone(project);
+      $('done').textContent = done ? 'Next project →' : 'Done, next project →';
+      $('reopen').hidden = !done;
+    }
+    $('summary').addEventListener('input', () => {
+      const {project} = current();
+      setProject(project, 'summary', $('summary').value.trim(), project.summary);
+      $('summary-hint').textContent = 'Shown on the wall and under the title on the page.';
+    });
+
+    // ---------- the Picture tab ----------
+    function renderImageWords() {
+      const {project, image} = current();
+      const words = imageTags(project, image);
+      renderChips('image-chips', words, {
+        inherited: projectTags(project),
+        placeholder: 'Add a keyword for this picture',
+        onRemove: (word) => setImageTags(imageTags(project, image).filter((w) => !same(w, word)), project, image),
+        onAdd: (word, options) => {
+          const now = imageTags(project, image);
+          setImageTags([...now, ...tags(word).filter((w) => !now.some((x) => same(x, w)))], project, image, options);
+        },
+      });
+      $('image-ideas').replaceChildren(...image.suggestions.map((w) => ideaButton(w, words.some((x) => same(x, w)), () => setImageTags(toggled(imageTags(current().project, current().image), w)))));
+    }
+    function renderPicture() {
+      const {image} = current();
+      if (document.activeElement !== $('description')) $('description').value = descriptionOf(image);
+      renderImageWords();
+      renderCredit();
+      wpRows('wp-picture', [
+        {label: 'File', value: image.wordpress.file},
+        {label: 'Title', value: image.wordpress.title, use: () => useDescription(image.wordpress.title)},
+        {label: 'Caption', value: image.wordpress.caption, use: () => useDescription(image.wordpress.caption)},
+        {label: 'Alt', value: image.wordpress.alt, use: () => useDescription(image.wordpress.alt)},
+      ]);
+    }
+    function useDescription(text) { $('description').value = text; $('description').dispatchEvent(new Event('input')); }
+    $('description').addEventListener('input', () => {
+      const {image} = current();
+      setImage(image, 'description', $('description').value.trim(), image.description || image.existingDescription || image.alt || '');
+    });
+
+    // photographer credits: one for the picture, or one for the whole project
     const ARCHIVE_CREDITS = JSON.parse(document.querySelector('#credit-data').textContent);
     const isModelling = (project) => project.id.startsWith('vaguelyvulgar/');
-    const creditFor = (project, image) => [recordFor(image).credit, state.projects[project.id]?.credit, ARCHIVE_CREDITS[image.key]].find((credit) => credit?.name?.trim());
+    const creditFor = (project, image) => [recordFor(image).credit, projectRecord(project).credit, ARCHIVE_CREDITS[image.key]].find((credit) => credit?.name?.trim());
     const isWebAddress = (value) => { try { return ['http:', 'https:'].includes(new URL(value).protocol); } catch { return false; } };
     const uncredited = () => flat.filter(({project, image}) => isModelling(project) && !creditFor(project, image));
-    function refreshCredit() {
-      const {project, image} = current();
-      const credit = creditFor(project, image);
-      const all = flat.filter(({project: other}) => isModelling(other)).length;
-      const open = uncredited().length;
-      $('credit-summary').textContent = open ? `Photographer credit · open tasks: ${open} of ${all} modelling pictures` : `Photographer credit · all ${all} modelling pictures credited`;
-      $('credit-open').textContent = open ? `${open} of ${all} modelling pictures still have no photographer. Leave a field empty when you do not know.` : 'Every modelling picture has a photographer.';
-      const site = credit?.url?.trim() ?? '';
-      $('credit-shown').textContent = credit ? `Caption: Photo: ${credit.name.trim()}${site && isWebAddress(site) ? `, linked to ${site}` : ''}` : 'No photographer for this picture yet.';
-      if (['credit-project-url', 'credit-image-url'].some((id) => $(id).value.trim() && !isWebAddress($(id).value.trim()))) $('credit-shown').textContent += ' · A site needs to start with https:// (or http://); otherwise the import leaves it out.';
-      $('next-uncredited').hidden = !open;
-    }
     function renderCredit() {
       const {project, image} = current();
       const own = recordFor(image).credit ?? {};
-      const shared = state.projects[project.id]?.credit ?? {};
-      $('credit-project-name').value = shared.name ?? '';
-      $('credit-project-url').value = shared.url ?? '';
-      $('credit-image-name').value = own.name ?? '';
-      $('credit-image-url').value = own.url ?? '';
+      const shared = projectRecord(project).credit ?? {};
+      const fill = (id, value) => { if (document.activeElement !== $(id)) $(id).value = value; };
+      fill('credit-image-name', own.name ?? '');
+      fill('credit-image-url', own.url ?? '');
+      fill('credit-project-name', shared.name ?? '');
+      fill('credit-project-url', shared.url ?? '');
       $('credit-image-name').placeholder = ARCHIVE_CREDITS[image.key]?.name || shared.name || 'Name as it should appear';
       $('credit-panel').open = isModelling(project) || Boolean(creditFor(project, image));
       refreshCredit();
+    }
+    function refreshCredit() {
+      const {project, image} = current();
+      const credit = creditFor(project, image);
+      const all = flat.filter(({project: p}) => isModelling(p)).length;
+      const open = uncredited().length;
+      $('credit-summary').textContent = credit ? `Photographer: ${credit.name.trim()}` : (isModelling(project) ? `Photographer · ${open} of ${all} modelling pictures still open` : 'Photographer');
+      const site = credit?.url?.trim() ?? '';
+      $('credit-shown').textContent = credit ? `Caption on the site: Photo: ${credit.name.trim()}${site && isWebAddress(site) ? `, linked to ${site}` : ''}` : 'No photographer for this picture yet.';
+      if (['credit-project-url', 'credit-image-url'].some((id) => $(id).value.trim() && !isWebAddress($(id).value.trim()))) $('credit-shown').textContent += ' A site needs to start with https://.';
+      $('next-uncredited').hidden = !isModelling(project) || !open;
     }
     $('credit-panel').addEventListener('input', (event) => {
       const {project, image} = current();
@@ -470,62 +886,220 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, wordBank: WORD_BANK
       save();
       refreshCredit();
     });
-    // Enter in a credit field types, it does not finish the project
-    $('credit-panel').addEventListener('keydown', (event) => { if (event.key === 'Enter' && !event.ctrlKey && !event.metaKey && event.target.tagName === 'INPUT') event.preventDefault(); });
+    $('credit-panel').addEventListener('keydown', (event) => { if (event.key === 'Enter' && event.target.tagName === 'INPUT') event.preventDefault(); });
     $('next-uncredited').addEventListener('click', () => {
-      collect();
       const todo = new Set(uncredited().map(({image}) => image.key));
       const after = flat.findIndex((item, index) => index > state.cursor && todo.has(item.image.key));
       const next = after >= 0 ? after : flat.findIndex((item) => todo.has(item.image.key));
       if (next < 0) return;
       state.cursor = next;
-      render({focus: false});
+      render();
       $('credit-image-name').focus({preventScroll: true});
     });
 
-    $('editor').addEventListener('input', (event) => {
-      collect();
-      updateProgress();
-      if (event.target.id === 'project-tags' || event.target.id === 'image-tags') refreshKeywords();
-    });
-    $('editor').addEventListener('submit', (event) => { event.preventDefault(); moveProject(1, true); });
-    $('previous').addEventListener('click', () => moveProject(-1));
-    $('skip').addEventListener('click', () => moveProject(1));
-    $('project-picker').addEventListener('change', (event) => { collect(); state.cursor = flat.findIndex(({projectIndex}) => projectIndex === Number(event.target.value)); render(); });
-    $('add-original-suggestions').addEventListener('click', () => { putTags('project-tags', [...tags($('project-tags').value), ...current().project.originalSuggestions]); collect(); refreshKeywords(); });
-    $('add-nearby-suggestions').addEventListener('click', () => { putTags('image-tags', [...tags($('image-tags').value), ...current().image.nearbySuggestions]); collect(); refreshKeywords(); $('image-tags').focus({preventScroll: true}); });
-    $('clear-image-tags').addEventListener('click', () => { $('image-tags').value = ''; collect(); refreshKeywords(); $('image-tags').focus({preventScroll: true}); });
-    addEventListener('keydown', (event) => {
-      if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') { event.preventDefault(); moveProject(1, true); }
-      if (event.altKey && event.key === 'ArrowLeft') { event.preventDefault(); moveProject(-1); }
-      if (event.altKey && event.key === 'ArrowRight') { event.preventDefault(); moveProject(1); }
-    });
-    $('export').addEventListener('click', () => {
-      collect();
-      const images = Object.fromEntries(flat.map(({project, image}) => {
-        const record = recordFor(image);
-        const projectKeywords = tags(state.projects[project.id]?.tags);
-        const imageKeywords = tags(record.tags);
-        return [image.key, {
-          projectId: project.id,
-          url: image.url,
-          description: record.description ?? image.existingDescription ?? '',
-          projectKeywords,
-          imageKeywords,
-          keywords: tags([...projectKeywords, ...imageKeywords].join(', ')),
-          reviewed: Boolean(state.projects[project.id]?.reviewed || record.reviewed),
-        }];
+    // ---------- the Preview tab: the wall's tile and lead row, and the page's top ----------
+    function renderPreview() {
+      if (tab !== 'preview') return;
+      const {project} = current();
+      const lead = project.images.find((image) => image.url === heroOf(project)) ?? project.images[0];
+      const summary = summaryOf(project) || project.excerpt;
+      const ratio = lead.width && lead.height ? lead.width / lead.height : 4 / 3;
+      const kicker = [project.kinds[0], project.year].filter(Boolean).join(' · ');
+      const tile = el('div', {className: 'tile'}, el('img', {src: lead.src, alt: ''}), el('span', {className: 'cap'}, el('span', {className: 't', textContent: project.title}), el('span', {className: 'm', textContent: project.label})));
+      tile.style.aspectRatio = String(ratio);
+      const leadPic = el('div', {className: 'lead-pic'}, el('img', {src: lead.src, alt: ''}));
+      leadPic.style.aspectRatio = String(ratio);
+      $('preview-wall').replaceChildren(
+        el('span', {className: 'hint', textContent: 'As a tile'}), tile,
+        el('span', {className: 'hint', textContent: 'As a lead row (when you pick it as one of the year’s two leads)'}),
+        el('article', {className: 'lead-row'}, leadPic, el('div', {className: 'lead-text'},
+          el('span', {className: 'kicker', textContent: kicker}),
+          el('h4', {className: 'title', textContent: project.title}),
+          el('span', {className: 'line', textContent: project.label}),
+          summary ? el('p', {className: 'desc', textContent: summary}) : el('p', {className: 'desc empty-note', textContent: 'No summary yet.'}),
+          el('span', {className: 'go', textContent: 'The project page →'}))),
+        el('span', {className: 'hint', textContent: 'In the panel that opens on a click'}),
+        el('div', {className: 'panel-lines'}, el('strong', {textContent: project.title}), el('span', {textContent: [project.label, project.year, project.kinds[0]].filter(Boolean).join(' · ')}), summary ? el('span', {textContent: summary}) : null),
+      );
+      const credit = creditFor(project, lead);
+      const caption = [lead.wordpress.caption, credit ? `Photo: ${credit.name.trim()}` : ''].filter(Boolean).join(' · ');
+      const own = summaryOf(project);
+      $('preview-page').replaceChildren(
+        el('span', {className: 'crumb', textContent: `Portfolio / ${project.portfolio}`}),
+        el('span', {className: 'when', textContent: [project.dateLabel, project.kinds.join(', ')].filter(Boolean).join(' • ')}),
+        el('h4', {textContent: project.title}),
+        own ? el('p', {className: 'sum', textContent: own}) : el('p', {className: 'sum empty-note', textContent: 'The page shows your summary here once you write one.'}),
+        el('figure', {}, el('img', {src: lead.src, alt: descriptionOf(lead)}), caption ? el('figcaption', {textContent: caption}) : null),
+      );
+    }
+
+    // ---------- the stage and moving around ----------
+    function renderStage() {
+      const {project, projectIndex, image, imageIndex} = current();
+      $('picture').src = image.src;
+      $('picture').srcset = image.srcset;
+      $('picture').alt = descriptionOf(image) || `${project.title}, picture ${imageIndex + 1}`;
+      $('image-counter').textContent = `Picture ${imageIndex + 1} of ${project.images.length}`;
+      const lead = image.url === heroOf(project);
+      $('make-hero').setAttribute('aria-pressed', String(lead));
+      $('make-hero').textContent = lead ? '★ The lead picture' : '☆ Make this the lead picture';
+      $('project-link').href = project.href;
+      const start = flat.findIndex((item) => item.projectIndex === projectIndex);
+      $('filmstrip').replaceChildren(...project.images.map((img, index) => {
+        const button = el('button', {type: 'button'}, el('img', {src: img.src, alt: '', loading: 'lazy'}));
+        const isLead = img.url === heroOf(project);
+        button.dataset.lead = String(isLead);
+        button.setAttribute('aria-label', `Picture ${index + 1} of ${project.images.length}${isLead ? ', the lead picture' : ''}`);
+        button.setAttribute('aria-current', String(index === imageIndex));
+        button.addEventListener('click', () => { state.cursor = start + index; render({keepTab: true}); });
+        return button;
       }));
-      // photographer credits ride along additively; the project's default is in projects[id].credit
-      for (const {image} of flat) { const credit = recordFor(image).credit; if (credit) images[image.key].credit = {name: credit.name ?? '', url: credit.url ?? ''}; }
-      const output = {version: 4, exportedAt: new Date().toISOString(), projects: state.projects, images};
-      const blob = new Blob([JSON.stringify(output, null, 2) + '\n'], {type: 'application/json'});
-      const link = Object.assign(document.createElement('a'), {href: URL.createObjectURL(blob), download: 'reddy-world-image-metadata.json'});
+      requestAnimationFrame(() => $('filmstrip').querySelector('[aria-current="true"]')?.scrollIntoView({block: 'nearest', inline: 'center'}));
+    }
+    function updateProgress() {
+      const done = completed();
+      $('progress-label').textContent = `${done} of ${DATA.projects.length} projects done`;
+      $('bar').style.width = `${(done / DATA.projects.length) * 100}%`;
+      const {project} = current();
+      $('project-state').textContent = isDone(project) ? 'Done' : 'Not done yet';
+      $('project-state').dataset.done = String(isDone(project));
+      document.title = `${done}/${DATA.projects.length} · ${project.title} — Portfolio desk`;
+    }
+    function render({keepTab = true} = {}) {
+      fillPicker();
+      const article = openArticleRecord();
+      $('article-bench').hidden = !article;
+      $('project-bench').hidden = Boolean(article);
+      if (article) {
+        updateProgress();
+        renderArticleMode();
+        return;
+      }
+      const {project, projectIndex} = current();
+      $('portfolio').textContent = project.portfolio;
+      $('project-title').textContent = project.title;
+      $('project-when').textContent = [project.dateLabel, project.kinds.join(', ')].filter(Boolean).join(' · ');
+      $('project-picker').value = String(projectIndex);
+      renderStage();
+      renderProject();
+      renderPicture();
+      updateProgress();
+      if (keepTab) showTab(tab);
+    }
+    function goProject(delta) {
+      // from an article, the arrows go back to the project you were on
+      if (openArticleRecord()) return leaveArticle();
+      const {projectIndex} = current();
+      const next = (projectIndex + delta + DATA.projects.length) % DATA.projects.length;
+      state.cursor = flat.findIndex((item) => item.projectIndex === next);
+      save();
+      $('note').textContent = '';
+      render();
+    }
+    function markDone() {
+      const {project} = current();
+      if (!isDone(project)) {
+        state.projects[project.id] = {...state.projects[project.id], reviewed: true};
+        state.session = (state.session ?? 0) + 1;
+        save();
+      }
+      goProject(1);
+      $('note').textContent = `${project.title} is done.`;
+    }
+    $('done').addEventListener('click', markDone);
+    // reopening is work too: `reopenedAt` makes the record count as changed, so it is stamped and wins merges
+    $('reopen').addEventListener('click', () => { const {project} = current(); state.projects[project.id] = {...state.projects[project.id], reviewed: false, reopenedAt: Date.now()}; save(); render(); });
+    $('previous').addEventListener('click', () => goProject(-1));
+    $('next-project').addEventListener('click', () => goProject(1));
+    $('project-picker').addEventListener('change', (event) => {
+      const value = event.target.value;
+      if (value.startsWith('article:')) return openArticle(value.slice('article:'.length));
+      state.article = null;
+      state.cursor = flat.findIndex(({projectIndex}) => projectIndex === Number(value));
+      save();
+      render();
+    });
+    $('make-hero').addEventListener('click', () => {
+      const {project, image} = current();
+      state.projects[project.id] = {...state.projects[project.id], hero: image.url};
+      save();
+      render();
+      $('note').textContent = 'Lead picture chosen: it heads the page, the card and the wall.';
+    });
+    addEventListener('keydown', (event) => {
+      // not while a dialog or the overview is open: the desk behind it is out of sight
+      if (document.querySelector('dialog[open]') || $('overview')?.hidden === false) return;
+      if ((event.ctrlKey || event.metaKey) && event.key === 'Enter' && !openArticleRecord()) { event.preventDefault(); markDone(); }
+      if (event.altKey && event.key === 'ArrowLeft') { event.preventDefault(); goProject(-1); }
+      if (event.altKey && event.key === 'ArrowRight') { event.preventDefault(); goProject(1); }
+    });
+
+    // ---------- keyword map ----------
+    function keywordRows() {
+      const map = new Map();
+      const add = (word, projectId) => {
+        const entry = map.get(word.toLowerCase()) ?? {word, projects: new Set()};
+        entry.projects.add(projectId);
+        map.set(word.toLowerCase(), entry);
+      };
+      for (const project of DATA.projects) for (const word of projectTags(project)) add(word, project.id);
+      return [...map.values()].sort((a, b) => b.projects.size - a.projects.size || a.word.localeCompare(b.word));
+    }
+    function renderMap() {
+      const query = $('map-filter').value.trim().toLowerCase();
+      $('map-list').replaceChildren(...keywordRows().filter(({word}) => word.toLowerCase().includes(query)).map(({word, projects}) => {
+        const add = el('button', {type: 'button', textContent: '+ this project', title: `Add “${word}” to this project`});
+        add.addEventListener('click', () => { setProjectTags([...projectTags(current().project).filter((w) => !same(w, word)), word]); renderMap(); });
+        return el('div', {className: 'keyword-row'}, el('div', {}, el('strong', {textContent: word}), el('small', {textContent: `${projects.size} project${projects.size === 1 ? '' : 's'}`})), add);
+      }));
+    }
+    $('map').addEventListener('click', () => { renderMap(); $('keyword-map').showModal(); $('map-filter').focus(); });
+    $('map-filter').addEventListener('input', renderMap);
+    $('close-map').addEventListener('click', () => $('keyword-map').close());
+    $('help').addEventListener('click', () => $('keys').showModal());
+
+    // ---------- send to site: a pull request with your changes and a preview; it goes live when you merge it ----------
+    const SENT = {
+      sent: {title: 'Sent', text: 'Your changes are on their way as a pull request with a preview, in about five minutes. Look at the preview, then merge it: that puts them live.', link: 'Your desk pull requests'},
+      manual: {title: 'Send from GitHub', text: 'This address cannot send by itself. On the page below, click "Run workflow": it reads the desk in your account and opens a pull request with a preview.', link: 'The Send to site workflow'},
+      signin: {title: 'Sign in first', text: 'Sending reads the desk saved in your account. Sign in (next to the save status), then send again.'},
+      unsaved: {title: 'Not saved to your account yet', text: 'Sending reads the desk saved in your account, and the newest work is not there yet.'},
+      failed: {title: 'Not sent', text: 'Something went wrong. The workflow page below can send it by hand.', link: 'The Send to site workflow'},
+    };
+    $('send').addEventListener('click', async () => {
+      $('send').disabled = true;
+      $('send').textContent = 'Sending…';
+      let result;
+      try { result = window.deskSync ? await window.deskSync.send() : {kind: 'failed', message: 'the desk is still starting'}; }
+      catch (error) { result = {kind: 'failed', message: error.message}; }
+      $('send').disabled = false;
+      $('send').textContent = 'Send to site';
+      const copy = SENT[result.kind];
+      $('sent-title').textContent = copy.title;
+      $('sent-text').textContent = copy.text + (result.line ? ` (${result.line})` : '') + (result.message ? ` (${result.message})` : '');
+      $('sent-link').hidden = !copy.link;
+      $('sent-link').textContent = copy.link ?? '';
+      $('sent-link').href = result.prs ?? result.url ?? '#';
+      $('sent').showModal();
+    });
+    $('close-sent').addEventListener('click', () => $('sent').close());
+    $('close-keys').addEventListener('click', () => $('keys').close());
+
+    // ---------- a copy as a file, and loading one (kept for safety; the desk saves by itself) ----------
+    $('export').addEventListener('click', () => {
+      const images = Object.fromEntries(flat.map(({project, image}) => {
+        const projectKeywords = projectTags(project);
+        const imageKeywords = imageTags(project, image);
+        const entry = {projectId: project.id, url: image.url, description: descriptionOf(image), projectKeywords, imageKeywords, keywords: tags([...projectKeywords, ...imageKeywords].join(', ')), reviewed: isDone(project)};
+        const credit = recordFor(image).credit;
+        if (credit) entry.credit = {name: credit.name ?? '', url: credit.url ?? ''};
+        return [image.key, entry];
+      }));
+      const output = {version: 4, exportedAt: new Date().toISOString(), projects: state.projects, images, articles: state.articles};
+      const link = el('a', {href: URL.createObjectURL(new Blob([JSON.stringify(output, null, 2) + '\n'], {type: 'application/json'})), download: 'reddy-world-image-metadata.json'});
       link.click();
       URL.revokeObjectURL(link.href);
     });
-    // An export from another address (a PR preview, another browser) carries the work over:
-    // the projects in it and their pictures replace what this browser has for them
     $('load').addEventListener('click', () => $('load-file').click());
     $('load-file').addEventListener('change', async (event) => {
       const file = event.target.files?.[0];
@@ -534,33 +1108,317 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, wordBank: WORD_BANK
       try {
         const loaded = JSON.parse(await file.text());
         if (!window.deskSync) throw new Error('the desk is still starting, try again in a moment');
-        collect();
-        // whole records, nothing of the old ones kept (no stale lead picture), stamped so they win the merge
         const opened = window.deskSync.load(state, loaded);
         state.cursor = Math.max(0, firstIncomplete());
         save();
         render();
-        $('celebrate').textContent = `Loaded ${opened.length} projects from ${file.name}.`;
+        $('note').textContent = `Loaded ${opened.length} projects from ${file.name}.`;
       } catch (error) {
-        $('celebrate').textContent = `Could not load ${file.name}: ${error.message}.`;
+        $('note').textContent = `Could not load ${file.name}: ${error.message}.`;
       }
     });
-    $('make-hero').addEventListener('click', () => {
-      const {project, image} = current();
-      collect();
-      state.projects[project.id] = {...state.projects[project.id], hero: image.url};
+
+    // ---------- articles: new pieces for the wall, kept as private drafts until Ryan publishes them ----------
+    // Ryan, 2026-10-26: "would be great to park them as "drafts" until publication right?" They are part of the
+    // desk's state, so they save to his account like the rest (desk-store.js merges them entry by entry).
+    // "Send to site" reads projects and pictures only, so a draft never reaches the site. Deleting leaves a
+    // stamped {deleted: true}, so a copy on another device can't bring the article back.
+    state.articles ??= {};
+    function drafts() {
+      return Object.entries(state.articles).filter(([, article]) => article && !article.deleted)
+        .sort(([, a], [, b]) => (b.created ?? 0) - (a.created ?? 0));
+    }
+    function openArticleRecord() {
+      const article = state.article ? state.articles?.[state.article] : null;
+      return article && !article.deleted ? article : null;
+    }
+    const articleTitle = (article) => String(article?.title ?? '').trim() || 'Untitled article';
+    function fillPicker() {
+      const groups = [];
+      const own = drafts();
+      if (own.length) groups.push(el('optgroup', {label: 'Your articles'}, ...own.map(([id, article]) => new Option(`${articleTitle(article)} · ${article.status === 'ready' ? 'ready' : 'draft'}`, `article:${id}`))));
+      groups.push(el('optgroup', {label: 'Projects'}, ...DATA.projects.map((project, index) => new Option(`${project.title} · ${project.portfolio}`, String(index)))));
+      $('project-picker').replaceChildren(...groups);
+    }
+    // an article's text as its page will show it: the tags the post text keeps, links only to web or site addresses
+    // (the same tidy() as the post text: a pasted div becomes a paragraph, pasted pictures and styles go)
+    function cleanHtml(html) {
+      const template = document.createElement('template');
+      template.innerHTML = String(html ?? '');
+      tidy(template.content);
+      return template.innerHTML;
+    }
+    const started = (article) => new Date(article.created ?? Date.now()).toLocaleDateString('en-GB', {day: 'numeric', month: 'short', year: 'numeric'});
+    function renderReading() {
+      const article = openArticleRecord();
+      if (!article) return;
+      const text = el('div', {className: 'reading-text'});
+      text.innerHTML = withPhotos(article, cleanHtml(article.content), (id, picture) => {
+        const figure = el('figure');
+        figure.append(photoImg(picture, picture.alt));
+        return figure;
+      });
+      const summary = String(article.summary ?? '').trim();
+      const lead = article.hero && article.pictures?.[article.hero];
+      const person = (article.kind ?? 'story') === 'interview' && article.person?.name ? article.person : null;
+      const dek = person && el('p', {className: 'dek', textContent: `${String(article.byline ?? '').trim()} ${person.name}${person.role ? `, ${person.role}` : ''}`.trim()});
+      $('reading').replaceChildren(
+        el('span', {className: 'when', textContent: `${DATA.kinds?.[article.kind ?? 'story']?.label ?? 'Story'} · ${article.status === 'ready' ? 'ready for the site' : 'draft'} · started ${started(article)}`}),
+        el('h2', {className: 'reading-title', textContent: articleTitle(article)}),
+        dek,
+        lead ? el('div', {className: 'lead'}, photoImg(lead, lead.alt)) : null,
+        summary ? el('p', {className: 'sum', textContent: summary}) : el('p', {className: 'sum empty-note', textContent: 'No summary yet: the wall shows the first words of the text.'}),
+        text,
+      );
+      $('article-heading').textContent = articleTitle(article);
+      $('article-when').textContent = `Started ${started(article)}`;
+      document.title = `${articleTitle(article)} (draft) — Portfolio desk`;
+    }
+    // ---------- an article's pictures: uploaded to the account (reddy.world's /api/desk-upload), private until published ----------
+    // In the text a picture is <figure data-picture="id">; the article keeps {pictures: {id: {path, name, alt}}, hero: id}.
+    const photoUrls = new Map();
+    function photoImg(picture, alt) {
+      const img = el('img', {alt: alt ?? '', loading: 'lazy'});
+      const known = photoUrls.get(picture.path);
+      if (known) img.src = known;
+      else if (window.deskSync?.picture) window.deskSync.picture(picture.path).then((url) => { if (url) { photoUrls.set(picture.path, url); img.src = url; } }).catch(() => {});
+      return img;
+    }
+    // the text with each picture marker made into `make(id, picture)`; markers of removed pictures go
+    function withPhotos(article, html, make) {
+      const template = document.createElement('template');
+      template.innerHTML = html;
+      tidy(template.content, null, (id) => (article.pictures?.[id] ? make(id, article.pictures[id]) : document.createTextNode('')));
+      return template.innerHTML;
+    }
+    // the pictures the page will show: the lead and the ones in the text
+    function shownPictures(article) {
+      const inText = [...String(article.content ?? '').matchAll(/data-picture="([a-z0-9]+)"/gi)].map((m) => m[1]);
+      return [...new Set([article.hero, ...inText].filter((id) => id && article.pictures?.[id]))];
+    }
+    function setPicture(id, field, value) {
+      const article = state.articles[state.article];
+      state.articles[state.article] = {...article, pictures: {...article.pictures, [id]: {...article.pictures[id], [field]: value}}};
       save();
-      render({focus: false});
-      $('celebrate').textContent = 'Lead picture chosen: it heads the project, its card and the wall.';
+      renderReading();
+      renderPublish();
+    }
+    function renderPictureList() {
+      const article = openArticleRecord();
+      if (!article) return;
+      const pictures = Object.entries(article.pictures ?? {}).filter(([, picture]) => picture && !picture.removed);
+      $('pic-list').replaceChildren(...pictures.map(([id, picture]) => {
+        const alt = el('textarea', {value: picture.alt ?? '', placeholder: 'What someone who can\'t see it should hear'});
+        alt.setAttribute('aria-label', `What ${picture.name} shows`);
+        alt.addEventListener('input', () => setPicture(id, 'alt', alt.value));
+        const lead = el('button', {type: 'button', textContent: article.hero === id ? '★ Lead picture' : '☆ Lead'});
+        lead.setAttribute('aria-pressed', String(article.hero === id));
+        lead.addEventListener('click', () => { setArticle('hero', article.hero === id ? undefined : id); renderPictureList(); });
+        const place = el('button', {type: 'button', textContent: 'In the text'});
+        place.addEventListener('click', () => placePicture(id));
+        const remove = el('button', {type: 'button', className: 'quiet', textContent: 'Remove'});
+        remove.addEventListener('click', () => {
+          const current = state.articles[state.article];
+          const content = String(current.content ?? '').replace(new RegExp(`<figure data-picture="${id}"></figure>`, 'g'), '');
+          state.articles[state.article] = {...current, content, hero: current.hero === id ? undefined : current.hero, pictures: {...current.pictures, [id]: {...current.pictures[id], removed: true}}};
+          save();
+          render();
+        });
+        return el('div', {className: 'pic-row'}, photoImg(picture, ''), el('div', {}, alt, el('div', {className: 'row'}, lead, place, remove)));
+      }));
+    }
+    // a picture into the text where the cursor is (else at the end), as a fixed block
+    let lastRange = null;
+    document.addEventListener('selectionchange', () => {
+      const selection = getSelection();
+      if (selection?.rangeCount && $('article-text').contains(selection.anchorNode)) lastRange = selection.getRangeAt(0).cloneRange();
     });
-    $('rated-source').textContent = DATA.ratingsInfo?.updatedAt
-      ? `Ratings from Wikipedia and Datamuse${DATA.ratingsInfo.bing ? ' and Bing Webmaster Tools' : ''}, fetched ${DATA.ratingsInfo.updatedAt.slice(0, 10)} when the site was built.`
-      : 'No ratings fetched yet.';
-    $('help').addEventListener('click', () => $('keys').showModal());
-    $('close-keys').addEventListener('click', () => $('keys').close());
-    $('map').addEventListener('click', () => { collect(); renderMap(); $('keyword-map').showModal(); $('map-filter').focus(); });
-    $('map-filter').addEventListener('input', renderMap);
-    $('close-map').addEventListener('click', () => $('keyword-map').close());
+    function placePicture(id) {
+      const article = openArticleRecord();
+      const block = el('span', {className: 'pics', contentEditable: 'false'});
+      block.dataset.picture = id;
+      block.append(photoImg(article.pictures[id], ''));
+      const editor = $('article-text');
+      if (lastRange && editor.contains(lastRange.startContainer)) { lastRange.collapse(false); lastRange.insertNode(block); }
+      else editor.append(block);
+      setArticle('content', cleanHtml(editor.innerHTML));
+    }
+    $('pic-input').addEventListener('change', async (event) => {
+      const files = [...(event.target.files ?? [])];
+      event.target.value = '';
+      for (const file of files) {
+        const id = `p${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+        $('pic-hint').textContent = `Adding ${file.name}…`;
+        try {
+          if (!window.deskSync?.upload) throw new Error('the desk is still starting');
+          const {path, name} = await window.deskSync.upload(file);
+          photoUrls.set(path, URL.createObjectURL(file));
+          const article = state.articles[state.article];
+          state.articles[state.article] = {...article, pictures: {...article.pictures, [id]: {path, name, alt: ''}}, hero: article.hero ?? id};
+          save();
+          renderPictureList();
+          renderReading();
+          renderPublish();
+          $('pic-hint').textContent = `${file.name} added. Say what it shows, for someone who can't see it.`;
+        } catch (error) {
+          $('pic-hint').textContent = `${file.name} was not added: ${error.message}.`;
+        }
+      }
+    });
+
+    // ---------- what the article needs on the site: kind, language, year, the person, the case study ----------
+    const kinds = DATA.kinds ?? {};
+    $('article-kind').replaceChildren(...Object.entries(kinds).map(([id, kind]) => new Option(kind.label, id)));
+    $('article-related').append(...(DATA.software ?? []).map((item) => new Option(item.title, item.id)));
+    const kindOf = (article) => article.kind ?? 'story';
+    // the address it gets: from the title, as the site writes addresses; fixed once it is published
+    const slugOf = (article) => article.slug || String(article.title ?? '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80);
+    const plainText = (html) => String(html ?? '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
+    // ready to publish: a title, enough words for a search result (50 characters, from the summary and the text),
+    // and for an interview the person
+    function missingFor(article) {
+      const missing = [];
+      if (!String(article.title ?? '').trim()) missing.push('a title');
+      if ((String(article.summary ?? '').trim() + ' ' + plainText(article.content)).trim().length < 50) missing.push('a few more words (50 characters)');
+      if (kindOf(article) === 'interview' && !(article.person?.name?.trim() && article.person?.role?.trim() && String(article.byline ?? '').trim())) missing.push('the person: their name, role and the words before their name');
+      if (shownPictures(article).some((id) => !String(article.pictures?.[id]?.alt ?? '').trim())) missing.push('what every picture shows (for someone who can\'t see it)');
+      return missing;
+    }
+    function renderPublish() {
+      const article = openArticleRecord();
+      if (!article) return;
+      const ready = article.status === 'ready';
+      const missing = missingFor(article);
+      $('article-state').textContent = ready ? 'Ready for the site' : 'Draft: only you see it';
+      $('article-state').dataset.ready = String(ready);
+      $('publish-article').hidden = ready;
+      $('unpublish-article').hidden = !ready;
+      $('publish-article').disabled = missing.length > 0;
+      $('publish-hint').textContent = ready
+        ? 'Ready: your next Send to site puts it on the site as a pull request with a preview, live when you merge it. Back to draft takes it off the site again with the send after.'
+        : missing.length ? `A draft is saved to your account and never goes to the site. To publish it needs ${missing.join(', ')}.` : 'A draft is saved to your account and never goes to the site until you publish it.';
+      const slug = slugOf(article);
+      $('article-address').textContent = slug ? `Its address: reddy.world/portfolio/${kinds[kindOf(article)]?.path ?? 'stories'}/${slug}/` : '';
+      $('article-person').hidden = kindOf(article) !== 'interview';
+    }
+    function setPerson(field, value) {
+      const article = state.articles[state.article];
+      state.articles[state.article] = {...article, person: {...article.person, [field]: value}};
+      save();
+      renderReading();
+      renderPublish();
+    }
+    $('article-kind').addEventListener('change', () => { setArticle('kind', $('article-kind').value); renderPublish(); });
+    $('article-lang').addEventListener('change', () => setArticle('lang', $('article-lang').value));
+    $('article-year').addEventListener('input', () => setArticle('year', Number($('article-year').value) || undefined));
+    $('article-byline').addEventListener('input', () => { setArticle('byline', $('article-byline').value); renderPublish(); });
+    $('article-related').addEventListener('change', () => setArticle('related', $('article-related').value || undefined));
+    for (const [id, field] of [['person-name', 'name'], ['person-role', 'role'], ['person-org', 'org'], ['person-org-url', 'orgUrl'], ['person-profile', 'profile']]) {
+      $(id).addEventListener('input', () => setPerson(field, $(id).value));
+    }
+    $('publish-article').addEventListener('click', () => {
+      const article = state.articles[state.article];
+      if (missingFor(article).length) return;
+      // the address and the day it was first published stay as they are from now on
+      state.articles[state.article] = {...article, status: 'ready', slug: slugOf(article), readyAt: article.readyAt ?? Date.now()};
+      save();
+      renderPublish();
+      $('article-note').textContent = 'Published on the desk: Send to site puts it on the site.';
+    });
+    $('unpublish-article').addEventListener('click', () => {
+      state.articles[state.article] = {...state.articles[state.article], status: 'draft'};
+      save();
+      renderPublish();
+      $('article-note').textContent = 'Back to draft: the next Send to site takes it off the site if it was there.';
+    });
+    function renderArticleMode() {
+      const article = openArticleRecord();
+      const fill = (id, value) => { if (document.activeElement !== $(id)) $(id).value = value ?? ''; };
+      $('article-kind').value = kindOf(article);
+      $('article-lang').value = article.lang ?? 'en';
+      fill('article-year', article.year ?? new Date(article.created ?? Date.now()).getFullYear());
+      fill('article-byline', article.byline);
+      fill('person-name', article.person?.name);
+      fill('person-role', article.person?.role);
+      fill('person-org', article.person?.org);
+      fill('person-org-url', article.person?.orgUrl);
+      fill('person-profile', article.person?.profile);
+      $('article-related').value = article.related ?? '';
+      renderPublish();
+      // a field Ryan is typing in keeps his caret: only the others are filled again
+      if (document.activeElement !== $('article-title')) $('article-title').value = article.title ?? '';
+      if (document.activeElement !== $('article-summary')) $('article-summary').value = article.summary ?? '';
+      // an empty text starts with one paragraph, so the first line typed is a paragraph too
+      if (document.activeElement !== $('article-text')) $('article-text').innerHTML = withPhotos(article, cleanHtml(article.content), (id, picture) => {
+        const block = el('span', {className: 'pics', contentEditable: 'false'});
+        block.dataset.picture = id;
+        block.append(photoImg(picture, ''));
+        return block;
+      }) || '<p><br></p>';
+      renderPictureList();
+      $('project-picker').value = `article:${state.article}`;
+      resetDelete();
+      renderReading();
+    }
+    function setArticle(field, value) {
+      state.articles[state.article] = {...state.articles[state.article], [field]: value};
+      save();
+      renderReading();
+      renderPublish();
+    }
+    $('article-title').addEventListener('input', () => {
+      setArticle('title', $('article-title').value);
+      fillPicker();
+      $('project-picker').value = `article:${state.article}`;
+    });
+    $('article-summary').addEventListener('input', () => setArticle('summary', $('article-summary').value));
+    // stored cleaned, so a pasted page or picture never fills the account copy
+    $('article-text').addEventListener('input', () => setArticle('content', cleanHtml($('article-text').innerHTML)));
+    function newArticle() {
+      const id = `a${Date.now().toString(36)}`;
+      state.articles[id] = {title: '', summary: '', content: '', status: 'draft', kind: 'story', lang: 'en', year: new Date().getFullYear(), created: Date.now()};
+      state.article = id;
+      save();
+      render();
+      $('article-note').textContent = '';
+      $('article-title').focus();
+    }
+    function openArticle(id) {
+      if (!state.articles[id] || state.articles[id].deleted) return;
+      state.article = id;
+      save();
+      render();
+    }
+    function leaveArticle() {
+      state.article = null;
+      save();
+      render();
+    }
+    $('new-article').addEventListener('click', newArticle);
+    $('back-to-projects').addEventListener('click', leaveArticle);
+    let deleteTimer = 0;
+    function resetDelete() {
+      clearTimeout(deleteTimer);
+      $('delete-article').textContent = 'Delete this draft';
+      delete $('delete-article').dataset.armed;
+    }
+    // two clicks, no pop-up: the first one asks, the second deletes
+    $('delete-article').addEventListener('click', () => {
+      if (!$('delete-article').dataset.armed) {
+        $('delete-article').dataset.armed = 'yes';
+        $('delete-article').textContent = 'Click again to delete it for good';
+        deleteTimer = setTimeout(resetDelete, 5000);
+        return;
+      }
+      const title = articleTitle(openArticleRecord());
+      state.articles[state.article] = {deleted: true, created: state.articles[state.article].created};
+      state.article = null;
+      save();
+      render();
+      $('note').textContent = `“${title}” deleted.`;
+    });
+    Object.assign(window.imageDesk, {newArticle, openArticle});
+
     render();
   </script>
   <section id="overview" class="overview" hidden aria-labelledby="ov-title">
@@ -573,34 +1431,9 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, wordBank: WORD_BANK
       <p class="ov-line"><span data-desk-saved></span> <button data-desk-signin type="button" hidden>Sign in</button></p>
       <p class="ov-line" id="ov-days"></p>
       <div id="ov-portfolios"></div>
+      <section class="ov-articles" id="ov-articles" aria-label="Your articles"></section>
     </div>
   </section>
-  <style is:global>
-    .top .progress { row-gap: .25rem; }
-    .top .saved-line { grid-column: 1 / -1; display: flex; gap: .5rem; align-items: center; color: #aaa; font-size: .72rem; line-height: 1.1; }
-    .top .saved-line button { min-height: 0; padding: .05rem .4rem; font-size: .72rem; }
-    .overview { position: fixed; inset: 0; z-index: 10; overflow-y: auto; background: #0f0f0f; }
-    .overview[hidden] { display: none; }
-    .ov-wrap { max-width: 44rem; margin: 0 auto; padding: 1.5rem 1rem 4rem; display: grid; gap: .9rem; }
-    .ov-head { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
-    .ov-head h2 { margin: 0; font-family: Georgia, serif; font-size: 1.8rem; }
-    .ov-next { min-height: 4rem; font-size: 1.25rem; text-align: left; }
-    .ov-big { margin: .5rem 0 0; font-size: 1.15rem; font-weight: 700; }
-    .ov-line { margin: 0; color: #ccc; line-height: 1.45; }
-    .ov-bar { display: flex; height: .7rem; background: #2a2a28; }
-    .ov-bar .ov-done { background: var(--gold); }
-    .ov-bar .ov-started { background: #7a6a48; }
-    .ov-portfolio { border-top: 1px solid var(--line); padding: .7rem 0; }
-    .ov-portfolio summary { cursor: pointer; display: grid; gap: .45rem; }
-    .ov-portfolio summary span { display: flex; justify-content: space-between; gap: 1rem; }
-    .ov-portfolio summary small { color: #aaa; }
-    .ov-portfolio ul { list-style: none; margin: .6rem 0 0; padding: 0; display: grid; gap: .3rem; }
-    .ov-row { width: 100%; min-height: 0; display: grid; grid-template-columns: .8rem 1fr; gap: .1rem .6rem; text-align: left; border-color: #3a3a38; color: #f5f5f0; }
-    .ov-row small { grid-column: 2; color: #aaa; }
-    .ov-dot { width: .7rem; height: .7rem; margin-top: .3rem; border: 1px solid var(--gold); border-radius: 50%; }
-    .ov-dot.ov-done { background: var(--gold); }
-    .ov-dot.ov-started { background: #7a6a48; }
-  </style>
   <script>import '../lib/desk-sync.js';</script>
 </body>
 </html>

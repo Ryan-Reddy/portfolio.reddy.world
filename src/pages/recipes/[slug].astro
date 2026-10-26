@@ -1,0 +1,11 @@
+---
+// The recipe articles at /portfolio/recipes/<slug>/ (src/content/articles/, kind: recipe)
+import Article from '../../components/Article.astro';
+import { articlePaths } from '../../lib/articles.js';
+
+export async function getStaticPaths() {
+  return articlePaths('recipe');
+}
+const { entry } = Astro.props;
+---
+<Article entry={entry} />
