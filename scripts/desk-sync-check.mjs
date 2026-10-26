@@ -131,7 +131,7 @@ try {
   check('overview: one row per portfolio', (await page.locator('.ov-portfolio').count()) >= 2, String(await page.locator('.ov-portfolio').count()));
   await shoot(page, 'overview');
   await page.locator('.ov-portfolio summary').first().click();
-  check('overview: every project listed', (await page.locator('.ov-row').count()) === total, String(await page.locator('.ov-row').count()));
+  check('overview: every project listed', (await page.locator('#ov-portfolios .ov-row').count()) === total, String(await page.locator('#ov-portfolios .ov-row').count()));
   await shoot(page, 'overview-open');
   const next = (await page.locator('#ov-next').textContent()).replace(/^Next up: | →$/g, '');
   await page.locator('#ov-next').click();
@@ -161,23 +161,39 @@ try {
     && (await pen.page.locator('#reading .reading-text').textContent()).includes('First paragraph'));
   check('the draft is in the project list, marked draft', (await pen.page.locator('#project-picker optgroup[label^="Your articles"] option').allTextContents()).includes('Street interviews · draft'));
   const stored = await pen.page.evaluate((key) => Object.values(JSON.parse(localStorage.getItem(key)).articles ?? {}), 'reddy-world-image-metadata-v4');
-  check('the draft is saved and stamped', stored.length === 1 && stored[0].title === 'Street interviews' && stored[0].status === 'draft' && stored[0].at > 0, JSON.stringify(stored));
+  // the desk may also hold drafts seeded from the repo (src/data/article-seeds/): this one is found by its title
+  const mine = stored.filter((article) => article.title === 'Street interviews');
+  check('the draft is saved and stamped', mine.length === 1 && mine[0].status === 'draft' && mine[0].at > 0, JSON.stringify(mine));
   // an interview needs its person before it can be published; a story with enough words can
   await pen.page.locator('#article-kind').selectOption('interview');
   check('an interview without its person cannot be published yet', await pen.page.locator('#publish-article').isDisabled() && /the person/.test(await pen.page.locator('#publish-hint').textContent()));
   await pen.page.locator('#article-kind').selectOption('story');
   await pen.page.locator('#publish-article').click();
-  const published = await pen.page.evaluate(() => Object.values(window.imageDesk.state.articles)[0]);
+  const published = await pen.page.evaluate(() => window.imageDesk.state.articles[window.imageDesk.state.article]);
   check('Publish marks it ready, with its address fixed', published.status === 'ready' && published.slug === 'street-interviews' && published.readyAt > 0, JSON.stringify(published).slice(0, 160));
   check('the address it gets is shown', /reddy\.world\/portfolio\/stories\/street-interviews\//.test(await pen.page.locator('#article-address').textContent()));
   await pen.page.locator('#unpublish-article').click();
-  check('Back to draft', await pen.page.evaluate(() => Object.values(window.imageDesk.state.articles)[0].status === 'draft'));
+  check('Back to draft', await pen.page.evaluate(() => window.imageDesk.state.articles[window.imageDesk.state.article].status === 'draft'));
+  // how the draft shows elsewhere: on the wall, as a shared link, in search
+  await pen.page.locator('#show-elsewhere').click();
+  check('the second view shows the wall tile, the link card and the search result', await pen.page.locator('#reading').isHidden()
+    && (await pen.page.locator('#elsewhere .tile .t').textContent()) === 'Street interviews'
+    && (await pen.page.locator('#elsewhere .tile .m').textContent()) === 'Story'
+    && (await pen.page.locator('#elsewhere .linkcard strong').textContent()) === 'Street interviews · reddy.world');
+  check('a story sits in the row Inventions & art', /Inventions & art/.test(await pen.page.locator('#elsewhere .preview .hint').first().textContent()));
+  check('the search description is the summary, then the start of the text', (await pen.page.locator('#elsewhere .serp .d').textContent()) === 'What people on the street told me. First paragraph of the draft.',
+    await pen.page.locator('#elsewhere .serp .d').textContent());
+  await pen.page.locator('#article-kind').selectOption('interview');
+  check('an interview sits in the row Study & other work', /Study & other work/.test(await pen.page.locator('#elsewhere .preview .hint').first().textContent()));
+  await pen.page.locator('#article-kind').selectOption('story');
+  await pen.page.locator('#show-elsewhere').click();
+  check('and back to its page', await pen.page.locator('#reading').isVisible() && await pen.page.locator('#elsewhere').isHidden());
   // pictures: signed out they can't be added (they live in the account); one the account has shows in the list and the text
   await pen.page.setInputFiles('#pic-input', { name: 'street.png', mimeType: 'image/png', buffer: Buffer.from('89504e470d0a1a0a', 'hex') });
   check('signed out, a picture is not added, and the desk says why', await waitFor(pen.page, () => /sign in first/.test(document.querySelector('#pic-hint').textContent)), await pen.page.locator('#pic-hint').textContent());
   await pen.page.evaluate(() => {
     const s = window.imageDesk.state;
-    const id = Object.keys(s.articles)[0];
+    const id = s.article;
     s.articles[id] = { ...s.articles[id], pictures: { pq1: { path: 'desk-uploads/aaaaaaaaaaaaaaaa-street.jpg', name: 'street.jpg', alt: '' } }, hero: 'pq1', content: '<p>First paragraph of the draft.</p><figure data-picture="pq1"></figure>' };
     window.imageDesk.render();
   });
@@ -188,7 +204,7 @@ try {
   await pen.page.locator('#article-text p').first().click();
   await pen.page.keyboard.press('End');
   await pen.page.keyboard.type(' More.');
-  check('typing keeps the picture marker in the text', await pen.page.evaluate(() => /<figure data-picture="pq1"><\/figure>/.test(Object.values(window.imageDesk.state.articles)[0].content)));
+  check('typing keeps the picture marker in the text', await pen.page.evaluate(() => /<figure data-picture="pq1"><\/figure>/.test(window.imageDesk.state.articles[window.imageDesk.state.article].content)));
   await pen.page.reload();
   await pen.page.waitForFunction(() => window.imageDesk && window.deskSync);
   check('after a reload the draft is still open', (await pen.page.locator('#article-title').inputValue()) === 'Street interviews');
@@ -203,7 +219,8 @@ try {
   check('delete asks first', (await pen.page.locator('#delete-article').textContent()).includes('Click again'));
   await pen.page.locator('#delete-article').click();
   const afterDelete = await pen.page.evaluate(() => Object.values(window.imageDesk.state.articles));
-  check('deleted: gone from the list, kept as a stamped tombstone', (await pen.page.locator('#project-picker optgroup[label^="Your articles"]').count()) === 0 && afterDelete.length === 1 && afterDelete[0].deleted === true && afterDelete[0].at > 0, JSON.stringify(afterDelete));
+  const tombstones = afterDelete.filter((article) => article.deleted);
+  check('deleted: gone from the list, kept as a stamped tombstone', !(await pen.page.locator('#project-picker option').allTextContents()).some((text) => text.startsWith('Street interviews')) && tombstones.length === 1 && tombstones[0].at > 0, JSON.stringify(tombstones));
   check('articles: no page errors', pen.errors.length === 0, pen.errors.join(' / '));
   await shoot(pen.page, 'article');
   await writer.close();
