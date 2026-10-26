@@ -16,6 +16,19 @@ const blank = (data) => {
     Object.assign(m, { alt: '', description: '' });
     delete m.keywords;
   }
+  // and the posts' own words, so the tests don't depend on what the desk has sent since
+  for (const p of [post, data.rrproductions.posts.find((x) => x.slug === 'making-of-a-kaleidoscope')]) {
+    delete p.keywords;
+    delete p.summary;
+    delete p.edited_content;
+  }
+  // a project with known words for the desk tests: lightsurface, five keywords on the post and its picture
+  const light = data.rmaekers.posts.find((p) => p.slug === 'lightsurface-mk1-set');
+  const words = ['vbx', 'Decor & stages', 'Light', 'custom props', 'dmx control'];
+  light.keywords = [...words];
+  for (const m of [...light.media.filter((x) => x.type === 'image'), light.featured].filter(Boolean)) m.keywords = [...words];
+  delete light.summary;
+  delete light.edited_content;
   return data;
 };
 const archive = () => blank(Object.fromEntries(['rmaekers', 'rrproductions', 'vaguelyvulgar'].map((k) => [k, read(`../src/data/${k}.json`)])));
@@ -295,4 +308,44 @@ test('the desk: a description becomes the alt text; a project credit reaches eve
 
 test('the desk: something that is not a desk is refused', () => {
   assert.throws(() => applyDesk({ version: 4, images: {} }, archive()), /not an image desk/);
+});
+
+test('the desk: a field cleared on purpose clears it on the site; a blank one does not', () => {
+  const data = archive();
+  applyDesk(desk({ 'rmaekers/lightsurface-mk1-set': { tags: '', cleared: ['tags'] } }), data);
+  assert.deepEqual(post(data, 'rmaekers', 'lightsurface-mk1-set').keywords, []);
+  assert.equal(media(data, 'rmaekers', 'lightsurface-mk1-set', LIGHT).keywords, undefined);
+  applyDesk(desk({ 'rmaekers/lightsurface-mk1-set': { summary: 'Light set' } }), data);
+  applyDesk(desk({ 'rmaekers/lightsurface-mk1-set': { summary: '', cleared: ['summary'] } }), data);
+  assert.equal(post(data, 'rmaekers', 'lightsurface-mk1-set').summary, undefined);
+});
+
+test('the desk: a description that is only the post\'s own caption is not taken as Ryan\'s words', () => {
+  const data = archive();
+  const m = media(data, 'rmaekers', 'lightsurface-mk1-set', LIGHT);
+  const before = JSON.stringify(m);
+  const report = applyDesk(desk({}, { [`rmaekers/lightsurface-mk1-set::${LIGHT}`]: { description: m.alt } }), data);
+  assert.equal(JSON.stringify(m), before);
+  assert.equal(report.pictures, 0);
+});
+
+test('the desk: an early url-only record goes to the public projects with that picture, never to a hidden one', () => {
+  const data = archive();
+  const shared = data.rrproductions.posts.find((p) => String(p.id) === '229').media.find((m) => m.type === 'image' && data.rrproductions.posts.find((x) => String(x.id) === '227').media.some((y) => y.url === m.url));
+  assert.ok(shared, 'a picture both posts hold');
+  applyDesk(desk({}, { [shared.url]: { description: 'A chair connector, drawn in IronCAD' } }), data);
+  const hidden = data.rrproductions.posts.find((p) => String(p.id) === '227').media.find((m) => m.url === shared.url);
+  assert.equal(shared.description, 'A chair connector, drawn in IronCAD');
+  assert.notEqual(hidden.description, 'A chair connector, drawn in IronCAD');
+});
+
+test('the desk: the lead picture keeps its own words in its featured copy', () => {
+  const data = archive();
+  const p = post(data, 'rrproductions', 'making-of-a-kaleidoscope');
+  const pictures = p.media.filter((m) => m.type === 'image');
+  const lead = pictures.find((m) => m.url !== p.featured?.url) ?? pictures[0];
+  applyDesk(desk({ 'rrproductions/making-of-a-kaleidoscope': { tags: 'kaleidoscope', hero: lead.url } }, { [`rrproductions/making-of-a-kaleidoscope::${lead.url}`]: { tags: 'mirror' } }), data);
+  assert.equal(p.featured.url, lead.url);
+  assert.deepEqual(p.featured.keywords, ['kaleidoscope', 'mirror']);
+  assert.deepEqual(lead.keywords, ['kaleidoscope', 'mirror']);
 });

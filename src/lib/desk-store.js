@@ -122,7 +122,10 @@ export function mergeEntry(a, b, existingDescription) {
   for (const key of new Set([...Object.keys(b), ...Object.keys(a)])) {
     const va = a[key];
     const vb = b[key];
-    if (blank(va)) out[key] = vb;
+    // "not done" set on purpose (Reopen) on the stamped side stays, over the other side's nothing
+    const stampedDone = ta > tb ? va : tb > ta ? vb : undefined;
+    if (key === 'reviewed' && stampedDone === false) out[key] = false;
+    else if (blank(va)) out[key] = vb;
     else if (blank(vb)) out[key] = va;
     else if (key === 'tags') out[key] = unionTags(va, vb);
     else if (typeof va === 'boolean') out[key] = va || vb;
@@ -223,7 +226,8 @@ export function summarize(projects, state, {credits = null, now = Date.now()} = 
       portfolio: project.portfolio,
       pictures: project.images.length,
       status,
-      keywords: own.tags !== undefined ? tagList(own.tags).length : (project.keywords?.length ?? 0),
+      // the desk's rule: a blank field is the archive's, unless Ryan cleared it on purpose
+      keywords: own.cleared?.includes?.('tags') ? 0 : String(own.tags ?? '').trim() ? tagList(own.tags).length : (project.keywords?.length ?? 0),
       lead: Boolean(own.hero),
       creditsMissing,
       doneToday: Boolean(own.reviewed && own.doneAt && dayOf(own.doneAt) === today),
