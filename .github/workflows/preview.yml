@@ -95,15 +95,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Delete the preview channel
+        shell: bash
         env:
           SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GETREDDYWORLD }}
         run: |
           printf '%s' "$SERVICE_ACCOUNT" > "$RUNNER_TEMP/sa.json"
+          trap 'rm -f "$RUNNER_TEMP/sa.json"' EXIT
           export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
+          # the CLI wants a firebase.json even with --site, and this job has no checkout: without one
+          # the list answered an error, which read as "no channel", and every preview stayed (#37)
+          mkdir -p "$RUNNER_TEMP/fb" && cd "$RUNNER_TEMP/fb" && echo '{}' > firebase.json
           fb() { npx -y firebase-tools@14 "$@" --project getreddyworld; }
-          if fb hosting:channel:list --site portfolio-reddy --json | grep -q "/channels/$CHANNEL\""; then
+          fb hosting:channel:list --site portfolio-reddy --json > list.json || true
+          if ! jq -e '.status == "success"' list.json > /dev/null; then
+            echo "::error::Could not list the preview channels of portfolio-reddy:"
+            cat list.json
+            exit 1
+          fi
+          if jq -e --arg c "$CHANNEL" '.result.channels[] | select(.name | endswith("/channels/" + $c))' list.json > /dev/null; then
             fb hosting:channel:delete "$CHANNEL" --site portfolio-reddy --force
           else
             echo "No channel $CHANNEL on portfolio-reddy (never deployed, or expired)"
           fi
-          rm -f "$RUNNER_TEMP/sa.json"
