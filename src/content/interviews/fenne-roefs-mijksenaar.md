@@ -28,7 +28,11 @@ In het openbaar vervoer zie je juist wat meer neutrale, rustigere, veiligere kle
 
 ## Op welke manieren beïnvloeden kleur en licht de leesbaarheid, oriëntatie en memorabiliteit van indoor ruimtes voor wayfinding?
 
-Kleuren zijn op zich een heel belangrijk functioneel object. De reflectiewaarden en contrast nemen wij altijd mee in ons ontwerp. Zeker naarmate mensen wat ouder worden of om andere redenen minder zicht hebben, is het heel belangrijk te realiseren dat deze doelgroep meer contrast nodig heeft. Als informatie heel belangrijk is en door iedereen gelezen moet kunnen worden, kiezen wij het liefst voor lichtbakken, inwendig verlichte borden. Als dit niet kan dan kiezen we voor hoog contrast met matte oppervlakken, en werken we met omgevingslicht. Hoe lager het omgevingslicht ook, des te hoger het contrast ook moet zijn. En voor hele grote teksten kom je dan weer makkelijker weg met wat minder contrast.
+Kleuren zijn op zich een heel belangrijk functioneel object. De reflectiewaarden en contrast nemen wij altijd mee in ons ontwerp. Zeker naarmate mensen wat ouder worden of om andere redenen minder zicht hebben, is het heel belangrijk te realiseren dat deze doelgroep meer contrast nodig heeft.
+
+Als informatie heel belangrijk is en door iedereen gelezen moet kunnen worden, kiezen wij het liefst voor lichtbakken, inwendig verlichte borden. Als dit niet kan dan kiezen we voor hoog contrast met matte oppervlakken, en werken we met omgevingslicht. Hoe lager het omgevingslicht ook, des te hoger het contrast ook moet zijn.
+
+En voor hele grote teksten kom je dan weer makkelijker weg met wat minder contrast.
 
 Zelfs het lettertype kan impact hebben, zo heeft Schiphol bijvoorbeeld meerdere lettertypen, maar het lettertype dat gebruikt wordt voor zwart op lichte ondergronden, is ietsjes vetter gemaakt simpelweg omdat de lichte achtergrond anders de letters overstraalt voor mensen met slecht zicht.
 
@@ -46,7 +50,11 @@ Op Schiphol gebruiken we dan hele verzadigde kleuren, in een museum wil je dat j
 
 ## Hoe beïnvloeden kleur en grafische elementen de visuele aandacht en waarneming van wayfinding signage? Zijn er richtlijnen voor effectief gebruik van kleurcoderingssystemen? Ben je bekend met de boeken van Edward Tufte?
 
-Je bent wel bekend met de kleuren op landkaarten, water bijvoorbeeld wordt steeds donkerder blauw, dit betekent dat het water steeds dieper wordt. En dat is heel intuïtief, maar als ik je dan vraag hoe diep deze schakering blauw is, dan is dat bijna onmogelijk om zo snel te herkennen. Maar je hebt dus ook kleursystemen, blauw betekent dit, groen betekent dat. We zijn dus ook bezig bijvoorbeeld met een vlaggenkleurensysteem voor op het strand, deze 7 kleuren moeten dusdanig verschillen dat iedereen ze kan herkennen en benoemen. Dus niet dat het oranje-rood is, maar dat iedereen het gelijk kan herkennen als zijnde rood.
+Je bent wel bekend met de kleuren op landkaarten, water bijvoorbeeld wordt steeds donkerder blauw, dit betekent dat het water steeds dieper wordt. En dat is heel intuïtief, maar als ik je dan vraag hoe diep deze schakering blauw is, dan is dat bijna onmogelijk om zo snel te herkennen.
+
+Maar je hebt dus ook kleursystemen, blauw betekent dit, groen betekent dat.
+
+We zijn dus ook bezig bijvoorbeeld met een vlaggenkleurensysteem voor op het strand, deze 7 kleuren moeten dusdanig verschillen dat iedereen ze kan herkennen en benoemen. Dus niet dat het oranje-rood is, maar dat iedereen het gelijk kan herkennen als zijnde rood.
 
 Vrouwen zijn gemiddeld bijvoorbeeld meer sensitief dan mannen voor verschillende kleuren, meer dan mannen. Dit zijn echt heel veel, maar om dit functioneel in te zetten voor je informatiesysteem is dit best wel beperkt.
 
@@ -54,7 +62,9 @@ Met bijvoorbeeld een metrolijnenkaart, kijk je naar 5-7 kleuren.
 
 ## Hoe heeft uw achtergrond in toegepaste psychologie en grafische communicatie uw aanpak beïnvloed bij het bestuderen van de invloed van kleurkeuzes op wayfinding?
 
-Ik zou haast zeggen in elke ontwerpbeslissing. Ik denk dat deze vraag vooral duidt op hoe je informatie verwerkt als zender en ontvanger. Er zit informatie in mijn hoofd, en die wil ik in jouw hoofd. Dus je realiseren dat er echt aan beide kanten wat mis kan gaan waardoor wat in mijn hoofd zit in de jouwe niet wordt begrepen. Ik denk dat het vaak mis gaat bij het inschatten van wat er nodig is voor iemand die hier voor de eerste keer komt en hoe evident het is hoe je je weg daar gaat zoeken. Wellicht staan de borden niet op de plek die ze normaal verwachten, of waar die ze nodig had, dus ziet ze niet. Dit is een essentieel onderdeel van het goed uitwerken van een ontwerp.
+Ik zou haast zeggen in elke ontwerpbeslissing. Ik denk dat deze vraag vooral duidt op hoe je informatie verwerkt als zender en ontvanger.
+
+Er zit informatie in mijn hoofd, en die wil ik in jouw hoofd. Dus je realiseren dat er echt aan beide kanten wat mis kan gaan waardoor wat in mijn hoofd zit in de jouwe niet wordt begrepen. Ik denk dat het vaak mis gaat bij het inschatten van wat er nodig is voor iemand die hier voor de eerste keer komt en hoe evident het is hoe je je weg daar gaat zoeken. Wellicht staan de borden niet op de plek die ze normaal verwachten, of waar die ze nodig had, dus ziet ze niet. Dit is een essentieel onderdeel van het goed uitwerken van een ontwerp.
 
 Er was bijvoorbeeld een expositie met een ding dat je niet mocht aanraken, te midden van allemaal dingen die je wel mocht aanraken. Hier stond dan weliswaar een bordje bij ABSOLUUT NIET AANRAKEN – LEVENSGEVAARLIJK, en iedereen raakte het aan.
 
@@ -69,17 +79,23 @@ We hebben eigenlijk voor heel veel luchthavens wayfinding ontworpen, en we merke
 - Blauw – commercieel
 - Paars – transfer → dit was wel iets nieuws.
 
-En deel van de reden voor de herhaling, is eigenlijk ook wel weer dat het vertrouwd voelt, het is iets dat ze herkennen van Schiphol en andere luchthavens, en dat schept een gevoel van veiligheid en bekendheid. En ook als ze in een luchthaven instappen en op een andere uitstappen hoeven ze niet alles wat ze net geleerd hebben weg te gooien weer, dit soort conventies zijn dan heel handig in. Er zijn geen algemene conventies voor wat we gebruiken, behalve dan voor vluchtroutes, dit is iets waar de brandweer dan bijvoorbeeld op controleert.
+En deel van de reden voor de herhaling, is eigenlijk ook wel weer dat het vertrouwd voelt, het is iets dat ze herkennen van Schiphol en andere luchthavens, en dat schept een gevoel van veiligheid en bekendheid. En ook als ze in een luchthaven instappen en op een andere uitstappen hoeven ze niet alles wat ze net geleerd hebben weg te gooien weer, dit soort conventies zijn dan heel handig in.
+
+Er zijn geen algemene conventies voor wat we gebruiken, behalve dan voor vluchtroutes, dit is iets waar de brandweer dan bijvoorbeeld op controleert.
 
 ## Hoe kunnen ontwerpers rekening houden met culturele verschillen en zorgen voor effectieve kleurkeuzes in wayfinding systemen voor diverse gebruikersgroepen, inclusief mensen met kleurenblindheid?
 
 Ik geloof dat iets van 8 procent van de mannen een vorm van kleurenblindheid hebben, rood-groen van elkaar onderscheiden, en dat ligt rond de 0,5% bij de vrouwen.
 
-Dus als wij kleur functioneel inzetten, dan is dat alsnog redundant, het is een secundaire eigenschap van de wayfinding en bewegwijzering. Het is een extra hulpmiddel. Zo heb je allerlei tools online om met verschillende vormen van kleurenblindheid je ontwerp te testen, en is dit ook heel belangrijk.
+Dus als wij kleur functioneel inzetten, dan is dat alsnog redundant, het is een secundaire eigenschap van de wayfinding en bewegwijzering. Het is een extra hulpmiddel.
+
+Zo heb je allerlei tools online om met verschillende vormen van kleurenblindheid je ontwerp te testen, en is dit ook heel belangrijk.
 
 ## Welke opkomende trends of toekomstige ontwikkelingen ziet u in het gebruik van kleur bij wayfinding in publieke ruimtes?
 
-Ik ben zelf momenteel helemaal bezig met geluid, als opkomende modaliteit waar je veel mee zou kunnen doen, wat betreft ruimtelijk begrip en navigatie. Ik ben zelf bezig met bijvoorbeeld een ontwerp van een soundscape die slechtzienden zou kunnen helpen bij het navigeren van een onbekende omgeving. Nou is het natuurlijk niet kleur, maar ik kan me wel intens verbazen over waarom het niet al meer gebeurt.
+Ik ben zelf momenteel helemaal bezig met geluid, als opkomende modaliteit waar je veel mee zou kunnen doen, wat betreft ruimtelijk begrip en navigatie. Ik ben zelf bezig met bijvoorbeeld een ontwerp van een soundscape die slechtzienden zou kunnen helpen bij het navigeren van een onbekende omgeving.
+
+Nou is het natuurlijk niet kleur, maar ik kan me wel intens verbazen over waarom het niet al meer gebeurt.
 
 Ik heb hierover een one-pager die ik je zal opsturen.
 
