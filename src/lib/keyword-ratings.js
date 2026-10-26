@@ -44,23 +44,24 @@ const viewsOf = (topic) => {
   const counts = ['en', 'nl'].map((lang) => topic.wiki[lang]?.views).filter((v) => typeof v === 'number');
   return counts.length ? counts.reduce((a, b) => a + b, 0) : 0;
 };
-// the 30 days before, for the same pages; null when a page has no earlier count
-const previousOf = (topic) => {
-  const pages = ['en', 'nl'].map((lang) => topic?.wiki?.[lang]).filter((page) => page?.title);
-  return pages.length && pages.every((page) => typeof page.previous === 'number') ? pages.reduce((sum, page) => sum + page.previous, 0) : null;
-};
-
 /**
- * Rising: at least a quarter more readers than in the 30 days before, from a base of 50 or more
- * (a page going from 4 to 9 readers is not a trend). Returns the change as a fraction, or null.
+ * The trend of the page a word is rated by: its readers in the last full month against the same month a
+ * year before, measured against all of that Wikipedia over the same months, which shrinks year on year.
+ * So a season (festivals every summer) or Wikipedia's own decline is not taken for a rising word.
+ * Returns the change as a fraction (0.4: 40% better than Wikipedia as a whole), or null with too little
+ * to go on (under 300 readers that month, or no count a year before).
  */
-export function trendOf(views, previous) {
-  if (typeof views !== 'number' || typeof previous !== 'number' || previous < 50) return null;
-  return (views - previous) / previous;
+export function trendOf(year, wikiYear) {
+  if (!year || typeof year.month !== 'number' || !(year.yearBefore > 0) || year.month < 300) return null;
+  const wiki = wikiYear?.month > 0 && wikiYear?.yearBefore > 0 ? wikiYear.month / wikiYear.yearBefore : 1;
+  return year.month / year.yearBefore / wiki - 1;
+}
+/** Bing's own trend for the exact words: the last 4 weeks against the 4 before, from 20 searches up. */
+export function bingTrendOf(bing) {
+  return typeof bing?.impressions === 'number' && bing.previous >= 20 ? (bing.impressions - bing.previous) / bing.previous : null;
 }
 export const RISING = 0.25;
 const trendBadge = (trend) => (trend !== null && trend >= RISING ? ` ↑${Math.round(trend * 100)}%` : '');
-const trendTitle = (trend) => (trend === null ? '' : `${trend >= 0 ? 'up' : 'down'} ${Math.abs(Math.round(trend * 100))}% on the 30 days before`);
 
 /** One word's rating, from the build's data. */
 export function rate(word, ratings) {
@@ -71,16 +72,19 @@ export function rate(word, ratings) {
   // a phrase without a page of its own is rated by its closest page (≈)
   const closest = !pages.length ? topic?.closest ?? null : null;
   const views = closest ? closest.views : topic ? viewsOf(topic) : null;
-  const trend = closest ? trendOf(closest.views, closest.previous) : trendOf(views, previousOf(topic));
+  // Bing counts searches for the exact words, so its trend goes first; else the page's year on year
+  const searchTrend = bingTrendOf(bing);
+  const pageTrend = trendOf(topic?.year, ratings?.wikiYear?.[topic?.year?.lang]);
+  const trend = searchTrend ?? pageTrend;
   const level = levelOf(views);
   const parts = [];
   if (!topic) parts.push('no data yet');
   else if (closest) parts.push(`no page of its own; its closest page “${closest.page}” had ${closest.views.toLocaleString('en')} readers in 30 days`);
   else if (!pages.length) parts.push('no Wikipedia page for this topic, nor a close one');
   else parts.push(`${views.toLocaleString('en')} readers in 30 days (${pages.join(', ')})`);
-  if (trend !== null) parts.push(trendTitle(trend));
+  if (pageTrend !== null) parts.push(`${pageTrend >= 0 ? 'up' : 'down'} ${Math.abs(Math.round(pageTrend * 100))}% on a year before, against Wikipedia as a whole`);
   if (local) parts.push(`rated by its topic “${core}”; the place makes it local`);
-  if (typeof bing?.impressions === 'number') parts.push(`Bing, Netherlands: ${bing.impressions.toLocaleString('en')} searches in ${bing.weeks} weeks`);
+  if (typeof bing?.impressions === 'number') parts.push(`Bing, Netherlands: ${bing.impressions.toLocaleString('en')} searches in ${bing.weeks} weeks${searchTrend !== null ? `, ${searchTrend >= 0 ? 'up' : 'down'} ${Math.abs(Math.round(searchTrend * 100))}% on the 4 weeks before` : ''}`);
   return {
     tag: word,
     views,
@@ -145,17 +149,17 @@ export function ratedFor(words, ratings, { limit = Infinity, relatedLimit = 6, v
       if (seen.has(key) || !rateable(other.tag) || !relevant(core, other, vocabulary) || typeof other.views !== 'number' || other.views <= (item.views ?? 0)) continue;
       if (!related.has(key) || related.get(key).views < other.views) {
         const level = levelOf(other.views);
-        const trend = trendOf(other.views, other.previous);
+        // a related word's own trend is not fetched: its rating is its 30 days only
         related.set(key, {
           tag: other.tag,
           views: other.views,
           level,
-          trend,
+          trend: null,
           approx: false,
           bing: null,
-          badge: `${'●'.repeat(level)}${'○'.repeat(3 - level)} ${compact(other.views)}${trendBadge(trend)}`,
+          badge: `${'●'.repeat(level)}${'○'.repeat(3 - level)} ${compact(other.views)}`,
           from: item.tag,
-          title: [`Related to “${item.tag}” (${other.source === 'datamuse' ? 'Datamuse' : 'Wikipedia search'}) · ${other.views.toLocaleString('en')} readers of its Wikipedia page in 30 days`, trendTitle(trend)].filter(Boolean).join(' · '),
+          title: `Related to “${item.tag}” (${other.source === 'datamuse' ? 'Datamuse' : 'Wikipedia search'}) · ${other.views.toLocaleString('en')} readers of its Wikipedia page in 30 days`,
         });
       }
     }

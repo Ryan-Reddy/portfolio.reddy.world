@@ -6,13 +6,17 @@
 //   KEYWORD_RATINGS_BUDGET=600 npm run keywords:rate   allow ten minutes instead of two
 //
 // Sources, all free and called one request at a time (their terms: see the comparison on issue #46):
-// - Wikipedia (en, nl): readers of a topic's page in the last 30 days and in the 30 days before (the trend),
-//   and related pages from its search. A phrase with no page of its own is rated by the closest page
-//   Wikipedia's search finds for it, when that page shares a word with it (marked ≈ on the desk).
+// - Wikipedia (en, nl): readers of a topic's page in the last 30 days, and related pages from its search.
+//   A phrase with no page of its own is rated by the closest page Wikipedia's search finds for it, when
+//   that page shares a word with it (marked ≈ on the desk).
+// - Wikimedia's pageview REST API, for the trend: the page's readers in the last full month against the
+//   same month a year before, measured against all of that Wikipedia over the same months (it shrinks
+//   year on year), so a season or Wikipedia's own decline is not taken for a rising word.
 //   Wikimedia asks for a User-Agent with contact details and requests in series, not in parallel.
 // - Datamuse: related words ("means like"); free without a key up to 100,000 requests a day.
 // - Bing Webmaster Tools, only when BING_WEBMASTER_API_KEY is set: weekly searches in the Netherlands
-//   for the exact words (GetKeywordStats). The key stays in the build; only the counts reach the page.
+//   for the exact words (GetKeywordStats), the last 4 weeks and the 4 before. The key stays in the build;
+//   only the counts reach the page.
 //
 // Never fails the build: a source that is down leaves its words as they were (or "no data").
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
@@ -23,9 +27,10 @@ const OUT = fileURLToPath(new URL('../src/data/keyword-ratings.json', import.met
 const USER_AGENT = 'reddy.world-image-desk/1.0 (https://reddy.world/contact; build-time keyword ratings)';
 const DAY = 24 * 60 * 60 * 1000;
 export const MAX_AGE_DAYS = 30;
-// entries written before the trend and the closest page were kept are fetched again
-export const VERSION = 2;
-const GAP_MS = 250;
+// entries written before the year-on-year trend and the closest page were kept are fetched again
+export const VERSION = 4;
+// Wikimedia allows about 200 requests a minute without a key
+const GAP_MS = 300;
 
 export function emptyRatings() {
   return {
@@ -74,32 +79,34 @@ const sumViews = (pageviews) => {
 };
 
 /**
- * Wikipedia's daily readers (date -> count, up to 60 days) as the last 30 days and the 30 before them.
- * `previous` is null when fewer than 28 earlier days came back, so a young page shows no trend.
+ * Readers in the last 30 days, from Wikipedia's daily counts (date -> count). Today and other days at the
+ * end that have no count yet are left out, so the sum covers 30 whole days.
  */
-export function splitViews(pageviews) {
-  if (!pageviews || typeof pageviews !== 'object') return { views: null, previous: null };
+export function lastThirtyDays(pageviews) {
+  if (!pageviews || typeof pageviews !== 'object') return null;
   const days = Object.keys(pageviews).sort();
-  const count = (list) => list.reduce((sum, day) => sum + (typeof pageviews[day] === 'number' ? pageviews[day] : 0), 0);
-  const before = days.slice(0, -30);
-  return { views: count(days.slice(-30)), previous: before.length >= 28 ? count(before) : null };
+  while (days.length && typeof pageviews[days.at(-1)] !== 'number') days.pop();
+  return days.slice(-30).reduce((sum, day) => sum + (typeof pageviews[day] === 'number' ? pageviews[day] : 0), 0);
 }
 
-/** One request at a time, a pause between them, one retry; null when the source is down. */
+/** One request at a time, a pause between them, one retry (after the wait a 429 asks for); null when the source is down. */
 export function politeFetcher({ fetchImpl = globalThis.fetch, gapMs = GAP_MS, deadline = Infinity, log = () => {} } = {}) {
   let last = 0;
   let failures = 0;
   return async function fetchJson(url, init = {}) {
     if (Date.now() > deadline || failures >= 8) return null;
+    let retryAfter = 0;
     for (let attempt = 0; attempt < 2; attempt++) {
-      const wait = last + gapMs * (attempt + 1) - Date.now();
-      if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+      const wait = Math.max(last + gapMs * (attempt + 1) - Date.now(), retryAfter);
+      if (wait > 0) await new Promise((r) => setTimeout(r, Math.min(wait, 30000)));
       last = Date.now();
       try {
         const res = await fetchImpl(url, { ...init, headers: { 'User-Agent': USER_AGENT, 'Api-User-Agent': USER_AGENT, Accept: 'application/json', ...init.headers }, signal: AbortSignal.timeout(15000) });
         if (res.ok) return await res.json();
         log(`  ${res.status} from ${new URL(url).host}`);
+        if (res.status === 404) return null; // a page with no counts (too new, or none): not a failure of the source
         if (res.status < 500 && res.status !== 429) break;
+        retryAfter = (Number(res.headers?.get?.('retry-after')) || 0) * 1000;
       } catch (error) {
         log(`  ${new URL(url).host}: ${error.message}`);
       }
@@ -109,14 +116,46 @@ export function politeFetcher({ fetchImpl = globalThis.fetch, gapMs = GAP_MS, de
   };
 }
 
+// ---------- the trend: the last full month against the same month a year before ----------
+const stampOf = (date) => `${date.getUTCFullYear()}${String(date.getUTCMonth() + 1).padStart(2, '0')}0100`;
+/**
+ * The last full month and the same month a year before, as Wikimedia's REST API writes them (YYYYMM0100),
+ * and the range to ask for: up to the month's last day, since the API cuts a month off at the end given.
+ */
+export function trendMonths(now) {
+  const today = new Date(now);
+  const month = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() - 1, 1));
+  const yearBefore = new Date(Date.UTC(month.getUTCFullYear() - 1, month.getUTCMonth(), 1));
+  const lastDay = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 0));
+  const end = `${lastDay.getUTCFullYear()}${String(lastDay.getUTCMonth() + 1).padStart(2, '0')}${String(lastDay.getUTCDate()).padStart(2, '0')}00`;
+  return { month: stampOf(month), yearBefore: stampOf(yearBefore), end };
+}
+const restPage = (lang, title, { yearBefore, end }) => `https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/${lang}.wikipedia/all-access/user/${encodeURIComponent(title.replace(/ /g, '_'))}/monthly/${yearBefore}/${end}`;
+const restWiki = (lang, { yearBefore, end }) => `https://wikimedia.org/api/rest_v1/metrics/pageviews/aggregate/${lang}.wikipedia/all-access/user/monthly/${yearBefore}/${end}`;
+const pick = (items, stamp) => items?.find((item) => item.timestamp === stamp)?.views ?? null;
+
+/** A page's readers in the last full month and in the same month a year before; null when Wikimedia has no counts. */
+export async function pageYear(fetchJson, lang, title, months) {
+  const data = await fetchJson(restPage(lang, title, months));
+  if (!data?.items) return null;
+  return { lang, page: title, month: pick(data.items, months.month), yearBefore: pick(data.items, months.yearBefore) };
+}
+
+/** All of a Wikipedia's readers in the same two months: the yardstick a page's change is measured against. */
+export async function wikiYear(fetchJson, lang, months) {
+  const data = await fetchJson(restWiki(lang, months));
+  if (!data?.items) return null;
+  return { month: pick(data.items, months.month), yearBefore: pick(data.items, months.yearBefore), months };
+}
+
 const wikiApi = (lang, params) => `https://${lang}.wikipedia.org/w/api.php?${new URLSearchParams({ action: 'query', format: 'json', formatversion: '2', maxlag: '5', ...params })}`;
 
-/** Readers in 30 days (and the 30 before) of the pages with exactly these titles (after Wikipedia's own redirects). */
+/** Readers in 30 days of the pages with exactly these titles (after Wikipedia's own redirects). */
 export async function wikiExact(fetchJson, lang, titles) {
   const out = {};
   for (let i = 0; i < titles.length; i += 50) {
     const batch = titles.slice(i, i + 50);
-    let params = { titles: batch.join('|'), redirects: '1', prop: 'pageviews', pvipdays: '60' };
+    let params = { titles: batch.join('|'), redirects: '1', prop: 'pageviews', pvipdays: '31' };
     const pages = new Map();
     let data = null;
     for (let round = 0; round < 6; round++) {
@@ -138,8 +177,7 @@ export async function wikiExact(fetchJson, lang, titles) {
       for (const title of batch) {
         const page = pages.get(follow(title));
         if (!page) continue;
-        const { views, previous } = splitViews(page.days);
-        out[title] = page.missing ? { title: null, views: null } : { title: follow(title), views: views ?? 0, previous };
+        out[title] = page.missing ? { title: null, views: null } : { title: follow(title), views: lastThirtyDays(page.days) ?? 0 };
       }
       if (!data.continue) break;
       params = { ...params, ...data.continue };
@@ -148,12 +186,12 @@ export async function wikiExact(fetchJson, lang, titles) {
   return out;
 }
 
-/** Wikipedia's own search for a topic: the pages it finds, in its order (`rank`), with readers in 30 days and the 30 before. */
+/** Wikipedia's own search for a topic: the pages it finds, in its order (`rank`), with readers in 30 days. */
 export async function wikiRelated(fetchJson, lang, topic, limit = 6) {
-  const data = await fetchJson(wikiApi(lang, { generator: 'search', gsrsearch: topic, gsrlimit: String(limit), gsrnamespace: '0', prop: 'pageviews', pvipdays: '60' }));
+  const data = await fetchJson(wikiApi(lang, { generator: 'search', gsrsearch: topic, gsrlimit: String(limit), gsrnamespace: '0', prop: 'pageviews', pvipdays: '31' }));
   if (!data) return null;
   return (data.query?.pages ?? [])
-    .map((page) => ({ tag: titleToTag(page.title), page: page.title, ...splitViews(page.pageviews), rank: page.index ?? 99, source: 'wikipedia' }))
+    .map((page) => ({ tag: titleToTag(page.title), page: page.title, views: lastThirtyDays(page.pageviews), rank: page.index ?? 99, source: 'wikipedia' }))
     .filter((item) => typeof item.views === 'number' && normalize(item.tag) !== topic);
 }
 
@@ -164,7 +202,7 @@ export async function wikiRelated(fetchJson, lang, topic, limit = 6) {
 export function closestPage(topic, hits) {
   const own = new Set(stems(topic));
   const best = [...(hits ?? [])].sort((a, b) => a.rank - b.rank).find((hit) => hit.views > 0 && stems(hit.page).some((stem) => own.has(stem)));
-  return best ? { page: best.page, views: best.views, previous: best.previous ?? null } : null;
+  return best ? { page: best.page, views: best.views } : null;
 }
 
 /** Datamuse: words that mean something like the topic. */
@@ -179,13 +217,15 @@ export async function datamuseRelated(fetchJson, topic, limit = 6) {
     .filter((word) => normalize(word) !== topic);
 }
 
-/** Bing Webmaster Tools: searches for the exact words in one market over the last weeks. */
+/** Bing Webmaster Tools: searches for the exact words in one market over the last weeks, and the weeks before (the trend). */
 export async function bingStats(fetchJson, key, word, { country = 'nl', language = 'nl-NL', weeks = 4 } = {}) {
   const url = `https://ssl.bing.com/webmaster/api.svc/json/GetKeywordStats?${new URLSearchParams({ q: word, country, language, apikey: key })}`;
   const data = await fetchJson(url);
   if (!data || !Array.isArray(data.d)) return null;
+  const sum = (rows) => rows.reduce((total, row) => total + (Number(row.Impressions) || 0), 0);
   const recent = data.d.slice(-weeks);
-  return { impressions: recent.reduce((sum, row) => sum + (Number(row.Impressions) || 0), 0), weeks: recent.length, market: `${country}/${language}` };
+  const before = data.d.slice(-2 * weeks, -weeks);
+  return { impressions: sum(recent), weeks: recent.length, previous: before.length === weeks ? sum(before) : null, market: `${country}/${language}` };
 }
 
 const capitalise = (topic) => topic.charAt(0).toUpperCase() + topic.slice(1);
@@ -200,6 +240,15 @@ export async function refreshRatings(wordLists, previous, { fetchJson, now = Dat
   const stale = topics.filter((t) => isStale(ratings.topics[t], now, MAX_AGE_DAYS, VERSION)).sort((a, b) => Number(Boolean(ratings.topics[a])) - Number(Boolean(ratings.topics[b])) || a.localeCompare(b)).slice(0, maxTopics);
   const stamp = new Date(now).toISOString();
   let updated = 0;
+  // the yardstick for the trend: all of each Wikipedia, the same two months as the pages (once a week)
+  const months = trendMonths(now);
+  ratings.wikiYear = { ...previous?.wikiYear };
+  for (const lang of ['en', 'nl']) {
+    const known = ratings.wikiYear[lang];
+    if (known?.months?.month === months.month && known?.months?.end === months.end && !isStale(known, now, 7)) continue;
+    const year = await wikiYear(fetchJson, lang, months);
+    if (year) ratings.wikiYear[lang] = { fetchedAt: stamp, ...year };
+  }
   if (stale.length) {
     log(`Rating ${stale.length} of ${topics.length} topics`);
     const exact = {};
@@ -218,7 +267,7 @@ export async function refreshRatings(wordLists, previous, { fetchJson, now = Dat
     const similarTitles = [...new Set(pending.flatMap((p) => p.similar.map(capitalise)))];
     const similarViews = similarTitles.length ? await wikiExact(fetchJson, 'en', similarTitles) : {};
     for (const { topic, en, nl, related, similar } of pending) {
-      const fromDatamuse = similar.map((word) => ({ tag: word, page: similarViews[capitalise(word)]?.title, views: similarViews[capitalise(word)]?.views, previous: similarViews[capitalise(word)]?.previous ?? null, source: 'datamuse' })).filter((item) => typeof item.views === 'number' && item.views > 0);
+      const fromDatamuse = similar.map((word) => ({ tag: word, page: similarViews[capitalise(word)]?.title, views: similarViews[capitalise(word)]?.views, source: 'datamuse' })).filter((item) => typeof item.views === 'number' && item.views > 0);
       // one entry per Wikipedia page (sculpting and sculptor both lead to Sculpture), never the topic's own page
       const own = new Set([en?.title, nl?.title].filter(Boolean));
       const all = new Map();
@@ -228,11 +277,16 @@ export async function refreshRatings(wordLists, previous, { fetchJson, now = Dat
         if (!all.has(key) || (all.get(key).source === 'datamuse' && item.source !== 'datamuse')) all.set(key, item);
       }
       const hasPage = Boolean(en?.title || nl?.title);
+      const closest = hasPage ? null : closestPage(topic, related);
+      // the trend of the page the word is rated by: its own (English first), else its closest page
+      const trendPage = en?.title ? ['en', en.title] : nl?.title ? ['nl', nl.title] : closest ? ['en', closest.page] : null;
+      const year = trendPage ? await pageYear(fetchJson, trendPage[0], trendPage[1], months) : null;
       ratings.topics[topic] = {
         v: VERSION,
         fetchedAt: stamp,
         wiki: { en: en?.title ? en : null, nl: nl?.title ? nl : null },
-        ...(hasPage ? {} : { closest: closestPage(topic, related) }),
+        ...(hasPage ? {} : { closest }),
+        ...(year ? { year } : {}),
         related: [...all.values()].sort((a, b) => b.views - a.views || a.tag.localeCompare(b.tag)).slice(0, 12).map(({ rank, ...item }) => item),
       };
       updated++;
@@ -246,9 +300,10 @@ export async function refreshRatings(wordLists, previous, { fetchJson, now = Dat
     }
   }
   ratings.sources = {
-    wikipedia: 'Readers of the topic\'s Wikipedia page in 30 days and the 30 before, English + Dutch; a phrase without a page: its closest page (Wikimedia API, CC0 data)',
+    wikipedia: 'Readers of the topic\'s Wikipedia page in 30 days, English + Dutch; a phrase without a page: its closest page (Wikimedia API, CC0 data)',
+    trend: 'The page\'s readers in the last full month against the same month a year before, measured against all of that Wikipedia (Wikimedia pageview REST API)',
     datamuse: 'Related words, means-like (Datamuse API, https://www.datamuse.com/api/)',
-    ...(bingKey || Object.keys(ratings.bing).length ? { bing: 'Searches in the Netherlands for the exact words, last 4 weeks (Bing Webmaster Tools GetKeywordStats)' } : {}),
+    ...(bingKey || Object.keys(ratings.bing).length ? { bing: 'Searches in the Netherlands for the exact words, last 4 weeks and the 4 before (Bing Webmaster Tools GetKeywordStats)' } : {}),
   };
   if (updated || stale.length === 0) ratings.updatedAt = updated ? stamp : ratings.updatedAt;
   return { ratings, updated, stale: stale.length, topics: topics.length };
