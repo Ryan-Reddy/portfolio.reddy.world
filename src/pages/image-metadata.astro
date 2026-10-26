@@ -490,7 +490,15 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       return projectIndex < 0 ? 0 : flat.findIndex((item) => item.projectIndex === projectIndex);
     };
     if (!Number.isInteger(state.cursor) || !flat[state.cursor]) state.cursor = Math.max(0, firstIncomplete());
-    window.imageDesk = {DATA, STORE, state, flat, render: (options) => render(options)};
+    // the edit bar on a project page links here as #project=<id>: open that project, and keep it open
+    const linked = decodeURIComponent((location.hash.match(/^#project=(.+)$/) ?? [])[1] ?? '');
+    const linkedIndex = DATA.projects.findIndex((project) => project.id === linked);
+    if (linkedIndex >= 0) {
+      state.cursor = flat.findIndex((item) => item.projectIndex === linkedIndex);
+      state.article = null;
+      history.replaceState(null, '', location.pathname + location.search);
+    }
+    window.imageDesk = {DATA, STORE, state, flat, pinned: linkedIndex >= 0, render: (options) => render(options)};
 
     // ---------- tabs ----------
     let tab = 'project';
