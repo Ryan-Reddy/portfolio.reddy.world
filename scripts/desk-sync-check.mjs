@@ -160,9 +160,18 @@ try {
   check('the draft reads as its page on the left', (await pen.page.locator('#reading .reading-title').textContent()) === 'Street interviews'
     && (await pen.page.locator('#reading .reading-text').textContent()).includes('First paragraph'));
   check('the draft is in the project list, marked draft', (await pen.page.locator('#project-picker optgroup[label^="Your articles"] option').allTextContents()).includes('Street interviews · draft'));
-  check('publishing waits: the button is off', await pen.page.locator('#publish-article').isDisabled());
   const stored = await pen.page.evaluate((key) => Object.values(JSON.parse(localStorage.getItem(key)).articles ?? {}), 'reddy-world-image-metadata-v4');
   check('the draft is saved and stamped', stored.length === 1 && stored[0].title === 'Street interviews' && stored[0].status === 'draft' && stored[0].at > 0, JSON.stringify(stored));
+  // an interview needs its person before it can be published; a story with enough words can
+  await pen.page.locator('#article-kind').selectOption('interview');
+  check('an interview without its person cannot be published yet', await pen.page.locator('#publish-article').isDisabled() && /the person/.test(await pen.page.locator('#publish-hint').textContent()));
+  await pen.page.locator('#article-kind').selectOption('story');
+  await pen.page.locator('#publish-article').click();
+  const published = await pen.page.evaluate(() => Object.values(window.imageDesk.state.articles)[0]);
+  check('Publish marks it ready, with its address fixed', published.status === 'ready' && published.slug === 'street-interviews' && published.readyAt > 0, JSON.stringify(published).slice(0, 160));
+  check('the address it gets is shown', /reddy\.world\/portfolio\/stories\/street-interviews\//.test(await pen.page.locator('#article-address').textContent()));
+  await pen.page.locator('#unpublish-article').click();
+  check('Back to draft', await pen.page.evaluate(() => Object.values(window.imageDesk.state.articles)[0].status === 'draft'));
   await pen.page.reload();
   await pen.page.waitForFunction(() => window.imageDesk && window.deskSync);
   check('after a reload the draft is still open', (await pen.page.locator('#article-title').inputValue()) === 'Street interviews');

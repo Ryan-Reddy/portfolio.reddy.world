@@ -33,11 +33,12 @@
 //   node scripts/import-image-keywords.mjs desk.json [--dry-run]
 // It holds only what he changed, so every project is read, done or not, and his value
 // replaces the archive's; it also carries the short summary and the post's text.
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, readdirSync, existsSync, unlinkSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { isFileNameCaption, isMachineAlt, fallbackAlt } from '../src/lib/alt-text.js';
 import { httpUrl, storyHtml } from '../src/lib/safe-output.js';
 import { curatedPost, isPublicArchivePost } from '../src/lib/archive-curation.js';
+import { articleFiles, deskIdOf } from './desk-articles.mjs';
 
 export { isFileNameCaption };
 
@@ -265,6 +266,23 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   const fromDesk = input.version === undefined;
   const report = fromDesk ? applyDesk(input, data) : applyKeywords(input, data);
   if (flag !== '--dry-run') for (const key of KEYS) writeFileSync(path(key), `${JSON.stringify(data[key], null, 2)}\n`);
+  // the desk's published articles as files of the articles collection (scripts/desk-articles.mjs)
+  if (fromDesk) {
+    const ARTICLES = new URL('../src/content/articles/', import.meta.url);
+    const SOFTWARE = new URL('../src/content/software/', import.meta.url);
+    const existing = existsSync(ARTICLES) ? Object.fromEntries(readdirSync(ARTICLES).filter((f) => f.endsWith('.md')).map((f) => {
+      const text = readFileSync(new URL(f, ARTICLES), 'utf-8').replace(/\r\n/g, '\n');
+      return [f.replace(/\.md$/, ''), { text, desk: deskIdOf(text) }];
+    })) : {};
+    const software = readdirSync(SOFTWARE).filter((f) => f.endsWith('.md')).map((f) => f.replace(/\.md$/, ''));
+    const { write, remove, waiting } = articleFiles(input, existing, { software });
+    if (flag !== '--dry-run') {
+      for (const { slug, text } of write) writeFileSync(new URL(`${slug}.md`, ARTICLES), text);
+      for (const slug of remove) unlinkSync(new URL(`${slug}.md`, ARTICLES));
+    }
+    console.log(`articles: ${write.length} written${write.length ? ` (${write.map((w) => w.slug).join(', ')})` : ''}, ${remove.length} taken off the site${remove.length ? ` (${remove.join(', ')})` : ''}`);
+    for (const { title, missing } of waiting) console.log(`  "${title}" is ready on the desk but needs ${missing.join(', ')}: not sent`);
+  }
   if (fromDesk) console.log(`import-image-keywords (the desk): ${report.projects} projects (${report.summaries} summaries, ${report.texts} texts), ${report.pictures} pictures and ${report.heroes} lead pictures updated, ${report.credits} pictures credited${flag === '--dry-run' ? ' (dry run, nothing written)' : ''}`);
   else console.log(`import-image-keywords: ${report.pictures} pictures, ${report.projects} projects and ${report.heroes} lead pictures updated, ${report.credits} pictures credited; ${report.skipped} pictures of projects not marked done on the desk left alone${flag === '--dry-run' ? ' (dry run, nothing written)' : ''}`);
   for (const { key, before, after } of report.alts) console.log(`alt ${key}

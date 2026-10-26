@@ -7,6 +7,7 @@ import { appFacts } from '../../lib/app-json.js';
 import { PERSON_ID, ORIGIN, SITE, BASE, contactUrl } from '../../lib/portfolios.js';
 import { imageRights } from '../../lib/image-rights.js';
 import { fitTitle } from '../../lib/snippet.js';
+import { articlePath } from '../../lib/article-kinds.js';
 import '../../styles/software.css';
 
 export async function getStaticPaths() {
@@ -18,6 +19,8 @@ const { entry } = Astro.props;
 const d = entry.data;
 const { Content } = await render(entry);
 const pageUrl = `${SITE}/software/${entry.id}/`;
+// the articles that belong to this case study (an interview done for it): linked by their titles
+const articles = await getCollection('articles', (article) => article.data.related?.id === entry.id);
 const shots = await Promise.all(d.screenshots.map((s) => shot(entry.id, s)));
 // a before and an after picture head the page as a slider; otherwise the first picture does
 const pairOf = (side) => shots.find((s, i) => d.screenshots[i].pair === side);
@@ -155,6 +158,7 @@ const facts = [
     )}
 
     <aside class="doors" aria-label="More">
+      {articles.map((article) => <a href={`${BASE}/${articlePath(article.data.kind, article.id)}`} lang={article.data.titleLang ?? article.data.lang}>{article.data.title}</a>)}
       <a href="/">See all my work →</a>
       <a href={`${BASE}/software/`}>All software and websites</a>
       <a href={contactUrl({ project: entry.id })}>Plan a free 30-minute talk</a>
