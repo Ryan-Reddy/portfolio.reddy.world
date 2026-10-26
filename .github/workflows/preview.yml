@@ -4,6 +4,8 @@
 #   Links to app pages are absolute and go to the live reddy.world.
 # - One PR comment with the link, updated for every push; the channel expires after 7 days
 #   and is deleted when the PR closes or merges. Static Hosting only, so nothing runs up costs.
+# - A PR labelled shared-preview (its link was mailed to someone outside) keeps its channel 30 days,
+#   Firebase's longest, counted from the last push; it still goes when the PR closes or merges.
 name: Preview
 
 on:
@@ -87,7 +89,7 @@ jobs:
           projectId: getreddyworld
           target: portfolio
           channelId: ${{ env.CHANNEL }}
-          expires: 7d
+          expires: ${{ contains(github.event.pull_request.labels.*.name, 'shared-preview') && '30d' || '7d' }}
           entryPoint: preview
 
   delete_preview:

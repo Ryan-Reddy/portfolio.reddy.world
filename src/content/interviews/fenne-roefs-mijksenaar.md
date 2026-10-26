@@ -18,6 +18,8 @@ interviewee:
   # as mijksenaar.com links it
   orgSameAs:
     - https://www.linkedin.com/company/mijksenaar
+  # Ryan, 2026-10-26
+  profile: https://www.linkedin.com/in/fenneroefs/
 year: 2023
 hero:
   file: airport-signs.webp
