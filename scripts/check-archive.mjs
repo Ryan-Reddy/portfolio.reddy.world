@@ -9,8 +9,11 @@
 //   the wall hand-offs, the image desk) is in the sitemap.
 // - Maup, kept in the repo but not Ryan's work, is in no page, feed or list.
 // - No file anywhere in dist/ carries "ryanvanlil" (his former name, in the old WordPress addresses).
+// - Every page that may be indexed fits a search result: title at most 60 characters, description
+//   50 to 160, og:description the same (the numbers reddy.world's post-deploy check uses).
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { isRetired } from '../src/lib/sitemap-images.js';
+import { TITLE_MAX, DESCRIPTION_MIN, DESCRIPTION_MAX } from '../src/lib/snippet.js';
 
 const DIST = new URL('../dist/', import.meta.url);
 const SITE = 'https://reddy.world/portfolio';
@@ -54,6 +57,14 @@ for (const dir of pages) {
   if (!title) say('no <title>');
   else if (titles.has(title)) say(`same title as /portfolio/${titles.get(title)}`);
   else titles.set(title, dir);
+  // counted as a reader sees them: entities as one character
+  const shown = (text) => (text ?? '').replace(/&(?:#\d+|#x[\da-f]+|[a-z]+);/gi, '_');
+  const description = html.match(/<meta name="description" content="([^"]*)"/)?.[1];
+  const og = html.match(/<meta property="og:description" content="([^"]*)"/)?.[1];
+  if (title && shown(title).length > TITLE_MAX) say(`title ${shown(title).length} characters, over ${TITLE_MAX}: ${title}`);
+  if (description === undefined) say('no meta description');
+  else if (shown(description).length < DESCRIPTION_MIN || shown(description).length > DESCRIPTION_MAX) say(`description ${shown(description).length} characters, not ${DESCRIPTION_MIN} to ${DESCRIPTION_MAX}: ${description}`);
+  if (description !== undefined && og !== description) say('og:description differs from the description');
 }
 
 if (!existsSync(new URL('image-metadata/index.html', DIST))) problems.push('the image desk /portfolio/image-metadata/ was not built');

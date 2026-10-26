@@ -6,6 +6,7 @@ import { shot } from '../../lib/software.js';
 import { appFacts } from '../../lib/app-json.js';
 import { PERSON_ID, ORIGIN, SITE, BASE, contactUrl } from '../../lib/portfolios.js';
 import { imageRights } from '../../lib/image-rights.js';
+import { fitTitle } from '../../lib/snippet.js';
 import '../../styles/software.css';
 
 export async function getStaticPaths() {
@@ -91,7 +92,7 @@ const facts = [
 ].filter(([, v]) => v);
 ---
 <Base
-  title={`${d.title}: ${d.dek.replace(/\.$/, '')} · reddy.world`}
+  title={fitTitle(`${d.title}: ${d.dek.replace(/\.$/, '')} · reddy.world`, `${d.title}: ${d.dek.replace(/\.$/, '')}`, `${d.title} · reddy.world`)}
   description={d.summary}
   image={shareImage}
   active="software"
