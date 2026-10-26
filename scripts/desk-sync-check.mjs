@@ -73,6 +73,20 @@ try {
   const chips = await page.locator('#project-chips .chip').allTextContents();
   check('a project shows the keywords the site has', chips.length === 5, chips.join(' | '));
   check('opening a project changes nothing', await page.evaluate(() => Object.keys(window.imageDesk.state.projects).length === 0));
+  // a word left in the box lands on the project it was typed on, not on the next one (review finding)
+  await page.locator('#project-chips input').fill('pendingword');
+  await page.keyboard.press('Alt+ArrowRight');
+  const after = await page.evaluate(() => { const s = window.imageDesk.state.projects; const ids = window.imageDesk.DATA.projects.map((p) => p.id); return { here: s['rmaekers/lightsurface-mk1-set']?.tags ?? '', next: s[ids[ids.indexOf('rmaekers/lightsurface-mk1-set') + 1]] ?? null }; });
+  check('a pending keyword stays on its own project when moving on', /pendingword/.test(after.here) && after.next === null, JSON.stringify(after));
+  await page.locator('#project-picker').selectOption(String(seeded));
+  // removing the last chip with Backspace keeps the focus in the box
+  await page.locator('#project-chips input').click();
+  await page.keyboard.press('Backspace');
+  check('Backspace removes a chip and keeps the focus in the box', await page.evaluate(() => document.activeElement?.closest('#project-chips') !== null && !window.imageDesk.state.projects['rmaekers/lightsurface-mk1-set'].tags.includes('pendingword')));
+  // removing every chip leaves none: the archive's words don't come back
+  for (let i = 0; i < 6; i++) await page.keyboard.press('Backspace');
+  check('removing every keyword leaves none', (await page.locator('#project-chips .chip').count()) === 0);
+  await page.evaluate(() => { delete window.imageDesk.state.projects['rmaekers/lightsurface-mk1-set']; window.imageDesk.render(); });
   await page.locator('#tab-picture').click();
   const wp = await page.locator('#wp-picture').innerText();
   check('a picture shows its WordPress file name', /\.(jpe?g|png|webp|gif)/i.test(wp), wp.replace(/\s+/g, ' ').slice(0, 120));

@@ -16,7 +16,9 @@ export async function GET() {
     lines.push(`## ${portfolioLabel(p)}`, '');
     for (const post of p.posts) {
       const when = post.undated ? '' : ` (${formatDate(post.date)})`;
-      const summary = post.excerpt ? `: ${post.excerpt}` : '';
+      // Ryan's summary from the image desk, else WordPress's excerpt
+      const blurb = post.summary || post.excerpt;
+      const summary = blurb ? `: ${blurb}` : '';
       lines.push(`- [${post.title.trim()}](${SITE}${post.path})${when}${summary}`);
     }
     lines.push('');

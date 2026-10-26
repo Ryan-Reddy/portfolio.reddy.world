@@ -20,11 +20,13 @@ const videos = post.media.filter((m) => m.type === 'video');
 const files = post.media.filter((m) => m.type === 'file');
 const name = titleCase(post.title);
 // the summary in Ryan's words (the desk's, else WordPress's excerpt), then what kind of work it was, under which name, and when,
-// cut at a word to what a search result shows (src/lib/snippet.js); a page with almost no words of its own names the month too
+// cut at a word to what a search result shows (src/lib/snippet.js). Too short: a short summary takes the
+// excerpt after it, then the month joins the year; whatever fits first.
 const context = contextOf(post);
-const ownWords = [post.summary, post.excerpt, name];
-const fitted = fitDescription(ownWords, context);
-const description = fitted.length >= DESCRIPTION_MIN || post.undated ? fitted : fitDescription(ownWords, context.replace(/, \d{4}$/,`, ${formatDate(post.date)}`));
+const withMonth = context.replace(/, \d{4}$/, `, ${formatDate(post.date)}`);
+const summaryAndExcerpt = post.summary && post.excerpt ? `${post.summary.trim().replace(/[.!?…]?$/, (stop) => stop || '.')} ${post.excerpt}` : '';
+const tries = [[post.summary, post.excerpt, name], [summaryAndExcerpt, post.excerpt, name]].flatMap((words) => [fitDescription(words, context), ...(post.undated ? [] : [fitDescription(words, withMonth)])]);
+const description = tries.find((text) => text.length >= DESCRIPTION_MIN) ?? tries.reduce((a, b) => (b.length > a.length ? b : a));
 const pageUrl = `${SITE}${post.path}`;
 
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
