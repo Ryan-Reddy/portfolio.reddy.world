@@ -284,3 +284,23 @@ test('a project the archive already has keywords for counts as done, with its ke
   const changed = { ...fresh(), projects: { [B]: { tags: 'decor' } } };
   assert.equal(row(changed).keywords, 1);
 });
+
+test('articles: a draft is stamped and merges entry by entry; a newer delete wins over an older copy', () => {
+  const here = { ...fresh(), articles: {} };
+  const snap = snapshotOf(here);
+  here.articles.a1 = { title: 'Street interviews', summary: '', content: '', status: 'draft', created: T0 };
+  assert.equal(stamp(here, snap, T1), true);
+  assert.equal(here.articles.a1.at, T1);
+  // another device wrote a second draft; both survive
+  const there = { ...fresh(), articles: { a2: { title: 'Mijksenaar', status: 'draft', created: T0, at: T0 } } };
+  const merged = mergeStates(here, there);
+  assert.deepEqual(Object.keys(merged.articles).sort(), ['a1', 'a2']);
+  // deleting here, later, beats the older copy of the draft on the other device
+  merged.articles.a1 = { deleted: true, created: T0 };
+  stamp(merged, snapshotOf(here), T2);
+  const again = mergeStates(merged, { ...there, articles: { ...there.articles, a1: { title: 'Street interviews', status: 'draft', created: T0, at: T1 } } });
+  assert.equal(again.articles.a1.deleted, true);
+  assert.equal(sameWork(again, mergeStates(again, again)), true);
+  // the overview is unchanged by articles: they are not projects
+  assert.equal(summarize(DATA, again).total, DATA.length);
+});

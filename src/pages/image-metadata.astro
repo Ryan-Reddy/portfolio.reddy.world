@@ -36,6 +36,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, wordBank: WORD_BANK
     button, input, textarea, select { font: inherit; color: inherit; }
     button { min-height: 2.5rem; border: 1px solid var(--gold); padding: .5rem .85rem; color: var(--gold); background: transparent; cursor: pointer; }
     button.primary { color: var(--gold-ink); background: var(--gold); font-weight: 650; }
+    button:disabled { opacity: .45; cursor: not-allowed; }
     button.quiet { border-color: var(--line); color: var(--fg); }
     button.link { min-height: 0; padding: 0; border: 0; color: var(--gold); font-size: .8rem; text-decoration: underline; text-underline-offset: 2px; }
     button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible, [contenteditable]:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
@@ -162,6 +163,18 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, wordBank: WORD_BANK
     .page figcaption { font-size: .75rem; color: rgba(245,245,240,.7); margin-top: .3rem; }
     .empty-note { color: #888; font-style: italic; }
 
+    /* an article: how it reads on the left, the editor on the right */
+    .workbench[hidden] { display: none; }
+    .reading { overflow-y: auto; padding: 1.5rem clamp(1rem, 4vw, 3rem); display: grid; align-content: start; gap: .6rem; max-width: 48rem; }
+    .reading .when { font-family: ui-monospace, Consolas, monospace; font-size: .75rem; color: rgba(245,245,240,.7); }
+    .reading-title { margin: 0; font-family: var(--display); font-size: clamp(2rem, 4vw, 2.75rem); font-weight: 600; line-height: 1.15; color: var(--gold); }
+    .reading .sum { margin: 0; font-size: 1.15rem; line-height: 1.6; }
+    .reading-text { font-size: 1.05rem; line-height: 1.8; }
+    .reading-text h2, .reading-text h3, .reading-text h4 { font-family: var(--display); }
+    .panel.article-panel { grid-template-rows: auto minmax(0, 1fr); }
+    .ov-articles ul { list-style: none; margin: .4rem 0; padding: 0; display: grid; gap: .3rem; }
+    .ov-articles h3 { margin: .6rem 0 0; font-family: var(--display); font-size: 1.35rem; font-weight: 600; }
+
     dialog { max-width: 36rem; color: var(--fg); background: #151515; border: 1px solid var(--gold); }
     dialog.map-dialog { width: min(64rem, calc(100% - 2rem)); max-width: none; max-height: calc(100dvh - 2rem); }
     .map-tools { position: sticky; top: 0; display: flex; gap: .6rem; padding-bottom: .75rem; background: #151515; }
@@ -218,6 +231,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, wordBank: WORD_BANK
       <button id="previous" class="quiet" type="button" title="Previous project (Alt+←)">←</button>
       <select id="project-picker" aria-label="Project"></select>
       <button id="next-project" class="quiet" type="button" title="Next project (Alt+→)">→</button>
+      <button id="new-article" class="quiet" type="button" title="A new article for the wall, kept as a draft">＋ Article</button>
     </nav>
     <div class="progress">
       <span id="progress-label"></span>
@@ -239,7 +253,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, wordBank: WORD_BANK
     </div>
   </header>
 
-  <main class="workbench">
+  <main class="workbench" id="project-bench">
     <section class="stage" aria-label="Pictures of this project">
       <div class="stage-bar">
         <span class="count" id="image-counter"></span>
@@ -344,6 +358,43 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, wordBank: WORD_BANK
     </section>
   </main>
 
+  <main class="workbench" id="article-bench" hidden>
+    <section class="stage" aria-label="How the article reads">
+      <div class="stage-bar"><span class="count">How it reads on its page</span><span class="spacer"></span><button id="back-to-projects" class="quiet" type="button">← Back to the projects</button></div>
+      <article class="reading" id="reading"></article>
+    </section>
+    <section class="panel article-panel" aria-label="This article">
+      <div class="head">
+        <small>Article</small>
+        <h1 id="article-heading"></h1>
+        <div class="meta"><span id="article-when"></span><span class="state">Draft: only you see it</span></div>
+      </div>
+      <div class="tab">
+        <section class="block">
+          <label for="article-title">Title</label>
+          <input id="article-title" autocomplete="off" placeholder="The article's title">
+        </section>
+        <section class="block">
+          <label for="article-summary">Short summary</label>
+          <textarea id="article-summary" placeholder="One or two lines in your own words: shown on the wall and under the title"></textarea>
+        </section>
+        <section class="block">
+          <h2>The text</h2>
+          <div class="story" id="article-text" contenteditable="true" role="textbox" aria-multiline="true" aria-label="The article's text"></div>
+          <p class="hint">Paragraphs, headings, bold, italic, links and lists are kept. Ctrl+B and Ctrl+I work.</p>
+        </section>
+        <section class="block">
+          <h2>Publishing</h2>
+          <p class="hint">A draft is saved to your account and never goes to the site, not even with Send to site.</p>
+          <button id="publish-article" type="button" disabled>Publish</button>
+          <p class="hint">Publishing comes with the place for stories on the site: <a href="https://github.com/Ryan-Reddy/reddy.world/issues/183" target="_blank" rel="noreferrer">decision 4 on #183</a>.</p>
+        </section>
+        <div class="bottom"><button id="delete-article" class="quiet" type="button">Delete this draft</button></div>
+        <p class="note" id="article-note" aria-live="polite"></p>
+      </div>
+    </section>
+  </main>
+
   <dialog id="keyword-map" class="map-dialog"><h2>Keyword map</h2><p class="hint">Every keyword in the archive and on this desk, and how many projects use it.</p><div class="map-tools"><input id="map-filter" type="search" placeholder="Filter keywords…" aria-label="Filter keywords"><button id="close-map" type="button">Close</button></div><div class="keyword-map" id="map-list"></div></dialog>
   <dialog id="sent" aria-labelledby="sent-title">
     <h2 id="sent-title">Send to site</h2>
@@ -356,6 +407,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, wordBank: WORD_BANK
     <p>Each project opens on what the site has today. Change anything; it saves by itself, to your account when you are signed in.</p>
     <p><strong>Project</strong>: the short summary, the keywords every picture gets, and the post's text. <strong>Picture</strong>: what the picture shows, its own keywords and its photographer. <strong>Preview</strong>: how it looks on the wall and on its page.</p>
     <p>The ★ is the lead picture: it heads the page, the card and the wall. Keys: Alt+← and Alt+→ change project, Ctrl+Enter marks it done.</p>
+    <p><strong>＋ Article</strong> starts a new piece for the wall. It stays a draft, only for you and saved to your account, until you publish it.</p>
     <button id="close-keys" class="primary" type="button">Got it</button>
   </dialog>
   <script type="application/json" id="queue-data" set:html={queue}></script>
@@ -416,7 +468,6 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, wordBank: WORD_BANK
     };
     if (!Number.isInteger(state.cursor) || !flat[state.cursor]) state.cursor = Math.max(0, firstIncomplete());
     window.imageDesk = {DATA, STORE, state, flat, render: (options) => render(options)};
-    for (const [index, project] of DATA.projects.entries()) $('project-picker').add(new Option(`${project.title} · ${project.portfolio}`, String(index)));
 
     // ---------- tabs ----------
     let tab = 'project';
@@ -756,6 +807,15 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, wordBank: WORD_BANK
       document.title = `${done}/${DATA.projects.length} · ${project.title} — Portfolio desk`;
     }
     function render({keepTab = true} = {}) {
+      fillPicker();
+      const article = openArticleRecord();
+      $('article-bench').hidden = !article;
+      $('project-bench').hidden = Boolean(article);
+      if (article) {
+        updateProgress();
+        renderArticleMode();
+        return;
+      }
       const {project, projectIndex} = current();
       $('portfolio').textContent = project.portfolio;
       $('project-title').textContent = project.title;
@@ -768,6 +828,8 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, wordBank: WORD_BANK
       if (keepTab) showTab(tab);
     }
     function goProject(delta) {
+      // from an article, the arrows go back to the project you were on
+      if (openArticleRecord()) return leaveArticle();
       const {projectIndex} = current();
       const next = (projectIndex + delta + DATA.projects.length) % DATA.projects.length;
       state.cursor = flat.findIndex((item) => item.projectIndex === next);
@@ -789,7 +851,14 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, wordBank: WORD_BANK
     $('reopen').addEventListener('click', () => { const {project} = current(); state.projects[project.id] = {...state.projects[project.id], reviewed: false}; save(); render(); });
     $('previous').addEventListener('click', () => goProject(-1));
     $('next-project').addEventListener('click', () => goProject(1));
-    $('project-picker').addEventListener('change', (event) => { state.cursor = flat.findIndex(({projectIndex}) => projectIndex === Number(event.target.value)); save(); render(); });
+    $('project-picker').addEventListener('change', (event) => {
+      const value = event.target.value;
+      if (value.startsWith('article:')) return openArticle(value.slice('article:'.length));
+      state.article = null;
+      state.cursor = flat.findIndex(({projectIndex}) => projectIndex === Number(value));
+      save();
+      render();
+    });
     $('make-hero').addEventListener('click', () => {
       const {project, image} = current();
       state.projects[project.id] = {...state.projects[project.id], hero: image.url};
@@ -798,7 +867,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, wordBank: WORD_BANK
       $('note').textContent = 'Lead picture chosen: it heads the page, the card and the wall.';
     });
     addEventListener('keydown', (event) => {
-      if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') { event.preventDefault(); markDone(); }
+      if ((event.ctrlKey || event.metaKey) && event.key === 'Enter' && !openArticleRecord()) { event.preventDefault(); markDone(); }
       if (event.altKey && event.key === 'ArrowLeft') { event.preventDefault(); goProject(-1); }
       if (event.altKey && event.key === 'ArrowRight') { event.preventDefault(); goProject(1); }
     });
@@ -864,7 +933,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, wordBank: WORD_BANK
         if (credit) entry.credit = {name: credit.name ?? '', url: credit.url ?? ''};
         return [image.key, entry];
       }));
-      const output = {version: 4, exportedAt: new Date().toISOString(), projects: state.projects, images};
+      const output = {version: 4, exportedAt: new Date().toISOString(), projects: state.projects, images, articles: state.articles};
       const link = el('a', {href: URL.createObjectURL(new Blob([JSON.stringify(output, null, 2) + '\n'], {type: 'application/json'})), download: 'reddy-world-image-metadata.json'});
       link.click();
       URL.revokeObjectURL(link.href);
@@ -887,6 +956,129 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, wordBank: WORD_BANK
       }
     });
 
+    // ---------- articles: new pieces for the wall, kept as private drafts until Ryan publishes them ----------
+    // Ryan, 2026-10-26: "would be great to park them as "drafts" until publication right?" They are part of the
+    // desk's state, so they save to his account like the rest (desk-store.js merges them entry by entry).
+    // "Send to site" reads projects and pictures only, so a draft never reaches the site. Deleting leaves a
+    // stamped {deleted: true}, so a copy on another device can't bring the article back.
+    state.articles ??= {};
+    function drafts() {
+      return Object.entries(state.articles).filter(([, article]) => article && !article.deleted)
+        .sort(([, a], [, b]) => (b.created ?? 0) - (a.created ?? 0));
+    }
+    function openArticleRecord() {
+      const article = state.article ? state.articles?.[state.article] : null;
+      return article && !article.deleted ? article : null;
+    }
+    const articleTitle = (article) => String(article?.title ?? '').trim() || 'Untitled article';
+    function fillPicker() {
+      const groups = [];
+      const own = drafts();
+      if (own.length) groups.push(el('optgroup', {label: 'Your articles (drafts)'}, ...own.map(([id, article]) => new Option(`${articleTitle(article)} · draft`, `article:${id}`))));
+      groups.push(el('optgroup', {label: 'Projects'}, ...DATA.projects.map((project, index) => new Option(`${project.title} · ${project.portfolio}`, String(index)))));
+      $('project-picker').replaceChildren(...groups);
+    }
+    // an article's text as its page will show it: the tags the post text keeps, links only to web or site addresses
+    function cleanHtml(html) {
+      const template = document.createElement('template');
+      template.innerHTML = String(html ?? '');
+      const walk = (node) => {
+        for (const child of [...node.childNodes]) {
+          if (child.nodeType === 8 || (child.nodeType === 1 && ['SCRIPT', 'STYLE', 'IFRAME', 'OBJECT', 'TEMPLATE', 'SVG'].includes(child.tagName.toUpperCase()))) { child.remove(); continue; }
+          if (child.nodeType !== 1) continue;
+          walk(child);
+          if (!ALLOWED.has(child.tagName)) child.replaceWith(...child.childNodes);
+          else for (const attr of [...child.attributes]) if (!(child.tagName === 'A' && attr.name === 'href' && /^(https?:\/\/|\/(?!\/))/i.test(attr.value))) child.removeAttribute(attr.name);
+        }
+      };
+      walk(template.content);
+      return template.innerHTML;
+    }
+    const started = (article) => new Date(article.created ?? Date.now()).toLocaleDateString('en-GB', {day: 'numeric', month: 'short', year: 'numeric'});
+    function renderReading() {
+      const article = openArticleRecord();
+      if (!article) return;
+      const text = el('div', {className: 'reading-text'});
+      text.innerHTML = cleanHtml(article.content);
+      const summary = String(article.summary ?? '').trim();
+      $('reading').replaceChildren(
+        el('span', {className: 'when', textContent: `Draft · started ${started(article)}`}),
+        el('h2', {className: 'reading-title', textContent: articleTitle(article)}),
+        summary ? el('p', {className: 'sum', textContent: summary}) : el('p', {className: 'sum empty-note', textContent: 'No summary yet.'}),
+        text,
+      );
+      $('article-heading').textContent = articleTitle(article);
+      $('article-when').textContent = `Started ${started(article)}`;
+      document.title = `${articleTitle(article)} (draft) — Portfolio desk`;
+    }
+    function renderArticleMode() {
+      const article = openArticleRecord();
+      // a field Ryan is typing in keeps his caret: only the others are filled again
+      if (document.activeElement !== $('article-title')) $('article-title').value = article.title ?? '';
+      if (document.activeElement !== $('article-summary')) $('article-summary').value = article.summary ?? '';
+      // an empty text starts with one paragraph, so the first line typed is a paragraph too
+      if (document.activeElement !== $('article-text')) $('article-text').innerHTML = cleanHtml(article.content) || '<p><br></p>';
+      $('project-picker').value = `article:${state.article}`;
+      resetDelete();
+      renderReading();
+    }
+    function setArticle(field, value) {
+      state.articles[state.article] = {...state.articles[state.article], [field]: value};
+      save();
+      renderReading();
+    }
+    $('article-title').addEventListener('input', () => {
+      setArticle('title', $('article-title').value);
+      fillPicker();
+      $('project-picker').value = `article:${state.article}`;
+    });
+    $('article-summary').addEventListener('input', () => setArticle('summary', $('article-summary').value));
+    $('article-text').addEventListener('input', () => setArticle('content', $('article-text').innerHTML));
+    function newArticle() {
+      const id = `a${Date.now().toString(36)}`;
+      state.articles[id] = {title: '', summary: '', content: '', status: 'draft', created: Date.now()};
+      state.article = id;
+      save();
+      render();
+      $('article-note').textContent = '';
+      $('article-title').focus();
+    }
+    function openArticle(id) {
+      if (!state.articles[id] || state.articles[id].deleted) return;
+      state.article = id;
+      save();
+      render();
+    }
+    function leaveArticle() {
+      state.article = null;
+      save();
+      render();
+    }
+    $('new-article').addEventListener('click', newArticle);
+    $('back-to-projects').addEventListener('click', leaveArticle);
+    let deleteTimer = 0;
+    function resetDelete() {
+      clearTimeout(deleteTimer);
+      $('delete-article').textContent = 'Delete this draft';
+      delete $('delete-article').dataset.armed;
+    }
+    // two clicks, no pop-up: the first one asks, the second deletes
+    $('delete-article').addEventListener('click', () => {
+      if (!$('delete-article').dataset.armed) {
+        $('delete-article').dataset.armed = 'yes';
+        $('delete-article').textContent = 'Click again to delete it for good';
+        deleteTimer = setTimeout(resetDelete, 5000);
+        return;
+      }
+      const title = articleTitle(openArticleRecord());
+      state.articles[state.article] = {deleted: true, created: state.articles[state.article].created};
+      state.article = null;
+      save();
+      render();
+      $('note').textContent = `“${title}” deleted.`;
+    });
+    Object.assign(window.imageDesk, {newArticle, openArticle});
+
     render();
   </script>
   <section id="overview" class="overview" hidden aria-labelledby="ov-title">
@@ -899,6 +1091,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, wordBank: WORD_BANK
       <p class="ov-line"><span data-desk-saved></span> <button data-desk-signin type="button" hidden>Sign in</button></p>
       <p class="ov-line" id="ov-days"></p>
       <div id="ov-portfolios"></div>
+      <section class="ov-articles" id="ov-articles" aria-label="Your articles"></section>
     </div>
   </section>
   <script>import '../lib/desk-sync.js';</script>

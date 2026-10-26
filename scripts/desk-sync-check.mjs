@@ -134,6 +134,40 @@ try {
   check('signed out: no page errors', errors.length === 0, errors.join(' / '));
   await contextOut.close();
 
+  // ---------- an article: a private draft until Ryan publishes it ----------
+  const writer = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+  const pen = await open(writer);
+  await pen.page.locator('#new-article').click();
+  check('＋ Article opens an empty draft', await pen.page.locator('#article-bench').isVisible() && await pen.page.locator('#project-bench').isHidden());
+  await pen.page.locator('#article-title').fill('Street interviews');
+  await pen.page.locator('#article-summary').fill('What people on the street told me.');
+  await pen.page.locator('#article-text').click();
+  await pen.page.keyboard.type('First paragraph of the draft.');
+  check('the draft reads as its page on the left', (await pen.page.locator('#reading .reading-title').textContent()) === 'Street interviews'
+    && (await pen.page.locator('#reading .reading-text').textContent()).includes('First paragraph'));
+  check('the draft is in the project list, marked draft', (await pen.page.locator('#project-picker optgroup[label^="Your articles"] option').allTextContents()).includes('Street interviews · draft'));
+  check('publishing waits: the button is off', await pen.page.locator('#publish-article').isDisabled());
+  const stored = await pen.page.evaluate((key) => Object.values(JSON.parse(localStorage.getItem(key)).articles ?? {}), 'reddy-world-image-metadata-v4');
+  check('the draft is saved and stamped', stored.length === 1 && stored[0].title === 'Street interviews' && stored[0].status === 'draft' && stored[0].at > 0, JSON.stringify(stored));
+  await pen.page.reload();
+  await pen.page.waitForFunction(() => window.imageDesk && window.deskSync);
+  check('after a reload the draft is still open', (await pen.page.locator('#article-title').inputValue()) === 'Street interviews');
+  await pen.page.locator('#open-overview').click();
+  check('the overview lists the draft', (await pen.page.locator('#ov-articles').innerText()).includes('Street interviews'));
+  await pen.page.locator('#ov-articles .ov-row').first().click();
+  check('the overview opens it', await pen.page.locator('#article-bench').isVisible());
+  await pen.page.locator('#back-to-projects').click();
+  check('back to the projects', await pen.page.locator('#project-bench').isVisible());
+  await pen.page.locator('#project-picker').selectOption({ label: 'Street interviews · draft' });
+  await pen.page.locator('#delete-article').click();
+  check('delete asks first', (await pen.page.locator('#delete-article').textContent()).includes('Click again'));
+  await pen.page.locator('#delete-article').click();
+  const afterDelete = await pen.page.evaluate(() => Object.values(window.imageDesk.state.articles));
+  check('deleted: gone from the list, kept as a stamped tombstone', (await pen.page.locator('#project-picker optgroup[label^="Your articles"]').count()) === 0 && afterDelete.length === 1 && afterDelete[0].deleted === true && afterDelete[0].at > 0, JSON.stringify(afterDelete));
+  check('articles: no page errors', pen.errors.length === 0, pen.errors.join(' / '));
+  await shoot(pen.page, 'article');
+  await writer.close();
+
   // ---------- a phone ----------
   const phone = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
   const small = await open(phone);
