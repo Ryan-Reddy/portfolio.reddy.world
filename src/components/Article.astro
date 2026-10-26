@@ -1,0 +1,136 @@
+---
+// One article's page (src/content/articles/<slug>.md): an interview, a story, a case study, a project,
+// a recipe, writing or a poem, on the case studies' paper layout. Started as the interview page of
+// portfolio.reddy.world#65 (reddy.world#176).
+import Base from '../layouts/Base.astro';
+import { getEntry, render } from 'astro:content';
+import { PERSON_ID, ORIGIN, SITE, BASE } from '../lib/portfolios.js';
+import { pictureAt } from '../lib/software.js';
+import { imageRights } from '../lib/image-rights.js';
+import { KINDS, articlePath, articleImages } from '../lib/article-kinds.js';
+import '../styles/software.css';
+
+const { entry } = Astro.props;
+const d = entry.data;
+const { Content } = await render(entry);
+const kind = KINDS[d.kind];
+const pageUrl = `${SITE}/${articlePath(d.kind, entry.id)}`;
+const related = d.related ? await getEntry(d.related) : null;
+const relatedUrl = related && `${SITE}/software/${related.id}/`;
+const who = d.person;
+// the intro is Ryan's own words, one paragraph per blank line
+const intro = d.intro?.text.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
+const hero = d.hero && { ...(await pictureAt(articleImages(entry.id), d.hero.file)), alt: d.hero.alt };
+// the link card (LinkedIn and others): the JPEG copy when there is one, else the picture itself
+const card = d.hero?.share && (await pictureAt(articleImages(entry.id), d.hero.share));
+const shareImage = hero && (card
+  ? { url: `${ORIGIN}${card.url}`, width: card.width, height: card.height, alt: hero.alt }
+  : { url: `${ORIGIN}${hero.url}`, width: hero.width, height: hero.height, alt: hero.alt });
+// the role's own words, the ones in `roleLinks` linked to where they stand (first time each appears)
+function linkedParts(text, links = {}) {
+  const parts = [];
+  let rest = text;
+  const keys = Object.keys(links);
+  while (rest) {
+    const hits = keys.map((key) => [key, rest.indexOf(key)]).filter(([, at]) => at >= 0).sort((a, b) => a[1] - b[1] || b[0].length - a[0].length);
+    if (!hits.length) { parts.push({ text: rest }); break; }
+    const [key, at] = hits[0];
+    if (at) parts.push({ text: rest.slice(0, at) });
+    parts.push({ text: key, href: links[key] });
+    keys.splice(keys.indexOf(key), 1);
+    rest = rest.slice(at + key.length);
+  }
+  return parts;
+}
+const roleParts = who ? linkedParts(who.role, who.roleLinks) : [];
+const day = (date) => date.toISOString().slice(0, 10);
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    // a poem is a creative work; everything else reads as an article
+    '@type': d.kind === 'poem' ? 'CreativeWork' : 'Article',
+    '@id': `${pageUrl}#work`,
+    headline: d.title,
+    name: d.title,
+    genre: kind.label,
+    description: d.description,
+    inLanguage: d.lang,
+    dateCreated: String(d.year),
+    datePublished: d.published ? day(d.published) : undefined,
+    dateModified: day(d.updated),
+    mainEntityOfPage: pageUrl,
+    url: pageUrl,
+    author: { '@type': 'Person', '@id': PERSON_ID, name: 'Ryan Reddy', url: `${ORIGIN}/` },
+    contributor: who ? {
+      '@type': 'Person',
+      name: who.name,
+      jobTitle: who.role,
+      url: who.profile,
+      sameAs: who.profile ? [who.profile] : undefined,
+      worksFor: who.org ? { '@type': 'Organization', name: who.org, url: who.orgUrl, sameAs: who.orgSameAs } : undefined,
+    } : undefined,
+    isPartOf: related ? { '@type': 'CreativeWork', '@id': `${relatedUrl}#work`, name: related.data.title, url: relatedUrl } : undefined,
+    image: hero ? {
+      '@type': 'ImageObject',
+      contentUrl: `${ORIGIN}${hero.url}`,
+      url: `${ORIGIN}${hero.url}`,
+      width: hero.width,
+      height: hero.height,
+      caption: hero.alt,
+      ...imageRights(hero.url, PERSON_ID),
+    } : undefined,
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Portfolio', item: `${SITE}/` },
+      ...(related ? [
+        { '@type': 'ListItem', position: 2, name: 'Software', item: `${SITE}/software/` },
+        { '@type': 'ListItem', position: 3, name: related.data.title, item: relatedUrl },
+      ] : []),
+      { '@type': 'ListItem', position: related ? 4 : 2, name: d.title, item: pageUrl },
+    ],
+  },
+];
+---
+<Base
+  title={`${d.seoTitle ?? d.title} · reddy.world`}
+  description={d.description}
+  image={shareImage}
+  active={related ? 'software' : undefined}
+  jsonLd={jsonLd}
+  type="article"
+  article={{ published: d.published ? day(d.published) : undefined, modified: day(d.updated), section: kind.label }}
+  theme="paper"
+  lang={d.lang}
+  footnote={related ? 'Software and websites by Ryan Reddy.' : undefined}
+>
+  <article class:list={['case', 'article', `article-${d.kind}`, { interview: d.kind === 'interview' }]} data-desk-article={entry.id}>
+    <nav class="breadcrumb" aria-label="Breadcrumb" lang="en">
+      <a href={`${BASE}/`}>Portfolio</a>
+      {related && <Fragment> <span aria-hidden="true">/</span> <a href={`${BASE}/software/`}>Software</a> <span aria-hidden="true">/</span> <a href={`${BASE}/software/${related.id}/`}>{related.data.title}</a></Fragment>}
+    </nav>
+
+    <header class="case-head">
+      <h1 lang={d.titleLang}>{d.title}</h1>
+      {who && <p class="dek">{d.byline} {who.profile ? <a href={who.profile} rel="noopener">{who.name}</a> : who.name},{' '}<span lang={who.roleLang}>{roleParts.map((part) => (part.href ? <a href={part.href} rel="noopener">{part.text}</a> : part.text))}</span></p>}
+    </header>
+
+    {hero && (
+      <figure class="case-hero">
+        <img src={hero.src} srcset={hero.srcset} sizes="(max-width: 1152px) 100vw, 1120px" width={hero.width} height={hero.height} alt={hero.alt} fetchpriority="high" decoding="async">
+      </figure>
+    )}
+
+    {intro && <div class="intro" lang={d.intro.lang}>{intro.map((p) => <p>{p}</p>)}</div>}
+
+    <div class="story"><Content /></div>
+
+    <aside class="doors" aria-label="More" lang="en">
+      {related && <a href={`${BASE}/software/${related.id}/`}>{related.data.title}</a>}
+      <a href="/">See all my work →</a>
+    </aside>
+  </article>
+</Base>

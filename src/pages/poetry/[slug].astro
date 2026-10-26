@@ -1,0 +1,11 @@
+---
+// The poem articles at /portfolio/poetry/<slug>/ (src/content/articles/, kind: poem)
+import Article from '../../components/Article.astro';
+import { articlePaths } from '../../lib/articles.js';
+
+export async function getStaticPaths() {
+  return articlePaths('poem');
+}
+const { entry } = Astro.props;
+---
+<Article entry={entry} />
