@@ -183,6 +183,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     .page figcaption { font-size: .75rem; color: rgba(245,245,240,.7); margin-top: .3rem; }
     /* an article on the wall, as a shared link and in search (the draft's second view) */
     .reading[hidden], .elsewhere[hidden] { display: none; }
+    #article-bench .stage-bar { flex-wrap: wrap; }
     .elsewhere { overflow-y: auto; padding: 1rem clamp(1rem, 3vw, 2rem) 2rem; display: grid; align-content: start; gap: 1.4rem; }
     .tile.text { aspect-ratio: 4 / 3; }
     .tile.text .cap { background: none; }
@@ -228,6 +229,21 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     .add-pics:focus-within { outline: 2px solid var(--gold); outline-offset: 2px; }
     .reading figure { margin: .4rem 0; }
     .reading figure img, .reading .lead img { display: block; width: 100%; max-height: 28rem; object-fit: cover; }
+    /* written in place: the editable parts show themselves on hover and focus, a picture carries its own tools */
+    .reading [contenteditable="true"] { outline: none; border-radius: 2px; }
+    .reading [contenteditable="true"]:hover { box-shadow: 0 0 0 1px #d8cfbb; }
+    .reading [contenteditable="true"]:focus { box-shadow: 0 0 0 2px #c9b98f; }
+    .reading [contenteditable="true"]:empty::before { content: attr(data-placeholder); color: #8a8376; }
+    .reading .reading-text { position: relative; min-height: 8rem; }
+    .reading #page-note { color: #6d675c; }
+    .reading #page-note:empty { display: none; }
+    .reading .reading-text[data-empty="true"]::before { content: "Write the text here."; position: absolute; color: #8a8376; pointer-events: none; }
+    .reading .pic-block { position: relative; cursor: grab; }
+    .reading .pic-tools { position: absolute; top: .4rem; right: .4rem; display: flex; gap: .25rem; }
+    .reading .pic-tools button { min-height: 2rem; min-width: 2rem; padding: 0 .55rem; border: 0; border-radius: 3px; background: rgba(36,33,28,.85); color: #f8f4e9; font-size: .85rem; cursor: pointer; }
+    .reading .pic-tools button:focus-visible { outline: 2px solid #f8f4e9; outline-offset: 1px; }
+    .reading .drop-above { box-shadow: 0 -3px 0 #8b3a1a; }
+    .reading .drop-below { box-shadow: 0 3px 0 #8b3a1a; }
     .state[data-ready="true"] { border-color: var(--gold); color: var(--gold); }
     .panel.article-panel { grid-template-rows: auto minmax(0, 1fr); }
     .ov-articles ul { list-style: none; margin: .4rem 0; padding: 0; display: grid; gap: .3rem; }
@@ -418,8 +434,17 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
 
   <main class="workbench" id="article-bench" hidden>
     <section class="stage" aria-label="How the article reads">
-      <div class="stage-bar"><span class="count" id="article-view">How it reads on its page</span><span class="spacer"></span><button id="show-elsewhere" class="quiet" type="button">On the wall and as a link</button><button id="back-to-projects" class="quiet" type="button">← Back to the projects</button></div>
-      <article class="reading" id="reading"></article>
+      <div class="stage-bar"><span class="count" id="article-view">Write on the page</span><span class="spacer"></span><button id="add-picture-here" class="quiet" type="button">＋ Picture</button><button id="show-elsewhere" class="quiet" type="button">On the wall and as a link</button><button id="back-to-projects" class="quiet" type="button">← Back to the projects</button></div>
+      <!-- the article as its page shows it, and where it is written: title, summary and text edit in place -->
+      <article class="reading" id="reading">
+        <span class="when" id="read-when"></span>
+        <p class="hint" id="page-note" aria-live="polite"></p>
+        <h2 class="reading-title" id="read-title" contenteditable="true" data-placeholder="The article's title" aria-label="The article's title"></h2>
+        <p class="dek" id="read-dek" hidden></p>
+        <div class="lead" id="read-lead" hidden></div>
+        <p class="sum" id="read-sum" contenteditable="true" data-placeholder="A short summary: one or two lines, shown on the wall and under the title" aria-label="Short summary"></p>
+        <div class="reading-text" id="read-text" contenteditable="true" role="textbox" aria-multiline="true" aria-label="The article's text"></div>
+      </article>
       <div class="elsewhere" id="elsewhere" hidden></div>
     </section>
     <section class="panel article-panel" aria-label="This article">
@@ -461,14 +486,13 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
         </section>
         <section class="block">
           <h2>The text</h2>
-          <div class="story" id="article-text" contenteditable="true" role="textbox" aria-multiline="true" aria-label="The article's text"></div>
-          <p class="hint">Paragraphs, headings, bold, italic, links and lists are kept. Ctrl+B and Ctrl+I work.</p>
+          <p class="hint">Write on the page, on the left: the title, the summary and the text. Paragraphs, headings, bold, italic, links and lists are kept; Ctrl+B and Ctrl+I work. A picture in the text moves with ↑ and ↓, or by dragging it.</p>
         </section>
         <section class="block" aria-labelledby="pictures-title">
           <h2 id="pictures-title">Pictures</h2>
           <div class="pic-list" id="pic-list"></div>
           <label class="add-pics">＋ Add pictures <input id="pic-input" type="file" accept="image/*" multiple hidden></label>
-          <p class="hint" id="pic-hint">They stay private in your account until the article is published. ★ makes one the lead picture across the top; "In the text" puts it where your cursor is.</p>
+          <p class="hint" id="pic-hint">They stay private in your account until the article is published. ★ makes one the lead picture across the top; "In the text" puts it after the paragraph your cursor is in on the page.</p>
         </section>
         <section class="block">
           <h2>Publishing</h2>
@@ -1181,27 +1205,36 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     const started = (article) => new Date(article.created ?? Date.now()).toLocaleDateString('en-GB', {day: 'numeric', month: 'short', year: 'numeric'});
     // the stage shows the article's page, or how it shows elsewhere: on the wall, as a shared link, in search
     let elsewhere = false;
+    let shownText = {article: null, content: null};
+    // The page is where the article is written: title, summary and text are edited in place. A part Ryan is
+    // typing in keeps his caret: only the others are filled again from the draft.
     function renderReading() {
       const article = openArticleRecord();
       if (!article) return;
-      const text = el('div', {className: 'reading-text'});
-      text.innerHTML = withPhotos(article, cleanHtml(article.content), (id, picture) => {
-        const figure = el('figure');
-        figure.append(photoImg(picture, picture.alt));
-        return figure;
-      });
-      const summary = String(article.summary ?? '').trim();
-      const lead = article.hero && article.pictures?.[article.hero];
+      $('read-when').textContent = `${DATA.kinds?.[article.kind ?? 'story']?.label ?? 'Story'} · ${article.status === 'ready' ? 'ready for the site' : 'draft'} · started ${started(article)}`;
+      if (document.activeElement !== $('read-title')) $('read-title').textContent = String(article.title ?? '');
+      if (document.activeElement !== $('read-sum')) $('read-sum').textContent = String(article.summary ?? '');
       const person = (article.kind ?? 'story') === 'interview' && article.person?.name ? article.person : null;
-      const dek = person && el('p', {className: 'dek', textContent: `${String(article.byline ?? '').trim()} ${person.name}${person.role ? `, ${person.role}` : ''}`.trim()});
-      $('reading').replaceChildren(
-        el('span', {className: 'when', textContent: `${DATA.kinds?.[article.kind ?? 'story']?.label ?? 'Story'} · ${article.status === 'ready' ? 'ready for the site' : 'draft'} · started ${started(article)}`}),
-        el('h2', {className: 'reading-title', textContent: articleTitle(article)}),
-        dek,
-        lead ? el('div', {className: 'lead'}, photoImg(lead, lead.alt)) : null,
-        summary ? el('p', {className: 'sum', textContent: summary}) : el('p', {className: 'sum empty-note', textContent: 'No summary yet: the wall shows the first words of the text.'}),
-        text,
-      );
+      $('read-dek').hidden = !person;
+      $('read-dek').textContent = person ? `${String(article.byline ?? '').trim()} ${person.name}${person.role ? `, ${person.role}` : ''}`.trim() : '';
+      const lead = article.hero && article.pictures?.[article.hero] && !article.pictures[article.hero].removed ? article.pictures[article.hero] : null;
+      const leadKey = lead ? `${article.hero}|${lead.alt ?? ''}` : '';
+      if ($('read-lead').dataset.key !== leadKey) {
+        $('read-lead').dataset.key = leadKey;
+        $('read-lead').replaceChildren(...(lead ? [photoImg(lead, lead.alt)] : []));
+      }
+      $('read-lead').hidden = !lead;
+      // the text is drawn again only for another article, or when the draft changed elsewhere (another device)
+      const text = $('read-text');
+      const content = String(article.content ?? '');
+      if (shownText.article !== state.article || (content !== shownText.content && !text.contains(document.activeElement))) {
+        // an empty text starts with one paragraph, so the first line typed is a paragraph too
+        const nodes = photoNodes(article, cleanHtml(content), pictureBlock);
+        if (nodes.childNodes.length) text.replaceChildren(nodes);
+        else text.innerHTML = '<p><br></p>';
+      }
+      shownText = {article: state.article, content};
+      markEmpty();
       $('article-heading').textContent = articleTitle(article);
       $('article-when').textContent = `Started ${started(article)}`;
       document.title = `${articleTitle(article)} (draft) — Portfolio desk`;
@@ -1211,7 +1244,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       elsewhere = !elsewhere;
       $('reading').hidden = elsewhere;
       $('elsewhere').hidden = !elsewhere;
-      $('article-view').textContent = elsewhere ? 'On the wall, as a link, in search' : 'How it reads on its page';
+      $('article-view').textContent = elsewhere ? 'On the wall, as a link, in search' : 'Write on the page';
       $('show-elsewhere').textContent = elsewhere ? 'Its page' : 'On the wall and as a link';
       renderReading();
     });
@@ -1231,6 +1264,85 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       template.innerHTML = html;
       tidy(template.content, null, (id) => (article.pictures?.[id] ? make(id, article.pictures[id]) : document.createTextNode('')));
       return template.innerHTML;
+    }
+    // the same as live nodes, so a picture still loading from the account appears when it arrives
+    function photoNodes(article, html, make) {
+      const template = document.createElement('template');
+      template.innerHTML = html;
+      tidy(template.content, null, (id) => (article.pictures?.[id] && !article.pictures[id].removed ? make(id, article.pictures[id]) : document.createTextNode('')));
+      return template.content;
+    }
+    // a picture in the page's text: shown as the page shows it, with ↑ ↓ to move it and ✕ to take it out of the
+    // text (it stays in the pictures list); it can be dragged too. Stored as <figure data-picture="id"> (tidy)
+    function pictureBlock(id, picture) {
+      const tool = (move, label, text) => { const button = el('button', {type: 'button', textContent: text}); button.dataset.move = move; button.setAttribute('aria-label', label); return button; };
+      const figure = el('figure', {className: 'pic-block', contentEditable: 'false', draggable: true},
+        photoImg(picture, picture.alt),
+        el('span', {className: 'pic-tools'}, tool('up', 'Move the picture up', '↑'), tool('down', 'Move the picture down', '↓'), tool('out', 'Take the picture out of the text', '✕')));
+      figure.dataset.picture = id;
+      return figure;
+    }
+    const markEmpty = () => { const text = $('read-text'); text.dataset.empty = String(!text.textContent.trim() && !text.querySelector('.pic-block')); };
+    // the page's text back into the draft, cleaned, so a pasted page or picture never fills the account copy
+    function saveText() {
+      markEmpty();
+      const content = cleanHtml($('read-text').innerHTML);
+      shownText = {article: state.article, content};
+      setArticle('content', content);
+    }
+    // the block of the text a node sits in (a direct child of the text)
+    const topBlock = (node) => { let at = node?.nodeType === 1 ? node : node?.parentElement; while (at && at.parentElement !== $('read-text')) at = at.parentElement; return at; };
+    $('read-text').addEventListener('input', saveText);
+    $('read-text').addEventListener('click', (event) => {
+      const button = event.target.closest?.('.pic-tools button');
+      if (!button) return;
+      event.preventDefault();
+      const figure = button.closest('.pic-block');
+      const block = topBlock(figure);
+      if (block !== figure) block.after(figure); // a picture inside a paragraph comes out of it first
+      if (button.dataset.move === 'up') figure.previousElementSibling?.before(figure);
+      else if (button.dataset.move === 'down') figure.nextElementSibling?.after(figure);
+      else figure.remove();
+      saveText();
+      if (figure.isConnected) button.focus();
+    });
+    let dragged = null;
+    const clearDrop = () => { for (const node of $('read-text').querySelectorAll('.drop-above, .drop-below')) node.classList.remove('drop-above', 'drop-below'); };
+    const dropAt = (event) => { const block = topBlock(event.target); if (!block || block === dragged) return null; const box = block.getBoundingClientRect(); return {block, above: event.clientY < box.top + box.height / 2}; };
+    $('read-text').addEventListener('dragstart', (event) => {
+      const figure = event.target.closest?.('.pic-block');
+      if (!figure) return;
+      dragged = figure;
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', '');
+    });
+    $('read-text').addEventListener('dragover', (event) => {
+      if (!dragged) return;
+      event.preventDefault();
+      clearDrop();
+      const at = dropAt(event);
+      if (at) at.block.classList.add(at.above ? 'drop-above' : 'drop-below');
+    });
+    $('read-text').addEventListener('drop', (event) => {
+      if (!dragged) return;
+      event.preventDefault();
+      const at = dropAt(event);
+      clearDrop();
+      if (at) at.block[at.above ? 'before' : 'after'](dragged);
+      dragged = null;
+      saveText();
+    });
+    $('read-text').addEventListener('dragend', () => { dragged = null; clearDrop(); });
+    // the title and the summary on the page: plain words, one line for the title
+    for (const [id, field, input] of [['read-title', 'title', 'article-title'], ['read-sum', 'summary', 'article-summary']]) {
+      $(id).addEventListener('input', () => {
+        const value = $(id).textContent.replace(/\s+/g, ' ');
+        $(input).value = value;
+        setArticle(field, value);
+        if (field === 'title') { fillPicker(); $('project-picker').value = `article:${state.article}`; }
+      });
+      $(id).addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); (field === 'title' ? $('read-sum') : $('read-text')).focus(); } });
+      $(id).addEventListener('paste', (event) => { event.preventDefault(); document.execCommand('insertText', false, event.clipboardData.getData('text/plain').replace(/\s+/g, ' ')); });
     }
     // the pictures the page will show: the lead and the ones in the text
     function shownPictures(article) {
@@ -1268,25 +1380,28 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
         return el('div', {className: 'pic-row'}, photoImg(picture, ''), el('div', {}, alt, el('div', {className: 'row'}, lead, place, remove)));
       }));
     }
-    // a picture into the text where the cursor is (else at the end), as a fixed block
+    // a picture into the page's text after the paragraph the cursor is in (else at the end)
     let lastRange = null;
     document.addEventListener('selectionchange', () => {
       const selection = getSelection();
-      if (selection?.rangeCount && $('article-text').contains(selection.anchorNode)) lastRange = selection.getRangeAt(0).cloneRange();
+      if (selection?.rangeCount && $('read-text').contains(selection.anchorNode)) lastRange = selection.getRangeAt(0).cloneRange();
     });
     function placePicture(id) {
       const article = openArticleRecord();
-      const block = el('span', {className: 'pics', contentEditable: 'false'});
-      block.dataset.picture = id;
-      block.append(photoImg(article.pictures[id], ''));
-      const editor = $('article-text');
-      if (lastRange && editor.contains(lastRange.startContainer)) { lastRange.collapse(false); lastRange.insertNode(block); }
-      else editor.append(block);
-      setArticle('content', cleanHtml(editor.innerHTML));
+      const figure = pictureBlock(id, article.pictures[id]);
+      const block = lastRange && $('read-text').contains(lastRange.startContainer) ? topBlock(lastRange.startContainer) : null;
+      if (block) block.after(figure);
+      else $('read-text').append(figure);
+      saveText();
     }
+    // ＋ Picture on the page: add one from this computer and put it after the paragraph the cursor is in
+    let placeAdded = false;
+    $('add-picture-here').addEventListener('click', () => { placeAdded = true; $('pic-input').click(); });
     $('pic-input').addEventListener('change', async (event) => {
       const files = [...(event.target.files ?? [])];
       event.target.value = '';
+      const place = placeAdded;
+      placeAdded = false;
       for (const file of files) {
         const id = `p${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
         $('pic-hint').textContent = `Adding ${file.name}…`;
@@ -1297,12 +1412,15 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
           const article = state.articles[state.article];
           state.articles[state.article] = {...article, pictures: {...article.pictures, [id]: {path, name, alt: ''}}, hero: article.hero ?? id};
           save();
+          if (place) placePicture(id);
           renderPictureList();
           renderReading();
           renderPublish();
           $('pic-hint').textContent = `${file.name} added. Say what it shows, for someone who can't see it.`;
+          $('page-note').textContent = place ? `${file.name} added: say what it shows under Pictures, on the right.` : '';
         } catch (error) {
           $('pic-hint').textContent = `${file.name} was not added: ${error.message}.`;
+          $('page-note').textContent = place ? `${file.name} was not added: ${error.message}.` : '';
         }
       }
     });
@@ -1446,13 +1564,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       // a field Ryan is typing in keeps his caret: only the others are filled again
       if (document.activeElement !== $('article-title')) $('article-title').value = article.title ?? '';
       if (document.activeElement !== $('article-summary')) $('article-summary').value = article.summary ?? '';
-      // an empty text starts with one paragraph, so the first line typed is a paragraph too
-      if (document.activeElement !== $('article-text')) $('article-text').innerHTML = withPhotos(article, cleanHtml(article.content), (id, picture) => {
-        const block = el('span', {className: 'pics', contentEditable: 'false'});
-        block.dataset.picture = id;
-        block.append(photoImg(picture, ''));
-        return block;
-      }) || '<p><br></p>';
+      $('page-note').textContent = '';
       renderPictureList();
       $('project-picker').value = `article:${state.article}`;
       resetDelete();
@@ -1470,8 +1582,6 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       $('project-picker').value = `article:${state.article}`;
     });
     $('article-summary').addEventListener('input', () => setArticle('summary', $('article-summary').value));
-    // stored cleaned, so a pasted page or picture never fills the account copy
-    $('article-text').addEventListener('input', () => setArticle('content', cleanHtml($('article-text').innerHTML)));
     function newArticle() {
       const id = `a${Date.now().toString(36)}`;
       state.articles[id] = {title: '', summary: '', content: '', status: 'draft', kind: 'story', lang: 'en', year: new Date().getFullYear(), created: Date.now()};

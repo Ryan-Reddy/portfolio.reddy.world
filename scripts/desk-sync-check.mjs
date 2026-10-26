@@ -155,7 +155,7 @@ try {
   check('＋ Article opens an empty draft', await pen.page.locator('#article-bench').isVisible() && await pen.page.locator('#project-bench').isHidden());
   await pen.page.locator('#article-title').fill('Street interviews');
   await pen.page.locator('#article-summary').fill('What people on the street told me.');
-  await pen.page.locator('#article-text').click();
+  await pen.page.locator('#read-text').click();
   await pen.page.keyboard.type('First paragraph of the draft.');
   check('the draft reads as its page on the left', (await pen.page.locator('#reading .reading-title').textContent()) === 'Street interviews'
     && (await pen.page.locator('#reading .reading-text').textContent()).includes('First paragraph'));
@@ -197,14 +197,44 @@ try {
     s.articles[id] = { ...s.articles[id], pictures: { pq1: { path: 'desk-uploads/aaaaaaaaaaaaaaaa-street.jpg', name: 'street.jpg', alt: '' } }, hero: 'pq1', content: '<p>First paragraph of the draft.</p><figure data-picture="pq1"></figure>' };
     window.imageDesk.render();
   });
-  check('a picture shows in the list and as a block in the text', (await pen.page.locator('#pic-list .pic-row').count()) === 1 && (await pen.page.locator('#article-text .pics[data-picture="pq1"]').count()) === 1);
+  check('a picture shows in the list and as a block in the text', (await pen.page.locator('#pic-list .pic-row').count()) === 1 && (await pen.page.locator('#read-text .pic-block[data-picture="pq1"]').count()) === 1);
   check('publishing waits for what the picture shows', /what every picture shows/.test(await pen.page.locator('#publish-hint').textContent()));
   await pen.page.locator('#pic-list textarea').fill('A street corner in Utrecht');
   check('saying what it shows lets it publish', await pen.page.locator('#publish-article').isEnabled());
-  await pen.page.locator('#article-text p').first().click();
+  await pen.page.locator('#read-text p').first().click();
   await pen.page.keyboard.press('End');
   await pen.page.keyboard.type(' More.');
   check('typing keeps the picture marker in the text', await pen.page.evaluate(() => /<figure data-picture="pq1"><\/figure>/.test(window.imageDesk.state.articles[window.imageDesk.state.article].content)));
+  // written in place: the title on the page is the draft's title, both ways
+  await pen.page.locator('#read-title').click();
+  await pen.page.keyboard.press('End');
+  await pen.page.keyboard.type(' today');
+  check('typing the title on the page renames the draft', await pen.page.evaluate(() => window.imageDesk.state.articles[window.imageDesk.state.article].title === 'Street interviews today')
+    && (await pen.page.locator('#article-title').inputValue()) === 'Street interviews today');
+  await pen.page.locator('#article-title').fill('Street interviews');
+  check('and the title field changes the page', (await pen.page.locator('#read-title').textContent()) === 'Street interviews');
+  // pictures in the page's text: ↑ ↓ move them, ✕ takes one out of the text, dragging moves one too
+  await pen.page.evaluate(() => {
+    document.activeElement?.blur();
+    const s = window.imageDesk.state;
+    s.articles[s.article] = { ...s.articles[s.article], pictures: { ...s.articles[s.article].pictures, pq2: { path: 'desk-uploads/bbbbbbbbbbbbbbbb-corner.jpg', name: 'corner.jpg', alt: 'A corner' } },
+      content: '<p>One.</p><figure data-picture="pq1"></figure><p>Two.</p><figure data-picture="pq2"></figure>' };
+    window.imageDesk.render();
+  });
+  const order = () => pen.page.evaluate(() => [...window.imageDesk.state.articles[window.imageDesk.state.article].content.matchAll(/<p>([^<]*)<\/p>|data-picture="(\w+)"/g)].map((m) => m[1] ?? m[2]).join(' '));
+  check('the page shows both pictures, each with ↑ ↓ ✕', (await pen.page.locator('#read-text .pic-block').count()) === 2 && (await pen.page.locator('#read-text .pic-block .pic-tools button').count()) === 6);
+  await pen.page.locator('#read-text .pic-block[data-picture="pq1"] button[data-move="down"]').click();
+  check('↓ moves a picture below the next paragraph', (await order()) === 'One. Two. pq1 pq2', await order());
+  await pen.page.locator('#read-text .pic-block[data-picture="pq2"] button[data-move="up"]').click();
+  check('↑ moves a picture up', (await order()) === 'One. Two. pq2 pq1', await order());
+  await pen.page.locator('#read-text .pic-block[data-picture="pq2"] button[data-move="out"]').click();
+  check('✕ takes it out of the text; it stays in the pictures list', (await order()) === 'One. Two. pq1' && (await pen.page.locator('#pic-list .pic-row').count()) === 2, await order());
+  await pen.page.locator('#read-text .pic-block[data-picture="pq1"]').dragTo(pen.page.locator('#read-text p').first(), { targetPosition: { x: 10, y: 2 } });
+  check('dragging a picture moves it', (await order()) === 'pq1 One. Two.', await order());
+  // ＋ Picture on the page: signed out it can't upload, and the page says why
+  const [chooser] = await Promise.all([pen.page.waitForEvent('filechooser'), pen.page.locator('#add-picture-here').click()]);
+  await chooser.setFiles({ name: 'here.png', mimeType: 'image/png', buffer: Buffer.from('89504e470d0a1a0a', 'hex') });
+  check('＋ Picture signed out: the page says why it was not added', await waitFor(pen.page, () => /not added: .*sign in first/.test(document.querySelector('#page-note').textContent)), await pen.page.locator('#page-note').textContent());
   await pen.page.reload();
   await pen.page.waitForFunction(() => window.imageDesk && window.deskSync);
   check('after a reload the draft is still open', (await pen.page.locator('#article-title').inputValue()) === 'Street interviews');
