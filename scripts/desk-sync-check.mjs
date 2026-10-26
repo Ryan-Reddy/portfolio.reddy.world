@@ -172,6 +172,23 @@ try {
   check('the address it gets is shown', /reddy\.world\/portfolio\/stories\/street-interviews\//.test(await pen.page.locator('#article-address').textContent()));
   await pen.page.locator('#unpublish-article').click();
   check('Back to draft', await pen.page.evaluate(() => Object.values(window.imageDesk.state.articles)[0].status === 'draft'));
+  // pictures: signed out they can't be added (they live in the account); one the account has shows in the list and the text
+  await pen.page.setInputFiles('#pic-input', { name: 'street.png', mimeType: 'image/png', buffer: Buffer.from('89504e470d0a1a0a', 'hex') });
+  check('signed out, a picture is not added, and the desk says why', await waitFor(pen.page, () => /sign in first/.test(document.querySelector('#pic-hint').textContent)), await pen.page.locator('#pic-hint').textContent());
+  await pen.page.evaluate(() => {
+    const s = window.imageDesk.state;
+    const id = Object.keys(s.articles)[0];
+    s.articles[id] = { ...s.articles[id], pictures: { pq1: { path: 'desk-uploads/aaaaaaaaaaaaaaaa-street.jpg', name: 'street.jpg', alt: '' } }, hero: 'pq1', content: '<p>First paragraph of the draft.</p><figure data-picture="pq1"></figure>' };
+    window.imageDesk.render();
+  });
+  check('a picture shows in the list and as a block in the text', (await pen.page.locator('#pic-list .pic-row').count()) === 1 && (await pen.page.locator('#article-text .pics[data-picture="pq1"]').count()) === 1);
+  check('publishing waits for what the picture shows', /what every picture shows/.test(await pen.page.locator('#publish-hint').textContent()));
+  await pen.page.locator('#pic-list textarea').fill('A street corner in Utrecht');
+  check('saying what it shows lets it publish', await pen.page.locator('#publish-article').isEnabled());
+  await pen.page.locator('#article-text p').first().click();
+  await pen.page.keyboard.press('End');
+  await pen.page.keyboard.type(' More.');
+  check('typing keeps the picture marker in the text', await pen.page.evaluate(() => /<figure data-picture="pq1"><\/figure>/.test(Object.values(window.imageDesk.state.articles)[0].content)));
   await pen.page.reload();
   await pen.page.waitForFunction(() => window.imageDesk && window.deskSync);
   check('after a reload the draft is still open', (await pen.page.locator('#article-title').inputValue()) === 'Street interviews');

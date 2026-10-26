@@ -35,6 +35,8 @@ export function storyHtml(html) {
     .replace(/<!--[\s\S]*?-->/g, '')
     .replace(/<(script|style|template|iframe|object|embed|svg|math|textarea|noscript)\b[\s\S]*?<\/\1\s*>/gi, '')
     .replace(/<figure\s+data-media="([\d,]+)"\s*>\s*<\/figure>/gi, (_, media) => keep(`<figure data-media="${media}"></figure>`))
+    // an article's own picture (scripts/desk-articles.mjs makes it the picture itself)
+    .replace(/<figure\s+data-picture="([a-z0-9]+)"\s*>\s*<\/figure>/gi, (_, id) => keep(`<figure data-picture="${id}"></figure>`))
     .replace(/<\/?([a-zA-Z][\w-]*)([^>]*)>/g, (tag, name, attrs) => {
       const tagName = RENAME[name.toLowerCase()] ?? name.toLowerCase();
       const closing = tag.startsWith('</');

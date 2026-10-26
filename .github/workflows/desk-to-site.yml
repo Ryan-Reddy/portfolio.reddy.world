@@ -1,15 +1,15 @@
 # "Send to site" on the image desk: Ryan's desk changes as one pull request with a preview.
 # - Started by the desk's button through reddy.world's /api/desk-to-site (functions/desk.js in
 #   Ryan-Reddy/reddy.world), by hand here ("Run workflow"), and every night.
-# - Fetches the desk from Ryan's account through reddy.world's /api/desk-state, which answers only this
-#   workflow on main (GitHub's OIDC token names the repo, the workflow and the branch), then brings it
-#   into the archive data with scripts/import-image-keywords.mjs.
-# - Pushes the changed data to a desk/ branch with one open pull request, "Your desk changes", and adds a
-#   comment per push with what changed. The push and the PR use DESK_TOKEN (Ryan's fine-grained token), so
-#   the PR gets its preview from preview.yml like any other; it goes live only when Ryan merges it.
+# - Three jobs, so no job has both installed packages and a credential:
+#   1. fetch (GitHub's OIDC token, no packages): the desk from Ryan's account through reddy.world's
+#      /api/desk-state, and the originals of the published articles' pictures through /api/desk-upload;
+#   2. build (no token, no secrets): web copies of those pictures (scripts/desk-pictures.mjs), then the
+#      desk into the archive data and the articles collection (scripts/import-image-keywords.mjs);
+#   3. push (DESK_TOKEN, no packages): the changes to a desk/ branch with one open pull request, "Your desk
+#      changes", and a comment per push with what changed. Ryan's token makes the PR get its preview from
+#      preview.yml like any other; it goes live only when Ryan merges it.
 # - Nothing changed: nothing happens. The desk back to what the site has: the open desk PR is closed.
-# - No npm install and no tests here: the importer needs no packages, so no third-party code runs next to
-#   the desk or the token. preview.yml builds, checks and tests the pull request.
 # - The nightly run waits quietly until DESK_TOKEN exists and reddy.world answers; a send by hand says why.
 name: Desk to site
 
@@ -20,25 +20,20 @@ on:
 
 permissions:
   contents: read
-  id-token: write
 
 concurrency:
   group: desk-to-site
   cancel-in-progress: false
 
 jobs:
-  send:
+  fetch:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      go: ${{ steps.desk.outputs.go }}
     steps:
-      - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-
-      - uses: actions/setup-node@v5
-        with:
-          node-version: '22'
-
       - name: Ready to send?
         id: ready
         shell: bash
@@ -50,29 +45,102 @@ jobs:
           msg="The repository secret DESK_TOKEN is missing: see the steps in Ryan-Reddy/reddy.world#205"
           if [ "$EVENT" = schedule ]; then echo "::notice::$msg"; else echo "::error::$msg"; exit 1; fi
 
-      - name: Fetch the desk from Ryan's account
+      - name: Fetch the desk and its pictures from Ryan's account
         id: desk
         if: steps.ready.outputs.go == 'true'
         shell: bash
         env:
           EVENT: ${{ github.event_name }}
         run: |
+          mkdir -p desk/originals
           oidc=$(curl -sSf -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=reddy.world-desk" | jq -r .value)
-          code=$(curl -sS -o "$RUNNER_TEMP/desk.json" -w '%{http_code}' -H "Authorization: Bearer $oidc" https://reddy.world/api/desk-state)
-          if [ "$code" = 200 ]; then echo "go=true" >> "$GITHUB_OUTPUT"; exit 0; fi
-          msg="reddy.world/api/desk-state answered $code (404: no desk saved in the account yet, or the function is not deployed)"
-          if [ "$EVENT" = schedule ] && [ "$code" = 404 ]; then echo "::notice::$msg"; else echo "::error::$msg"; exit 1; fi
+          code=$(curl -sS -o desk/desk.json -w '%{http_code}' -H "Authorization: Bearer $oidc" https://reddy.world/api/desk-state)
+          if [ "$code" != 200 ]; then
+            msg="reddy.world/api/desk-state answered $code (404: no desk saved in the account yet, or the function is not deployed)"
+            if [ "$EVENT" = schedule ] && [ "$code" = 404 ]; then echo "::notice::$msg"; exit 0; fi
+            echo "::error::$msg"; exit 1
+          fi
+          # the originals of the pictures the published articles show (desk-uploads/<id>-<name>)
+          jq -r '.articles // {} | to_entries[] | .value | select(.status == "ready" and (.deleted | not)) | .pictures // {} | to_entries[] | select(.value.removed | not) | .value.path' desk/desk.json | sort -u | while read -r path; do
+            curl -sSf -H "Authorization: Bearer $oidc" --get --data-urlencode "path=$path" https://reddy.world/api/desk-upload -o "desk/originals/$(basename "$path")" || echo "::warning::picture not fetched: $path"
+          done
+          echo "go=true" >> "$GITHUB_OUTPUT"
 
-      # bash here means -eo pipefail: a failing import stops the run instead of hiding behind tee
-      - name: Bring the desk into the archive data
+      - uses: actions/upload-artifact@v4
         if: steps.desk.outputs.go == 'true'
+        with:
+          name: desk
+          path: desk/
+          retention-days: 1
+
+  build:
+    needs: fetch
+    if: needs.fetch.outputs.go == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      changed: ${{ steps.changes.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      # packages for the picture copies (sharp); this job holds no token and no secret
+      - run: npm ci
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: desk
+          path: ${{ runner.temp }}/desk
+
+      # bash here means -eo pipefail: a failing step stops the run instead of hiding behind tee
+      - name: Pictures, then the desk into the archive data and the articles
         shell: bash
-        run: node scripts/import-image-keywords.mjs "$RUNNER_TEMP/desk.json" 2>&1 | tee "$RUNNER_TEMP/report.txt"
+        run: |
+          D="$RUNNER_TEMP/desk"
+          node scripts/desk-pictures.mjs "$D/desk.json" "$D/originals" "$D/pictures.json" 2>&1 | tee "$RUNNER_TEMP/report.txt"
+          node scripts/import-image-keywords.mjs "$D/desk.json" --pictures "$D/pictures.json" 2>&1 | tee -a "$RUNNER_TEMP/report.txt"
+
+      - name: The changes, as a patch for the push job
+        id: changes
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/out"
+          cp "$RUNNER_TEMP/report.txt" "$RUNNER_TEMP/out/report.txt"
+          git add -A src/data src/content/articles public/images/articles
+          if git diff --cached --quiet; then echo "changed=false" >> "$GITHUB_OUTPUT"; else git diff --cached --binary > "$RUNNER_TEMP/out/changes.patch"; echo "changed=true" >> "$GITHUB_OUTPUT"; fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: changes
+          path: ${{ runner.temp }}/out/
+          retention-days: 1
+
+  push:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: changes
+          path: ${{ runner.temp }}/out
 
       # only the workflow's own pull request counts: in this repository (not a fork), with its title, by Ryan's token
       - name: The open desk pull request
         id: pr
-        if: steps.desk.outputs.go == 'true'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -83,22 +151,23 @@ jobs:
 
       - name: What changed
         id: changed
-        if: steps.desk.outputs.go == 'true'
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.DESK_TOKEN }}
           NUMBER: ${{ steps.pr.outputs.number }}
           OPEN: ${{ steps.pr.outputs.branch }}
+          CHANGED: ${{ needs.build.outputs.changed }}
         run: |
-          if [ -z "$(git status --porcelain src/data src/content/articles)" ]; then
+          if [ "$CHANGED" != true ]; then
             echo "Nothing on the desk differs from the site."
             # the desk is back to what the site has: merging the open desk PR would publish what Ryan took back
             if [ -n "$NUMBER" ]; then gh pr close "$NUMBER" --delete-branch --comment "Closed by Send to site: the desk now matches the site, so there is nothing left to send."; fi
             exit 0
           fi
+          git apply --index --binary "$RUNNER_TEMP/out/changes.patch"
           if [ -n "$OPEN" ]; then
             git fetch -q origin "$OPEN"
-            if git diff --quiet "origin/$OPEN" -- src/data src/content/articles && [ -z "$(git ls-files --others --exclude-standard src/content/articles)" ]; then echo "The open pull request already has these changes."; exit 0; fi
+            if git diff --cached --quiet "origin/$OPEN" -- src/data src/content/articles public/images/articles; then echo "The open pull request already has these changes."; exit 0; fi
             # a commit made on the desk PR by hand is never thrown away
             others=$(git log "origin/main..origin/$OPEN" --format='%ae' | grep -v '^41898341+github-actions\[bot\]@users.noreply.github.com$' || true)
             if [ -n "$others" ]; then
@@ -119,11 +188,11 @@ jobs:
           RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           branch="${OPEN:-desk/to-site-$(date -u +%Y%m%d-%H%M)}"
+          report="$RUNNER_TEMP/out/report.txt"
           git config user.name 'github-actions[bot]'
           git config user.email '41898341+github-actions[bot]@users.noreply.github.com'
           git switch -c "$branch"
-          git add -A src/data src/content/articles
-          git commit -q -m "Desk changes, $(date -u '+%Y-%m-%d %H:%M') UTC" -m "$(head -c 20000 "$RUNNER_TEMP/report.txt")"
+          git commit -q -m "Desk changes, $(date -u '+%Y-%m-%d %H:%M') UTC" -m "$(head -c 20000 "$report")"
           # Ryan's token for this push only: the pull request then gets its preview from preview.yml
           git push --force -q "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "HEAD:refs/heads/$branch"
           # a comment holds at most 65,536 characters: a long report is cut, the run log has all of it
@@ -131,8 +200,8 @@ jobs:
             echo "Sent from the image desk: [run]($RUN)"
             echo
             echo '```'
-            head -c 60000 "$RUNNER_TEMP/report.txt"
-            if [ "$(wc -c < "$RUNNER_TEMP/report.txt")" -gt 60000 ]; then echo; echo '… the rest is in the run log'; fi
+            head -c 60000 "$report"
+            if [ "$(wc -c < "$report")" -gt 60000 ]; then echo; echo '… the rest is in the run log'; fi
             echo '```'
           } > "$RUNNER_TEMP/comment.md"
           if [ -z "$NUMBER" ]; then
@@ -140,13 +209,13 @@ jobs:
           Your changes from the image desk (https://reddy.world/private/portfolio/), sent with "Send to site".
 
           ## Done when
-          - [ ] The preview (the bot's link below) shows the changes on the project pages and the wall feed
+          - [ ] The preview (the bot's link below) shows the changes on the project pages, the articles and the wall feed
           - [ ] Ryan merges this pull request: that puts them live
 
           ## How to check
           1. Open the preview link the bot posts below.
-          2. Open a project you changed (the comments list them): the summary sits under the title, the text and pictures are yours.
-          3. The wall reads `rss.xml` on the preview: your summary is the project's `<description>`.
+          2. Open a project or an article you changed (the comments list them): the words and pictures are yours.
+          3. The wall reads `rss.xml` on the preview: your summaries and new articles are in it.
 
           Sending again before merging updates this pull request; each send adds a comment with what changed.
           EOF
