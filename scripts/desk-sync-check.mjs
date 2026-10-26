@@ -140,6 +140,11 @@ try {
   await page.goto(DESK + '#overview');
   await page.waitForFunction(() => window.imageDesk);
   check('#overview opens the overview directly (the link from /private)', await page.locator('#overview').isVisible());
+  // Send to site reads the desk in the account: signed out, it says to sign in first
+  await page.locator('#ov-close').click();
+  await page.locator('#send').click();
+  check('Send to site, signed out: asks to sign in first', await waitFor(page, () => document.querySelector('#sent').open && document.querySelector('#sent-title').textContent === 'Sign in first'), await page.locator('#sent-title').textContent());
+  await page.locator('#close-sent').click();
   check('signed out: no page errors', errors.length === 0, errors.join(' / '));
   await contextOut.close();
 

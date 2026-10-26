@@ -17,6 +17,9 @@ const HIDDEN = {
     '227',  // "Materialenmix + integraal 9": 7 pictures, no text; 4 of them are also in "Designing a chair"
     '421',  // "Georgies Wundergarten": 5 pictures, no text; 4 of them are on the ReddyMaekers page of the same name
   ]),
+  rmaekers: new Set([
+    '2070', // "PROJECTS" at /portfolio-3/: an empty WordPress page, no pictures and no text (2026-10-26)
+  ]),
   // Vaguely Vulgar is a modelling portfolio. The old performance, film and
   // business/about pages remain in the source archive but are not its public work.
   vaguelyvulgar: new Set(['72', '61', '1',
@@ -109,6 +112,12 @@ const COPY = {
 /** The post as the site shows it: the archive record with any reviewed words above */
 export function curatedPost(portfolio, post) {
   const copy = COPY[portfolio]?.[String(post.id)];
+  // the text Ryan edited on the image desk is the page's text as it stands: he edited it after the
+  // intro, cuts and swaps below, so they are not made again (scripts/import-image-keywords.mjs)
+  if (post.edited_content) {
+    const { intro, cut, swap, content, ...fields } = copy ?? {};
+    return { ...post, ...fields, content: post.edited_content };
+  }
   if (!copy) return post;
   const { intro, cut = [], swap = [], ...fields } = copy;
   let content = fields.content ?? post.content;

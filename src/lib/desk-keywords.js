@@ -1,4 +1,4 @@
-// The image desk's projects and its first two suggestion columns (/portfolio/image-metadata/).
+// The image desk's projects and its first two suggestion columns (built at /portfolio/image-metadata/, served at reddy.world/private/portfolio/).
 // Shared by the page and by scripts/keyword-ratings.mjs, which rates the same words at build time.
 import { portfolios, photos, picture, SITE, KIND_LABEL, formatDate } from './portfolios.js';
 import { BRAND } from './brands.js';
