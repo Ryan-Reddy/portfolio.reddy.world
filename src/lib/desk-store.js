@@ -205,7 +205,8 @@ export function summarize(projects, state, {credits = null, now = Date.now()} = 
   const rows = projects.map((project, index) => {
     const own = state.projects?.[project.id] ?? {};
     const touched = !isPristine(own) || project.images.some((image) => !isPristine(record(image), image.existingDescription));
-    const status = own.reviewed ? 'done' : touched ? 'started' : 'todo';
+    // a project the archive already has words for counts as done until Ryan reopens it on the desk
+    const status = (own.reviewed ?? project.done) ? 'done' : touched ? 'started' : 'todo';
     const creditName = (credit) => String(credit?.name ?? '').trim();
     const creditsMissing = credits && project.id.startsWith('vaguelyvulgar/')
       ? project.images.filter((image) => !creditName(record(image)?.credit) && !creditName(own.credit) && !creditName(credits[image.key])).length
@@ -217,7 +218,7 @@ export function summarize(projects, state, {credits = null, now = Date.now()} = 
       portfolio: project.portfolio,
       pictures: project.images.length,
       status,
-      keywords: tagList(own.tags).length,
+      keywords: own.tags !== undefined ? tagList(own.tags).length : (project.keywords?.length ?? 0),
       lead: Boolean(own.hero),
       creditsMissing,
       doneToday: Boolean(own.reviewed && own.doneAt && dayOf(own.doneAt) === today),

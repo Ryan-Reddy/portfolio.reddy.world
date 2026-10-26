@@ -272,3 +272,15 @@ test('on a clash of a lead picture, the stamped side wins; an unstamped one only
   assert.equal(mergeStates(phone, pc).projects[A].hero, 'a2');
   assert.equal(mergeStates(pc, { ...fresh(), projects: { [A]: { tags: 'y', at: T1 } } }).projects[A].hero, 'a1');
 });
+
+test('a project the archive already has keywords for counts as done, with its keywords, until Ryan reopens it', () => {
+  const seeded = DATA.map((project) => (project.id === B ? { ...project, keywords: ['decor', 'signage', 'light'], done: true } : project));
+  const row = (state) => summarize(seeded, state).portfolios[0].rows.find((r) => r.id === B);
+  assert.equal(row(fresh()).status, 'done');
+  assert.equal(row(fresh()).keywords, 3);
+  assert.equal(summarize(seeded, fresh()).done, 1);
+  const reopened = { ...fresh(), projects: { [B]: { reviewed: false } } };
+  assert.notEqual(row(reopened).status, 'done');
+  const changed = { ...fresh(), projects: { [B]: { tags: 'decor' } } };
+  assert.equal(row(changed).keywords, 1);
+});
