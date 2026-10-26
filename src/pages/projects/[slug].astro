@@ -1,0 +1,11 @@
+---
+// The project articles at /portfolio/projects/<slug>/ (src/content/articles/, kind: project)
+import Article from '../../components/Article.astro';
+import { articlePaths } from '../../lib/articles.js';
+
+export async function getStaticPaths() {
+  return articlePaths('project');
+}
+const { entry } = Astro.props;
+---
+<Article entry={entry} />

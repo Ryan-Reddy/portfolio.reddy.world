@@ -4,6 +4,7 @@ import yaml from 'js-yaml';
 import { absUrl } from './media-url.js';
 import { BRAND } from './brands.js';
 import { isPublicArchivePost, curatedPost, KEPT_NOT_SHOWN } from './archive-curation.js';
+import { articlePath, articleImages } from './article-kinds.js';
 
 const KEYS = ['rmaekers', 'rrproductions', 'vaguelyvulgar'];
 const SITE = 'https://reddy.world/portfolio';
@@ -50,6 +51,15 @@ for (const name of readdirSync(SOFTWARE_DIR).filter((f) => f.endsWith('.md'))) {
   byPath.set(`${SITE}/software/${slug}/`, { img, lastmod });
 }
 byPath.set(`${SITE}/software/`, { img: [], lastmod: newest || undefined });
+
+// The articles (src/content/articles/<slug>.md): the picture across the top, and the last edit
+const ARTICLES_DIR = new URL('../content/articles/', import.meta.url);
+for (const name of readdirSync(ARTICLES_DIR).filter((f) => f.endsWith('.md'))) {
+  const slug = name.replace(/\.md$/, '');
+  const data = yaml.load(readFileSync(new URL(name, ARTICLES_DIR), 'utf-8').split(/^---\s*$/m)[1]);
+  const img = data.hero ? [{ url: absUrl(`/portfolio/images/${articleImages(slug)}/${data.hero.file}`), caption: data.hero.alt }] : [];
+  byPath.set(`${SITE}/${articlePath(data.kind, slug)}`, { img, lastmod: day(data.updated) });
+}
 
 /** A no-index page at a retired address: never in the sitemap */
 export function isRetired(url) {

@@ -1,0 +1,11 @@
+---
+// The case-study articles at /portfolio/case-studies/<slug>/ (src/content/articles/, kind: case-study)
+import Article from '../../components/Article.astro';
+import { articlePaths } from '../../lib/articles.js';
+
+export async function getStaticPaths() {
+  return articlePaths('case-study');
+}
+const { entry } = Astro.props;
+---
+<Article entry={entry} />

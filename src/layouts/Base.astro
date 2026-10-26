@@ -14,15 +14,18 @@ interface Props {
   // 'paper': reddy.world's light paper colours (the software pages); default the archive's dark
   theme?: 'paper';
   footnote?: string;
+  // the page's main language; the header and footer stay marked English (an interview in Dutch, reddy.world#176)
+  lang?: string;
 }
 
 const { title, description, image, active, jsonLd, type = 'website', article, theme,
-  footnote = 'Selected work, notes and experiments by Ryan Reddy.' } = Astro.props;
+  footnote = 'Selected work, notes and experiments by Ryan Reddy.', lang = 'en' } = Astro.props;
+const chromeLang = lang === 'en' ? undefined : 'en';
 // Astro.url includes the base, so this is the page's reddy.world/portfolio URL
 const canonical = new URL(Astro.url.pathname, ORIGIN).href;
 ---
 <!doctype html>
-<html lang="en" class={theme}>
+<html lang={lang} class={theme}>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -69,7 +72,7 @@ const canonical = new URL(Astro.url.pathname, ORIGIN).href;
   </script>
 </head>
 <body>
-  <header class="site-header">
+  <header class="site-header" lang={chromeLang}>
     <div class="header-inner">
       <a href="https://reddy.world/?at=work" class="brand-link" title="Ryan Reddy — the wall">
         <span class="brand-sub">Ryan Reddy</span>
@@ -92,7 +95,7 @@ const canonical = new URL(Astro.url.pathname, ORIGIN).href;
     <slot />
   </main>
 
-  <footer class="site-footer">
+  <footer class="site-footer" lang={chromeLang}>
     <div class="footer-inner">
       <div>
         <p class="footer-name">Ryan Reddy</p>
