@@ -46,7 +46,8 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600&display=swap">
   <style is:global>
-    /* The desk: the picture on the left, one tab at a time on the right (Project · Picture · Preview).
+    /* The desk: every kind opens on its page on the left, one tab at a time on the right (Project · Picture · Preview);
+       a project's Picture tab shows one picture at a time on the left instead.
        Colours and type follow reddy.world (public/css/mainCSS.css there), so the previews look like the wall. */
     :root {
       color-scheme: dark;
@@ -91,7 +92,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     /* workbench */
     .workbench { height: calc(100dvh - 4rem); display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(24rem, 1fr); grid-template-rows: minmax(0, 1fr); }
     .stage { min-width: 0; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; background: #090909; }
-    .stage-bar { display: flex; align-items: center; gap: .6rem; padding: .55rem .8rem; border-bottom: 1px solid var(--line); font-size: .85rem; }
+    .stage-bar { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; padding: .55rem .8rem; border-bottom: 1px solid var(--line); font-size: .85rem; }
     .stage-bar .count { color: var(--muted); font-variant-numeric: tabular-nums; }
     .stage-bar .spacer { flex: 1; }
     .stage-bar a { white-space: nowrap; }
@@ -107,6 +108,8 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
 
     /* panel and tabs */
     .panel { min-width: 0; min-height: 0; display: grid; grid-template-rows: auto auto minmax(0, 1fr); border-left: 1px solid var(--line); }
+    /* these set their own display, which would beat [hidden] */
+    .panel[hidden], .filmstrip[hidden], .picture[hidden], .read-rest[hidden] { display: none; }
     .head { padding: .8rem 1rem .4rem; display: grid; gap: .2rem; }
     .head small { color: var(--muted); }
     .head h1 { margin: 0; font-family: var(--display); font-size: clamp(1.5rem, 2.6vw, 2.1rem); font-weight: 600; line-height: 1.05; text-wrap: balance; }
@@ -163,13 +166,6 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     .box-list > details.box, .pic-list > details.box { min-width: 0; }
     @media (prefers-reduced-motion: reduce) { details.box { transition: none; } }
 
-    /* the post's own text */
-    .story { min-height: 10rem; max-height: 26rem; overflow-y: auto; padding: .7rem .85rem; background: var(--surface); border: 1px solid #5a5a56; line-height: 1.55; font-size: .92rem; }
-    .story p { margin: 0 0 .7em; }
-    .story h2, .story h3, .story h4 { font-family: var(--display); margin: .6em 0 .3em; }
-    .pics { display: inline-flex; gap: .2rem; align-items: center; margin: .15rem 0; padding: .2rem; border: 1px solid var(--line); background: #111; user-select: none; vertical-align: middle; }
-    .pics img { width: 2.4rem; height: 1.8rem; object-fit: cover; display: block; }
-
     /* what WordPress had */
     dl.wp { margin: 0; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: .35rem .6rem; font-size: .82rem; align-items: baseline; }
     dl.wp dt { color: var(--muted); }
@@ -208,7 +204,6 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     .page figcaption { font-size: .75rem; color: rgba(245,245,240,.7); margin-top: .3rem; }
     /* an article on the wall, as a shared link and in search (the draft's second view) */
     .reading[hidden], .elsewhere[hidden] { display: none; }
-    #article-bench .stage-bar { flex-wrap: wrap; }
     .elsewhere { overflow-y: auto; padding: 1rem clamp(1rem, 3vw, 2rem) 2rem; display: grid; align-content: start; gap: 1.4rem; }
     .tile.text { aspect-ratio: 4 / 3; }
     .tile.text .cap { background: none; }
@@ -229,8 +224,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     .serp .d { font-size: .85rem; color: #4d5156; line-height: 1.4; }
     .empty-note { color: #888; font-style: italic; }
 
-    /* an article: how it reads on the left, the editor on the right */
-    .workbench[hidden] { display: none; }
+    /* the page: how it reads on the left, written in place */
     /* the reading view looks like the article's page (src/components/Article.astro, the paper colours of software.css) */
     .reading { overflow-y: auto; padding: 1.5rem clamp(1rem, 4vw, 3rem) 3rem; display: grid; align-content: start; gap: .7rem; background: #f8f4e9; color: #24211c; }
     .reading > * { max-width: 46rem; }
@@ -282,6 +276,30 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     .reading .block-tools button:focus-visible { outline: 2px solid #24211c; outline-offset: 1px; }
     .reading .drop-above { box-shadow: 0 -3px 0 #8b3a1a; }
     .reading .drop-below { box-shadow: 0 3px 0 #8b3a1a; }
+    .reading-text { overflow-wrap: anywhere; }
+    /* a project's page: the site's dark look (global.css .modal-title, .post-summary, .modal-body-text) and its order,
+       the summary, then the lead, the text and the Photographs ([slug].astro). One column, no wider than the page:
+       a row of pictures counts their full size as its narrowest, which would widen an auto column. */
+    .reading[data-kind="project"] { grid-template-columns: minmax(0, 1fr); background: var(--bg); color: var(--fg); }
+    .reading[data-kind="project"] .reading-title { color: var(--gold); }
+    .reading[data-kind="project"] .when, .reading[data-kind="project"] #page-note { color: var(--muted); }
+    .reading[data-kind="project"] .reading-text a { color: var(--gold); }
+    .reading[data-kind="project"] [contenteditable="true"]:hover { box-shadow: 0 0 0 1px var(--line); }
+    .reading[data-kind="project"] [contenteditable="true"]:focus { box-shadow: 0 0 0 2px var(--gold); }
+    .reading[data-kind="project"] [contenteditable="true"]:empty::before, .reading[data-kind="project"] .reading-text[data-empty="true"]::before { color: var(--muted); }
+    .reading[data-kind="project"] .drop-above { box-shadow: 0 -3px 0 var(--gold); }
+    .reading[data-kind="project"] .drop-below { box-shadow: 0 3px 0 var(--gold); }
+    .reading[data-kind="project"] .block-tools button { background: var(--raised); color: var(--fg); }
+    .reading[data-kind="project"] .block-tools button:focus-visible { outline-color: var(--gold); }
+    .reading[data-kind="project"] #read-lead { order: 1; }
+    .reading[data-kind="project"] #read-text { order: 2; }
+    .reading[data-kind="project"] #read-rest { order: 3; }
+    /* a project's pictures in the site's rows of up to three, each as wide as its shape (global.css .post-row) */
+    .reading .media-row { display: flex; gap: .4rem; margin-bottom: .4rem; }
+    .reading .media-row img { flex: var(--r) 1 0; min-width: 0; width: auto; max-height: none; aspect-ratio: var(--r); object-fit: cover; cursor: zoom-in; }
+    .reading .media-row img:only-child { flex: 1 1 auto; width: 100%; max-height: 28rem; object-fit: contain; }
+    .reading img[data-current="true"] { outline: 2px solid var(--gold); outline-offset: 2px; }
+    .read-rest .rest-title { margin: .8rem 0; font-family: var(--display); font-size: 1.6rem; font-weight: 600; color: var(--gold); }
     .state[data-ready="true"] { border-color: var(--gold); color: var(--gold); }
     .panel.article-panel { grid-template-rows: auto minmax(0, 1fr); }
     .ov-articles ul { list-style: none; margin: .4rem 0; padding: 0; display: grid; gap: .3rem; }
@@ -328,9 +346,9 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       .stage { height: 52dvh; }
       .stage-bar { padding: .4rem .6rem; gap: .5rem; }
       .stage-bar .count { white-space: nowrap; }
-      /* the article's bar label is longer ("On the wall, as a link, in search"): it wraps rather than run off */
-      #article-bench .stage-bar .count { white-space: normal; flex: 1 1 100%; }
-      #article-bench .stage-bar .spacer { display: none; }
+      /* the page's bar label can be long ("On the wall, as a link, in search"): it wraps rather than run off */
+      .stage-bar #article-view { white-space: normal; flex: 1 1 100%; }
+      .stage-bar .spacer { display: none; }
       .stage-bar button.lead { min-height: 2.2rem; padding: .3rem .6rem; font-size: .82rem; }
       .panel { border-left: 0; border-top: 1px solid var(--line); }
       .tab { overflow: visible; }
@@ -368,19 +386,40 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     </div>
   </header>
 
-  <main class="workbench" id="project-bench">
-    <section class="stage" aria-label="Pictures of this project">
+  <main class="workbench" id="bench">
+    <!-- every kind opens on its page, where it is written: the summary and the text edit in place, an article's title too.
+         A project's Picture tab shows one picture large here instead. data-for: the views a control of the bar is in. -->
+    <section class="stage" aria-label="The page">
       <div class="stage-bar">
-        <span class="count" id="image-counter"></span>
+        <span class="count" id="article-view" data-for="article page">Write on the page</span>
+        <span class="count" id="image-counter" data-for="picture"></span>
         <span class="spacer"></span>
-        <button id="make-hero" class="lead" type="button" aria-pressed="false">☆ Make this the lead picture</button>
-        <a id="project-link" target="_blank" rel="noreferrer">Open the page ↗</a>
+        <button id="back-to-page" class="quiet" type="button" data-for="picture">← Its page</button>
+        <button id="make-hero" class="lead" type="button" aria-pressed="false" data-for="picture">☆ Make this the lead picture</button>
+        <a id="project-link" target="_blank" rel="noreferrer" data-for="page picture">Open the page ↗</a>
+        <button id="add-picture-here" class="quiet" type="button" data-for="article">＋ Picture</button>
+        <button id="add-video-here" class="quiet" type="button" data-for="article">＋ Video</button>
+        <button id="show-elsewhere" class="quiet" type="button" data-for="article">On the wall and as a link</button>
+        <button id="back-to-projects" class="quiet" type="button" data-for="article">← Back to the projects</button>
       </div>
-      <div class="picture"><img id="picture" alt=""></div>
-      <nav class="filmstrip" id="filmstrip" aria-label="All pictures in this project"></nav>
+      <article class="reading" id="reading">
+        <span class="when" id="read-when"></span>
+        <p class="hint" id="page-note" aria-live="polite"></p>
+        <form class="video-form" id="video-form" hidden><input id="video-url" type="url" inputmode="url" autocomplete="off" placeholder="Paste a YouTube or Vimeo link" aria-label="A YouTube or Vimeo link"><button type="submit">Add</button><button id="video-cancel" class="quiet" type="button">Cancel</button></form>
+        <h2 class="reading-title" id="read-title" contenteditable="true" data-placeholder="The article's title" aria-label="The article's title"></h2>
+        <p class="dek" id="read-dek" hidden></p>
+        <div class="lead" id="read-lead" hidden></div>
+        <p class="sum" id="read-sum" contenteditable="true" data-placeholder="A short summary: one or two lines, shown on the wall and under the title" aria-label="Short summary"></p>
+        <div class="reading-text" id="read-text" contenteditable="true" role="textbox" aria-multiline="true" aria-label="The article's text"></div>
+        <section class="read-rest" id="read-rest" hidden><h3 class="rest-title"></h3><div class="rest-rows"></div></section>
+        <div class="block-tools" id="block-tools" hidden><button type="button" data-move="up" aria-label="Move this paragraph up (Alt+↑)">↑</button><button type="button" data-move="down" aria-label="Move this paragraph down (Alt+↓)">↓</button></div>
+      </article>
+      <div class="elsewhere" id="elsewhere" hidden></div>
+      <div class="picture" id="picture-view" hidden><img id="picture" alt=""></div>
+      <nav class="filmstrip" id="filmstrip" hidden aria-label="All pictures in this project"></nav>
     </section>
 
-    <section class="panel" aria-label="This project">
+    <section class="panel" id="project-bench" aria-label="This project">
       <div class="head">
         <small id="portfolio"></small>
         <h1 id="project-title"></h1>
@@ -421,8 +460,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
           <details class="box" data-box="text">
             <summary><span class="box-name">The text</span><span class="box-line"></span><span class="box-tick" aria-hidden="true">✓</span></summary>
             <div class="box-body">
-              <div class="story" id="story" contenteditable="true" role="textbox" aria-multiline="true" aria-label="The post's text"></div>
-              <p class="hint">Picture blocks keep the pictures in place. <button class="link" id="story-reset" type="button">Undo my changes</button></p>
+              <p class="hint">Write on the page, left. Move a picture row with ↑ ↓ or drag it; ✕ takes it out of the text, to Photographs below. A click on a picture opens it large. <button class="link" id="story-reset" type="button" hidden>Undo my changes to the text</button></p>
             </div>
           </details>
 
@@ -485,26 +523,8 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
         </div>
       </div>
     </section>
-  </main>
 
-  <main class="workbench" id="article-bench" hidden>
-    <section class="stage" aria-label="How the article reads">
-      <div class="stage-bar"><span class="count" id="article-view">Write on the page</span><span class="spacer"></span><button id="add-picture-here" class="quiet" type="button">＋ Picture</button><button id="add-video-here" class="quiet" type="button">＋ Video</button><button id="show-elsewhere" class="quiet" type="button">On the wall and as a link</button><button id="back-to-projects" class="quiet" type="button">← Back to the projects</button></div>
-      <!-- the article as its page shows it, and where it is written: title, summary and text edit in place -->
-      <article class="reading" id="reading">
-        <span class="when" id="read-when"></span>
-        <p class="hint" id="page-note" aria-live="polite"></p>
-        <form class="video-form" id="video-form" hidden><input id="video-url" type="url" inputmode="url" autocomplete="off" placeholder="Paste a YouTube or Vimeo link" aria-label="A YouTube or Vimeo link"><button type="submit">Add</button><button id="video-cancel" class="quiet" type="button">Cancel</button></form>
-        <h2 class="reading-title" id="read-title" contenteditable="true" data-placeholder="The article's title" aria-label="The article's title"></h2>
-        <p class="dek" id="read-dek" hidden></p>
-        <div class="lead" id="read-lead" hidden></div>
-        <p class="sum" id="read-sum" contenteditable="true" data-placeholder="A short summary: one or two lines, shown on the wall and under the title" aria-label="Short summary"></p>
-        <div class="reading-text" id="read-text" contenteditable="true" role="textbox" aria-multiline="true" aria-label="The article's text"></div>
-        <div class="block-tools" id="block-tools" hidden><button type="button" data-move="up" aria-label="Move this paragraph up (Alt+↑)">↑</button><button type="button" data-move="down" aria-label="Move this paragraph down (Alt+↓)">↓</button></div>
-      </article>
-      <div class="elsewhere" id="elsewhere" hidden></div>
-    </section>
-    <section class="panel article-panel" aria-label="This article">
+    <section class="panel article-panel" id="article-bench" aria-label="This article" hidden>
       <div class="head">
         <small>Article</small>
         <h1 id="article-heading"></h1>
@@ -589,8 +609,8 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     <h2>How this desk works</h2>
     <p>Each project opens on what the site has today. Change anything; it saves by itself, to your account when you are signed in.</p>
     <p>Only the next thing to do is open. A box you finished folds to one dim line with a ✓; click it to open it again.</p>
-    <p><strong>Project</strong>: the short summary, the keywords every picture gets, and the post's text. <strong>Picture</strong>: what the picture shows, its own keywords and its photographer. <strong>Preview</strong>: how it looks on the wall and on its page.</p>
-    <p>The ★ is the lead picture: it heads the page, the card and the wall. Keys: Alt+← and Alt+→ change project, Ctrl+Enter marks it done.</p>
+    <p><strong>Project</strong>: its page on the left, where you write the summary and the text; on the right the keywords every picture gets. <strong>Picture</strong>: one picture large with all of the project's pictures below it, and what it shows, its own keywords and its photographer; a click on a picture on the page opens it here. <strong>Preview</strong>: how it looks on the wall and on its page.</p>
+    <p>The ★ is the lead picture: the card and the wall show it. Keys: Alt+← and Alt+→ change project, Ctrl+Enter marks it done.</p>
     <p><strong>＋ Article</strong> starts a new piece for the wall. It stays a draft, only for you and saved to your account, until you publish it.</p>
     <button id="close-keys" class="primary" type="button">Got it</button>
   </dialog>
@@ -748,12 +768,19 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     // ---------- tabs ----------
     let tab = 'project';
     function showTab(name) {
+      // from the picture back to the page: the page shows where that picture sits (render() calls this on every render)
+      const leaving = tab === 'picture' && name !== 'picture';
       tab = name;
       for (const t of ['project', 'picture', 'preview']) {
         $(`tab-${t}`).setAttribute('aria-selected', String(t === name));
         $(`pane-${t}`).hidden = t !== name;
       }
       if (name === 'preview') renderPreview();
+      showStage();
+      if (leaving) {
+        renderReading();
+        $('reading').querySelector(`img[data-key="${CSS.escape(current().image.key)}"]`)?.scrollIntoView({block: 'center'});
+      }
     }
     for (const t of ['project', 'picture', 'preview']) $(`tab-${t}`).addEventListener('click', () => showTab(t));
 
@@ -941,55 +968,68 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
         else for (const attr of [...child.attributes]) if (!(tag === 'A' && attr.name === 'href' && safeHref(attr.value))) child.removeAttribute(attr.name);
       }
     }
-    // the post's own text: WordPress HTML shown as paragraphs; <figure data-media> become fixed picture blocks
-    function storyHtml(project, html) {
+    // ---------- a project's text, on its page ----------
+    // Stored as the archive stores it: paragraphs as HTML, pictures as <figure data-media="i,j"></figure> by their index
+    // in the post's media (src/lib/desk-text.js fromEditor writes the same). On the page a figure is a block of the
+    // site's rows of pictures ([slug].astro rows()): ↑ ↓ or a drag move it, ✕ takes it out of the text. A picture is
+    // found by its src, as the edit bar finds it (src/lib/edit-bar.js); a duplicate has none, and the site leaves it out.
+    const imageAt = (project, index) => project.images.find((image) => image.src === project.thumbs[index]);
+    function shot(image) {
+      const img = el('img', {alt: '', loading: 'lazy', sizes: '(max-width: 900px) 100vw, 46rem', srcset: image.srcset ?? '', src: image.src});
+      img.dataset.key = image.key;
+      img.style.setProperty('--r', String(image.width && image.height ? image.width / image.height : 4 / 3));
+      return img;
+    }
+    // rows of up to three, balanced (5 pictures: 3 + 2), as the site draws them
+    function shotRows(images) {
+      const count = Math.ceil(images.length / 3);
+      const rows = [];
+      for (let r = 0, start = 0; r < count; r++) {
+        const size = Math.ceil((images.length - start) / (count - r));
+        rows.push(el('div', {className: 'media-row'}, ...images.slice(start, start + size).map(shot)));
+        start += size;
+      }
+      return rows;
+    }
+    function mediaBlock(project, media) {
+      const images = media.split(',').map((index) => imageAt(project, index.trim())).filter(Boolean);
+      const figure = el('figure', {className: 'pic-block media-block', contentEditable: 'false', draggable: true},
+        ...(images.length ? shotRows(images) : [el('span', {className: 'hint', textContent: 'The site leaves this picture out (a duplicate).'})]),
+        el('span', {className: 'pic-tools'}, blockTool('up', 'Move the pictures up', '↑'), blockTool('down', 'Move the pictures down', '↓'), blockTool('out', 'Take the pictures out of the text', '✕')));
+      figure.dataset.media = media;
+      return figure;
+    }
+    // the text as live nodes; an article's own picture or video has no place in a project's text
+    function projectNodes(project, html) {
       const blocks = String(html).replace(/\r\n/g, '\n').split(/\n{2,}/).map((chunk) => chunk.trim()).filter((chunk) => chunk && chunk !== '&nbsp;');
       const wrapped = blocks.map((chunk) => (/^<(p|h[1-6]|ul|ol|blockquote|figure|div|hr|table)\b/i.test(chunk) ? chunk : `<p>${chunk.replace(/\n/g, '<br>')}</p>`)).join('');
       const template = document.createElement('template');
       template.innerHTML = wrapped;
-      tidy(template.content, (media) => {
-        const block = el('span', {className: 'pics', contentEditable: 'false'});
-        block.dataset.media = media;
-        for (const index of media.split(',')) {
-          const src = project.thumbs[index.trim()];
-          block.append(src ? el('img', {src, alt: '', loading: 'lazy'}) : el('span', {textContent: `picture ${Number(index) + 1}`}));
-        }
-        return block;
-      });
-      return template.innerHTML;
+      const none = () => document.createTextNode('');
+      tidy(template.content, (media) => mediaBlock(project, media), none, none);
+      return template.content;
     }
     // back to what the archive stores: paragraphs as HTML, picture blocks as <figure data-media>, nothing pasted along
-    function storyToContent() {
-      const copy = $('story').cloneNode(true);
-      for (const block of copy.querySelectorAll('.pics')) { const figure = document.createElement('figure'); figure.dataset.media = block.dataset.media; block.replaceWith(figure); }
-      tidy(copy);
+    function projectText() {
+      const copy = $('read-text').cloneNode(true);
+      const none = () => document.createTextNode('');
+      tidy(copy, null, none, none);
       return copy.innerHTML.replace(/<figure data-media="([^"]*)"><\/figure>/g, '\n\n<figure data-media="$1"></figure>\n\n').replace(/<\/p>/g, '</p>\n\n').replace(/\n{3,}/g, '\n\n').trim();
     }
-    let storyPictures = 0;
-    function renderStory() {
-      const {project} = current();
-      const record = projectRecord(project);
-      // a field Ryan is typing in keeps his caret, also when a copy from his account arrives meanwhile
-      if (document.activeElement !== $('story')) $('story').innerHTML = storyHtml(project, record.content !== undefined ? record.content : project.content);
-      storyPictures = (String(project.content).match(/<figure data-media=/g) ?? []).length;
-      $('story-reset').hidden = record.content === undefined;
-    }
+    // the pictures a text places, by their src: the site shows the others under Photographs
+    const placedSrcs = (project, content) => new Set([...String(content ?? '').matchAll(/data-media="([^"]*)"/g)]
+      .flatMap((match) => match[1].split(',').map((index) => project.thumbs[index.trim()])).filter(Boolean));
     try { document.execCommand('defaultParagraphSeparator', false, 'p'); } catch {}
-    $('story').addEventListener('input', () => {
-      const {project} = current();
-      state.projects[project.id] = {...state.projects[project.id], content: storyToContent()};
-      $('story-reset').hidden = false;
-      save();
-      const left = $('story').querySelectorAll('.pics').length;
-      $('note').textContent = left < storyPictures ? 'A picture block left the text. “Undo my changes to the text” brings it back.' : '';
-    });
     $('story-reset').addEventListener('click', () => {
       const {project} = current();
       const record = {...state.projects[project.id]};
       delete record.content;
       state.projects[project.id] = record;
       save();
-      renderStory();
+      // drawn again from the archive's text, also when the page still shows the same words
+      shownText.key = null;
+      $('page-note').textContent = '';
+      renderReading();
     });
 
     function wpRows(containerId, rows) {
@@ -1008,7 +1048,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
         ? 'On the wall and under the title.'
         : `Empty, the wall shows WordPress's: “${project.excerpt.slice(0, 90)}${project.excerpt.length > 90 ? '…' : ''}”`;
       renderProjectWords();
-      renderStory();
+      renderReading();
       wpRows('wp-project', [
         {label: 'Categories', value: project.wordpress.categories, use: () => setProjectTags([...projectTags(project), ...project.wordpress.categories.filter((w) => !projectTags(project).some((x) => same(x, w)))])},
         {label: 'Tags', value: project.wordpress.tags, use: () => setProjectTags([...projectTags(project), ...project.wordpress.tags.filter((w) => !projectTags(project).some((x) => same(x, w)))])},
@@ -1022,6 +1062,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       const {project} = current();
       setProject(project, 'summary', $('summary').value.trim(), project.summary);
       $('summary-hint').textContent = 'On the wall and under the title.';
+      if (document.activeElement !== $('read-sum')) $('read-sum').textContent = summaryOf(project);
     });
 
     // ---------- the Picture tab ----------
@@ -1227,6 +1268,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       if (article) {
         updateProgress();
         renderArticleMode();
+        showStage();
         return;
       }
       const {project, projectIndex} = current();
@@ -1280,7 +1322,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       state.projects[project.id] = {...state.projects[project.id], hero: image.url};
       save();
       render();
-      $('note').textContent = 'Lead picture chosen: it heads the page, the card and the wall.';
+      $('note').textContent = 'Lead picture chosen: the card and the wall show it.';
     });
     addEventListener('keydown', (event) => {
       // not while a dialog or the overview is open: the desk behind it is out of sight
@@ -1405,14 +1447,33 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       return template.innerHTML;
     }
     const started = (article) => new Date(article.created ?? Date.now()).toLocaleDateString('en-GB', {day: 'numeric', month: 'short', year: 'numeric'});
-    // the stage shows the article's page, or how it shows elsewhere: on the wall, as a shared link, in search
+    // The stage shows the page (of a project or an article), how an article shows elsewhere (on the wall, as a
+    // shared link, in search), or on a project's Picture tab one picture large with the filmstrip.
     let elsewhere = false;
-    let shownText = {article: null, content: null};
+    // what #read-text shows: 'project:<id>' or 'article:<id>', and the text it was drawn from
+    let shownText = {key: null, content: null};
+    function showStage() {
+      const article = Boolean(openArticleRecord());
+      const picture = !article && tab === 'picture';
+      const view = article ? 'article' : picture ? 'picture' : 'page';
+      $('reading').hidden = article ? elsewhere : picture;
+      $('elsewhere').hidden = !(article && elsewhere);
+      $('picture-view').hidden = !picture;
+      $('filmstrip').hidden = !picture;
+      for (const node of document.querySelectorAll('.stage-bar [data-for]')) node.hidden = !node.dataset.for.split(' ').includes(view);
+      $('article-view').textContent = article && elsewhere ? 'On the wall, as a link, in search' : 'Write on the page';
+      if ($('reading').hidden) $('block-tools').hidden = true;
+    }
     // The page is where the article is written: title, summary and text are edited in place. A part Ryan is
     // typing in keeps his caret: only the others are filled again from the draft.
     function renderReading() {
       const article = openArticleRecord();
-      if (!article) return;
+      if (!article) return renderProjectPage();
+      $('reading').dataset.kind = 'article';
+      $('read-title').contentEditable = 'true';
+      $('read-title').setAttribute('aria-label', 'The article\'s title');
+      $('read-text').setAttribute('aria-label', 'The article\'s text');
+      $('read-rest').hidden = true;
       $('read-when').textContent = `${DATA.kinds?.[article.kind ?? 'story']?.label ?? 'Story'} · ${article.status === 'ready' ? 'ready for the site' : 'draft'} · started ${started(article)}`;
       if (document.activeElement !== $('read-title')) $('read-title').textContent = String(article.title ?? '');
       if (document.activeElement !== $('read-sum')) $('read-sum').textContent = String(article.summary ?? '');
@@ -1429,27 +1490,76 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       // the text is drawn again only for another article, or when the draft changed elsewhere (another device)
       const text = $('read-text');
       const content = String(article.content ?? '');
-      if (shownText.article !== state.article || (content !== shownText.content && !text.contains(document.activeElement))) {
+      if (shownText.key !== `article:${state.article}` || (content !== shownText.content && !text.contains(document.activeElement))) {
         // an empty text starts with one paragraph, so the first line typed is a paragraph too
         const nodes = photoNodes(article, cleanHtml(content), pictureBlock);
         if (nodes.childNodes.length) text.replaceChildren(nodes);
         else text.innerHTML = '<p><br></p>';
       }
-      shownText = {article: state.article, content};
+      shownText = {key: `article:${state.article}`, content};
       markEmpty();
       $('article-heading').textContent = articleTitle(article);
       $('article-when').textContent = `Started ${started(article)}`;
       document.title = `${articleTitle(article)} (draft) — Portfolio desk`;
       if (elsewhere) renderElsewhere(article);
     }
+    // A project's page as the site shows it ([slug].astro): date • kinds, the title (the site's, not a desk field), the
+    // summary and the text written in place, the lead above the text only where the site puts one, and under
+    // Photographs the pictures the text doesn't place. The picture the desk is on is outlined.
+    function renderProjectPage() {
+      const {project, image} = current();
+      const record = projectRecord(project);
+      const pageKey = `project:${project.id}`;
+      const content = record.content !== undefined ? record.content : project.content;
+      $('reading').dataset.kind = 'project';
+      $('video-form').hidden = true;
+      $('read-when').textContent = [project.dateLabel, project.kinds.join(', ')].filter(Boolean).join(' • ');
+      $('read-title').contentEditable = 'false';
+      $('read-title').textContent = project.title;
+      $('read-title').setAttribute('aria-label', 'The project\'s title');
+      if (document.activeElement !== $('read-sum')) $('read-sum').textContent = summaryOf(project);
+      $('read-dek').hidden = true;
+      $('read-text').setAttribute('aria-label', 'The project\'s text');
+      if (shownText.key !== pageKey) $('page-note').textContent = '';
+      // a ★ chosen on the desk is one of the photos, which the site never puts above the text
+      const lead = project.leadSrc && !record.hero ? project.leadSrc : '';
+      const leadKey = lead ? `p:${lead}` : '';
+      if ($('read-lead').dataset.key !== leadKey) {
+        $('read-lead').dataset.key = leadKey;
+        $('read-lead').replaceChildren(...(lead ? [el('img', {src: lead, alt: ''})] : []));
+      }
+      $('read-lead').hidden = !lead;
+      // the text is drawn again only for another project, or when it changed elsewhere (the edit bar, another device)
+      const text = $('read-text');
+      if (shownText.key !== pageKey || (content !== shownText.content && !text.contains(document.activeElement))) {
+        const nodes = projectNodes(project, content);
+        if (nodes.childNodes.length) text.replaceChildren(nodes);
+        else text.innerHTML = '<p><br></p>';
+      }
+      shownText = {key: pageKey, content};
+      markEmpty();
+      $('story-reset').hidden = record.content === undefined;
+      const placed = placedSrcs(project, content);
+      const rest = project.images.filter((picture) => !placed.has(picture.src));
+      const restKey = rest.map((picture) => picture.key).join('\n');
+      if ($('read-rest').dataset.key !== restKey) {
+        $('read-rest').dataset.key = restKey;
+        $('read-rest').querySelector('.rest-title').textContent = `Photographs (${rest.length})`;
+        $('read-rest').querySelector('.rest-rows').replaceChildren(...shotRows(rest));
+      }
+      $('read-rest').hidden = !rest.length;
+      for (const img of $('reading').querySelectorAll('img[data-key]')) {
+        if (img.dataset.key === image.key) img.dataset.current = 'true';
+        else delete img.dataset.current;
+      }
+    }
     $('show-elsewhere').addEventListener('click', () => {
       elsewhere = !elsewhere;
-      $('reading').hidden = elsewhere;
-      $('elsewhere').hidden = !elsewhere;
-      $('article-view').textContent = elsewhere ? 'On the wall, as a link, in search' : 'Write on the page';
       $('show-elsewhere').textContent = elsewhere ? 'Its page' : 'On the wall and as a link';
+      showStage();
       renderReading();
     });
+    $('back-to-page').addEventListener('click', () => showTab('project'));
     // ---------- an article's pictures: uploaded to the account (reddy.world's /api/desk-upload), private until published ----------
     // In the text a picture is <figure data-picture="id">; the article keeps {pictures: {id: {path, name, alt}}, hero: id}.
     const photoUrls = new Map();
@@ -1507,9 +1617,26 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     // the page's text back into the draft, cleaned, so a pasted page or picture never fills the account copy
     function saveText() {
       markEmpty();
+      if (!openArticleRecord()) return saveProjectText();
       const content = cleanHtml($('read-text').innerHTML);
-      shownText = {article: state.article, content};
+      shownText = {key: `article:${state.article}`, content};
       setArticle('content', content);
+    }
+    // a project's text back into its record, as the archive stores it (never through the article's savers)
+    function saveProjectText() {
+      const {project} = current();
+      const content = projectText();
+      shownText = {key: `project:${project.id}`, content};
+      state.projects[project.id] = {...state.projects[project.id], content};
+      $('story-reset').hidden = false;
+      save();
+      // pictures the archive's text places and this text no longer does: the site shows them under Photographs
+      const before = placedSrcs(project, project.content);
+      const now = placedSrcs(project, content);
+      const out = project.images.some((picture) => before.has(picture.src) && !now.has(picture.src));
+      $('page-note').textContent = out ? 'Out of the text: the site shows it under Photographs. “Undo my changes to the text” brings it back.' : '';
+      // the lead and Photographs follow a ✕ straight away
+      renderProjectPage();
     }
     // the block of the text a node sits in (a direct child of the text)
     const topBlock = (node) => { let at = node?.nodeType === 1 ? node : node?.parentElement; while (at && at.parentElement !== $('read-text')) at = at.parentElement; return at; };
@@ -1526,6 +1653,17 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       else figure.remove();
       saveText();
       if (figure.isConnected) button.focus();
+    });
+    // a click on a project's picture on its page opens it large, on the Picture tab (the cursor moves as the filmstrip moves it)
+    $('reading').addEventListener('click', (event) => {
+      if (openArticleRecord() || event.target.closest?.('.pic-tools')) return;
+      const img = event.target.closest?.('img[data-key]');
+      if (!img) return;
+      const index = flat.findIndex((item) => item.image.key === img.dataset.key);
+      if (index < 0) return;
+      state.cursor = index;
+      tab = 'picture';
+      render();
     });
     let dragged = null;
     const clearDrop = () => { for (const node of $('read-text').querySelectorAll('.drop-above, .drop-below')) node.classList.remove('drop-above', 'drop-below'); };
@@ -1637,6 +1775,18 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     // the title and the summary on the page: plain words, one line for the title
     for (const [id, field, input] of [['read-title', 'title', 'article-title'], ['read-sum', 'summary', 'article-summary']]) {
       $(id).addEventListener('input', () => {
+        // on a project's page: the summary is the project's, set as its box sets it; the title is the site's
+        if (!openArticleRecord()) {
+          if (field === 'summary') {
+            const {project} = current();
+            const value = $(id).textContent.replace(/\s+/g, ' ').trim();
+            $('summary').value = value;
+            setProject(project, 'summary', value, project.summary);
+            $('summary-hint').textContent = 'On the wall and under the title.';
+            renderPreview();
+          }
+          return;
+        }
         const value = $(id).textContent.replace(/\s+/g, ' ');
         $(input).value = value;
         setArticle(field, value);
@@ -1768,6 +1918,8 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     $('video-cancel').addEventListener('click', closeVideoForm);
     $('video-form').addEventListener('submit', (event) => {
       event.preventDefault();
+      // a video or a picture of its own goes only into an article's text
+      if (!openArticleRecord()) return;
       const key = videoKey($('video-url').value);
       if (!key) { $('page-note').textContent = 'That is not a YouTube or Vimeo link.'; return; }
       const block = lastRange && $('read-text').contains(lastRange.startContainer) ? topBlock(lastRange.startContainer) : null;
@@ -1785,6 +1937,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       event.target.value = '';
       const place = placeAdded;
       placeAdded = false;
+      if (!openArticleRecord()) return;
       for (const file of files) {
         const id = `p${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
         $('pic-hint').textContent = `Adding ${file.name}…`;

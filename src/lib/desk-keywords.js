@@ -112,8 +112,10 @@ export function deskProjects() {
       dateLabel: post.undated ? '' : formatDate(post.date),
       kinds: post.kinds.map((kind) => KIND_LABEL[kind]),
       wordpress: { categories: raw.categories ?? [], tags: raw.tags ?? [], excerpt: plain(raw.excerpt) },
-      // the picture that leads the project today (its card, its page, the wall); Ryan can choose another
+      // the picture that leads the project today (its card, the wall); Ryan can choose another
       hero: post.featured?.url ?? '',
+      // the site heads the page with the featured picture only when it is not one of the post's photos ([slug].astro 87-95)
+      leadSrc: post.featured && post.layout !== 'comp-card' && !projectPhotos.some((m) => m.url === post.featured.url) ? picture(post.featured).src : '',
       originalSuggestions,
       currentKeywords: unique([...originalSuggestions, ...post.kinds.map((kind) => KIND_LABEL[kind]), ...post.categories, ...post.tags]),
       // the customer-search phrases alone (no titles or tags): the third column finds related words for these

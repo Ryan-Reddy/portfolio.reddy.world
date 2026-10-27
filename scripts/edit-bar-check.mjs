@@ -81,6 +81,8 @@ try {
   const want = await page.evaluate(() => window.imageDesk.DATA.projects.find((p) => p.id === 'rrproductions/making-of-a-kaleidoscope').title);
   check('Open in the desk lands on the project', (await page.locator('#project-title').textContent()) === want, await page.locator('#project-title').textContent());
   check('the desk shows the summary written in place', (await page.locator('#summary').inputValue()) === 'A kaleidoscope made by hand.');
+  check('and the desk opens it on its page, with the bar\'s words', await page.locator('#reading[data-kind="project"]').isVisible()
+    && (await page.locator('#read-sum').textContent()) === 'A kaleidoscope made by hand.' && (await page.locator('#read-text').innerText()).includes('(edited)'));
   check('no page errors', errors.length === 0, errors.join(' / '));
   // a page with a lead picture and pictures below the text: each gets a ✎
   await page.goto(`${base}/rmaekers/giant-swings/?edit`);

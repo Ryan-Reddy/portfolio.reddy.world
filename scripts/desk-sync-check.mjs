@@ -88,6 +88,22 @@ try {
   const chips = await page.locator('#project-chips .chip').allTextContents();
   const siteWords = await page.evaluate((i) => window.imageDesk.DATA.projects[i].keywords.length, seeded);
   check('a project shows the keywords the site has', chips.length > 0 && chips.length === siteWords, chips.join(' | '));
+  // it opens on its page, in the article's editor: the site's title, not written on; the text with its picture blocks
+  const onPage = await page.evaluate((i) => {
+    const project = window.imageDesk.DATA.projects[i];
+    const imgs = [...document.querySelectorAll('#read-text .media-block img')];
+    return {
+      kind: document.querySelector('#reading').dataset.kind, title: document.querySelector('#read-title').textContent === project.title,
+      editable: document.querySelector('#read-title').getAttribute('contenteditable'), story: document.querySelectorAll('#story').length,
+      blocks: document.querySelectorAll('#read-text .media-block').length, want: (project.content.match(/<figure data-media=/g) ?? []).length,
+      keyed: imgs.length > 0 && imgs.every((img) => img.dataset.key),
+    };
+  }, seeded);
+  check('a project opens on its page, in the article\'s editor', await page.locator('#reading').isVisible() && onPage.kind === 'project' && onPage.story === 0, JSON.stringify(onPage));
+  check('its title is the site\'s, not written on', onPage.title && onPage.editable === 'false', JSON.stringify(onPage));
+  check('its text has a block for every picture block, each picture by its key', onPage.want === 1 && onPage.blocks === onPage.want && onPage.keyed, JSON.stringify(onPage));
+  check('a project\'s page has no ＋ Picture, ＋ Video or lead button', await page.locator('#add-picture-here').isHidden() && await page.locator('#add-video-here').isHidden() && await page.locator('#make-hero').isHidden());
+  check('a text that places every picture has no Photographs below it', await page.locator('#read-rest').isHidden());
   check('opening a project changes nothing', await page.evaluate(() => Object.keys(window.imageDesk.state.projects).length === 0));
   // progressive disclosure: only the next box is open; a handled one is one dim line with a ✓
   let list = await boxes(page, 'project');
@@ -127,6 +143,39 @@ try {
   for (let i = 0; i < 6; i++) await page.keyboard.press('Backspace');
   check('removing every keyword leaves none', (await page.locator('#project-chips .chip').count()) === 0);
   await page.evaluate(() => { delete window.imageDesk.state.projects['rmaekers/lightsurface-mk1-set']; window.imageDesk.render(); });
+  // written on the page: the summary and the text go to the project's record, the text as the archive stores it
+  const recordOf = () => page.evaluate(() => window.imageDesk.state.projects['rmaekers/lightsurface-mk1-set'] ?? {});
+  await page.locator('#read-sum').click();
+  await page.keyboard.type('On the page.');
+  let written = await recordOf();
+  check('the summary written on the page is the project\'s summary', written.summary === 'On the page.' && (await page.locator('#summary').inputValue()) === 'On the page.'
+    && await page.evaluate(() => !('null' in window.imageDesk.state.articles)), JSON.stringify(written));
+  await page.locator('#read-text p').first().click();
+  await page.keyboard.press('End');
+  await page.keyboard.type(' (page)');
+  written = await recordOf();
+  const pageText = written.content ?? '';
+  check('the text written on the page is stored as the archive stores it', /\(page\)/.test(pageText) && pageText.includes('\n\n')
+    && (pageText.match(/<figure data-media="0"><\/figure>/g) ?? []).length === 1 && !/pic-block|contenteditable|data-picture|data-video/.test(pageText), pageText);
+  // ✕ takes a picture row out of the text: the site shows it under Photographs, and so does the page
+  await page.locator('#read-text .media-block button[data-move="out"]').click();
+  written = await recordOf();
+  check('✕ takes the pictures out of the text, to Photographs below', !/data-media/.test(written.content) && (await page.locator('#read-rest img').count()) === 1
+    && (await page.locator('#read-rest .rest-title').textContent()) === 'Photographs (1)' && (await page.locator('#page-note').textContent()).trim() !== '', written.content);
+  await openBox(page, 'project', 'text');
+  await page.locator('#story-reset').click();
+  written = await recordOf();
+  check('Undo my changes to the text brings the archive\'s text back', written.content === undefined && (await page.locator('#read-text .media-block').count()) === 1, JSON.stringify(written));
+  // a click on a picture on the page opens it large on the Picture tab; ← Its page goes back
+  const onText = page.locator('#read-text .media-block img[data-key]').first();
+  const clickedKey = await onText.getAttribute('data-key');
+  await onText.click();
+  check('a click on a picture on the page opens it large, on the Picture tab', (await page.locator('#tab-picture').getAttribute('aria-selected')) === 'true'
+    && await page.locator('#picture-view').isVisible() && await page.locator('#filmstrip').isVisible() && await page.locator('#reading').isHidden()
+    && (await page.evaluate(() => window.imageDesk.flat[window.imageDesk.state.cursor].image.key)) === clickedKey, clickedKey);
+  await page.locator('#back-to-page').click();
+  check('← Its page goes back to the page', await page.locator('#reading').isVisible() && (await page.locator('#tab-project').getAttribute('aria-selected')) === 'true');
+  await page.evaluate(() => { delete window.imageDesk.state.projects['rmaekers/lightsurface-mk1-set']; window.imageDesk.render(); });
   await page.locator('#tab-picture').click();
   list = await boxes(page, 'picture');
   check('a picture opens only its next box', onlyNextOpen(list), show(list));
@@ -152,6 +201,7 @@ try {
   const plain = Object.keys(exported.projects).find((id) => !exported.projects[id].hero);
   const plainIndex = await page.evaluate((id) => window.imageDesk.DATA.projects.findIndex((project) => project.id === id), plain);
   await page.locator('#project-picker').selectOption(String(plainIndex));
+  await page.locator('#tab-picture').click();
   await page.locator('#make-hero').click();
   check('before loading: a lead picture chosen on the desk', await page.evaluate((id) => Boolean(window.imageDesk.state.projects[id]?.hero), plain), plain);
   await page.setInputFiles('#load-file', exportFile);
@@ -198,6 +248,8 @@ try {
   const pen = await open(writer);
   await pen.page.locator('#new-article').click();
   check('＋ Article opens an empty draft', await pen.page.locator('#article-bench').isVisible() && await pen.page.locator('#project-bench').isHidden());
+  check('an article\'s page has ＋ Picture, and no lead button or ← Its page', await pen.page.locator('#add-picture-here').isVisible()
+    && await pen.page.locator('#make-hero').isHidden() && await pen.page.locator('#back-to-page').isHidden());
   let articleBoxes = await boxes(pen.page, 'article');
   check('a new article opens only its title', onlyNextOpen(articleBoxes) && articleBoxes.find((b) => b.open)?.name === 'title', show(articleBoxes));
   await pen.page.locator('#article-title').fill('Street interviews');
@@ -369,6 +421,11 @@ try {
     check('390 px, ' + tab + ' tab: no sideways scroll', await small.page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), String(await small.page.evaluate(() => document.documentElement.scrollWidth)));
     await shoot(small.page, 'phone-' + tab);
   }
+  // a project's page with rows of pictures fits too, inside its own scroll
+  await small.page.locator('#tab-project').click();
+  await small.page.locator('#project-picker').selectOption(String(await small.page.evaluate(() => window.imageDesk.DATA.projects.findIndex((project) => project.id === 'rmaekers/merchandising'))));
+  check("390 px, a project's page with rows of pictures: no sideways scroll in it", await small.page.evaluate(() => document.querySelector('#reading').scrollWidth <= document.querySelector('#reading').clientWidth),
+    String(await small.page.evaluate(() => document.querySelector('#reading').scrollWidth)));
   // the article at phone width: its bar and its boxes fit too
   await small.page.locator('#new-article').click();
   check('390 px, article: no sideways scroll', await small.page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), String(await small.page.evaluate(() => document.documentElement.scrollWidth)));
