@@ -1,0 +1,53 @@
+name: Keep dev up to date with main
+
+# What goes live straight on main (a release, Send to site's desk changes, Dependabot) is merged
+# into `dev` right away, so the next release PR dev → main has no stale conflicts. Then reddy.world's
+# dev site is rebuilt: a push made with GITHUB_TOKEN starts no workflow here, so this starts it
+# directly. A conflict stops here with an error, to be merged by hand.
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-dev
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Merge main into dev
+        id: merge
+        run: |
+          if ! git ls-remote --exit-code --heads origin dev > /dev/null; then
+            echo "No dev branch yet: nothing to keep up to date."
+            exit 0
+          fi
+          git fetch -q origin dev
+          git switch -q -c dev origin/dev
+          if git merge-base --is-ancestor origin/main HEAD; then
+            echo "dev already has everything main has."
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898341+github-actions[bot]@users.noreply.github.com'
+          if ! git merge --no-edit origin/main; then
+            echo "::error::main does not merge cleanly into dev; merge it by hand"
+            exit 1
+          fi
+          git push -q origin HEAD:dev
+          echo "pushed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Rebuild reddy.world's dev site
+        if: steps.merge.outputs.pushed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.REDDY_WORLD_DEPLOY_TOKEN }}
+        run: gh workflow run firebase-hosting-dev.yml -R Ryan-Reddy/reddy.world --ref dev || echo "::warning::reddy.world's dev deploy could not start (no dev branch there yet?)"

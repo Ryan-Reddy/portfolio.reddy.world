@@ -21,6 +21,7 @@ Selected visual archive and physical production portfolios of **Ryan Reddy**:
 - **The old host:** portfolio.reddy.world is the Firebase Hosting site `portfolio-reddy` (project `getreddyworld`). It only redirects: every old WordPress URL 301s to its page on reddy.world/portfolio. [deploy.yml](.github/workflows/deploy.yml) deploys it on every push to `main`, and starts the reddy.world deploy so the pages go live too.
 - `npm run build` writes `firebase.json` ([firebase-config.mjs](scripts/firebase-config.mjs)) and fails if a redirect target is missing from the build.
 - **Every PR gets a preview** ([preview.yml](.github/workflows/preview.yml)): the build on channel `pr<N>` of the `portfolio-reddy` site, opening on `/portfolio/software/`. One bot comment on the PR has the link and is updated for every push. The channel expires after 7 days and is deleted when the PR closes. It shows this archive only; links to reddy.world's app pages go to the live site.
+- **Small PRs go into `dev`, a release into `main`** (Ryan, 2026-10-27: small slices, ship then build, and a `dev` branch). Open PRs with `--base dev`. When `dev` moves, [dev.yml](.github/workflows/dev.yml) starts reddy.world's dev site, which shows this archive's `dev` under /portfolio/ next to the app's `dev`. A release PR `dev → main` puts it live. What lands straight on `main` (Send to site, Dependabot) is merged back into `dev` by [sync-dev.yml](.github/workflows/sync-dev.yml).
 
 ---
 

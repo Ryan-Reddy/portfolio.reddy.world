@@ -1,0 +1,27 @@
+name: Dev site
+
+# When `dev` moves, reddy.world's dev site is rebuilt with this archive's `dev` branch under
+# /portfolio/ (reddy.world's firebase-hosting-dev.yml): one address showing everything merged into
+# `dev`, the app and the archive together. Small PRs land in `dev`; a release PR dev → main puts
+# them live (Ryan, 2026-10-27). Secret REDDY_WORLD_DEPLOY_TOKEN: the same token deploy.yml uses.
+on:
+  push:
+    branches:
+      - dev
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dev-site
+  cancel-in-progress: true
+
+jobs:
+  start_the_dev_deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Start reddy.world's dev deploy
+        env:
+          GH_TOKEN: ${{ secrets.REDDY_WORLD_DEPLOY_TOKEN }}
+        # until reddy.world has its own dev branch the run can't start: that's said, not failed
+        run: gh workflow run firebase-hosting-dev.yml -R Ryan-Reddy/reddy.world --ref dev || echo "::warning::reddy.world's dev deploy could not start (no dev branch there yet?)"
