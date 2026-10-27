@@ -259,6 +259,8 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     .reading { grid-auto-rows: max-content; }
     .reading #page-note { color: #6d675c; }
     .reading #page-note:empty { display: none; }
+    .reading #layout-note { color: var(--muted); }
+    .reading [data-layout] { border-left: 2px dashed var(--line); padding-left: .6rem; }
     .reading .reading-text[data-empty="true"]::before { content: "Write the text here."; position: absolute; color: #8a8376; pointer-events: none; }
     .reading .pic-block { position: relative; cursor: grab; }
     .reading .pic-tools { position: absolute; top: .4rem; right: .4rem; display: flex; gap: .25rem; }
@@ -419,6 +421,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
         <p class="dek" id="read-dek" hidden></p>
         <div class="lead" id="read-lead" hidden></div>
         <p class="sum" id="read-sum" contenteditable="true" data-placeholder="A short summary: one or two lines, shown on the wall and under the title" aria-label="Short summary"></p>
+        <p class="hint" id="layout-note" hidden>Marked at the left: the old site's own layout. Words changed there make it plain paragraphs on the site.</p>
         <div class="reading-text" id="read-text" contenteditable="true" role="textbox" aria-multiline="true" aria-label="The article's text"></div>
         <section class="read-rest" id="read-rest" hidden><h3 class="rest-title"></h3><div class="rest-rows"></div></section>
         <div class="block-tools" id="block-tools" hidden><button type="button" data-move="up" aria-label="Move this paragraph up (Alt+↑)">↑</button><button type="button" data-move="down" aria-label="Move this paragraph down (Alt+↓)">↓</button></div>
@@ -705,7 +708,9 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       state.article = null;
       history.replaceState(null, '', location.pathname + location.search);
     }
-    window.imageDesk = {DATA, STORE, state, flat, pinned: linkedIndex >= 0, render: (options) => render(options)};
+    window.imageDesk = {DATA, STORE, state, flat, pinned: linkedIndex >= 0, render: (options) => render(options),
+      // for scripts/desk-sync-check.mjs: the pieces a text is read in, and the piece a node of the page was drawn from
+      pieces: (html) => textPieces(html).map((piece) => piece.source), pieceSource: (node) => pieceOf.get(node)?.source};
 
     // ---------- boxes: only the next thing open ----------
     // Ryan, 2026-10-27: "progressive dicsclosure and also boxes that autocompact once they have been handled, also
@@ -938,12 +943,15 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     const RENAME = {H1: 'H2', H5: 'H4', H6: 'H4'};
     const BLOCKS = new Set(['DIV', 'SECTION', 'ARTICLE', 'HEADER', 'FOOTER', 'ADDRESS', 'PRE', 'TABLE', 'THEAD', 'TBODY', 'TFOOT', 'TR', 'TD', 'TH', 'FIGCAPTION', 'DL', 'DT', 'DD']);
     const DROP = new Set(['SCRIPT', 'STYLE', 'IFRAME', 'OBJECT', 'EMBED', 'TEMPLATE', 'SVG', 'MATH', 'IMG', 'PICTURE', 'VIDEO', 'AUDIO', 'CANVAS', 'NOSCRIPT', 'FORM', 'INPUT', 'BUTTON', 'SELECT', 'TEXTAREA']);
-    // a link goes to a web address or to a page of this site; nothing that a browser could read as another host
+    // a link goes to a web address, to a page of this site or to an e-mail address; nothing that a browser could read as another host
     const safeHref = (href) => {
       const value = String(href ?? '').trim();
       if (/[\u0000-\u001f\u007f\\]/.test(value)) return false;
-      return /^https?:\/\/[^/]/i.test(value) || /^\/(?!\/)/.test(value);
+      return /^https?:\/\/[^/]/i.test(value) || /^\/(?!\/)/.test(value) || /^mailto:[^\s"<>]+$/i.test(value);
     };
+    // what a link keeps: its address, and whether it opens in a new tab (target="_blank", rel="noopener"), as the archive's do
+    const linkAttr = (attr) => (attr.name === 'href' && safeHref(attr.value)) || (attr.name === 'target' && attr.value === '_blank')
+      || (attr.name === 'rel' && /^(?:noopener|noreferrer|nofollow)(?:\s+(?:noopener|noreferrer|nofollow))*$/i.test(attr.value.trim()));
     const holdsBlocks = (node) => [...node.children].some((c) => /^(P|H[1-6]|UL|OL|BLOCKQUOTE|HR|FIGURE|TABLE|DIV)$/.test(c.tagName) || c.classList.contains('pics'));
     // `pictures(media)`: what a <figure data-media> becomes (the desk's picture block); without it the figure stays, empty.
     // An article's own picture is <figure data-picture="id">; `photos(id)` makes its block, else it stays a figure.
@@ -981,7 +989,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
           if (holdsBlocks(child) || child.parentNode?.closest?.('p, li, h2, h3, h4, blockquote')) child.replaceWith(...child.childNodes, ...(holdsBlocks(child) ? [] : [document.createElement('br')]));
           else { const p = document.createElement('p'); p.append(...child.childNodes); child.replaceWith(p); }
         } else if (!ALLOWED.has(tag)) child.replaceWith(...child.childNodes);
-        else for (const attr of [...child.attributes]) if (!(tag === 'A' && attr.name === 'href' && safeHref(attr.value))) child.removeAttribute(attr.name);
+        else for (const attr of [...child.attributes]) if (!(tag === 'A' && linkAttr(attr))) child.removeAttribute(attr.name);
       }
     }
     // ---------- a project's text, on its page ----------
@@ -1015,26 +1023,155 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       figure.dataset.media = media;
       return figure;
     }
-    // the text as live nodes; an article's own picture or video has no place in a project's text
+    // The text in pieces, as the site draws it: a block with all it holds (a <p>, a <figure>, a <div>) or a paragraph of
+    // loose text, each as it stands in the text ({source, loose}). A copy of src/lib/content.js segments(), the same
+    // rules: Send to site keeps a piece of the site's text as it is (scripts/import-image-keywords.mjs deskText).
+    const SITE_BLOCKS = new Set(['address', 'article', 'aside', 'blockquote', 'dd', 'details', 'div', 'dl', 'dt', 'fieldset',
+      'figcaption', 'figure', 'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'header', 'hr',
+      'iframe', 'li', 'main', 'nav', 'ol', 'p', 'pre', 'section', 'table', 'tbody', 'td', 'tfoot',
+      'th', 'thead', 'tr', 'ul']);
+    function textPieces(raw) {
+      const html = String(raw ?? '').replace(/\r\n?/g, '\n');
+      const out = [];
+      const loose = (text) => { for (const chunk of text.split(/\n[ \t]*\n/)) if (chunk.replace(/&nbsp;/g, ' ').trim()) out.push({source: chunk.trim(), loose: true}); };
+      const tagRe = /<(\/?)([a-z][a-z0-9]*)\b[^>]*?(\/?)>|<!--[\s\S]*?-->/gi;
+      let depth = 0, blockStart = 0, inlineStart = 0, openTag = '', m;
+      while ((m = tagRe.exec(html))) {
+        if (!m[2]) continue;
+        const name = m[2].toLowerCase();
+        if (!SITE_BLOCKS.has(name)) continue;
+        const closing = m[1] === '/';
+        const selfClosed = m[3] === '/' || name === 'hr';
+        if (!closing && depth === 0) {
+          loose(html.slice(inlineStart, m.index));
+          blockStart = m.index;
+          if (selfClosed) { out.push({source: html.slice(m.index, tagRe.lastIndex), loose: false}); inlineStart = tagRe.lastIndex; }
+          else { depth = 1; openTag = m[0]; }
+        } else if (!closing && !selfClosed) depth += 1;
+        else if (closing && depth > 0) {
+          depth -= 1;
+          if (depth === 0) { out.push({source: html.slice(blockStart, tagRe.lastIndex), loose: false}); inlineStart = tagRe.lastIndex; }
+        }
+      }
+      const tail = out.length;
+      loose(html.slice(inlineStart));
+      // a block the text never closes: the site reads all after it as loose text. The piece it starts in keeps that tag
+      // when it is changed (`opens`), so the rest of the text reads as before.
+      if (depth > 0) { const piece = out.slice(tail).find((p) => p.source.includes(openTag)); if (piece) piece.opens = openTag; }
+      return out;
+    }
+    // a text with no words and no pictures (src/lib/content.js blankText): a cleared editor leaves <p><br></p>
+    const blankText = (html) => !/<figure\b/i.test(html) && !html.replace(/<[^>]*>/g, ' ').replace(/&nbsp;|&#160;/gi, ' ').trim();
+    const noNode = () => document.createTextNode('');
+    // a node of the text's top level that is part of it: not the spaces between blocks, nor the line ✕ leaves
+    const counts = (node) => (node.nodeType === 1 ? !node.matches('.out-mark') : node.nodeType === 8 || (node.nodeType === 3 && node.data.trim() !== ''));
+    const blockish = (node) => node.nodeType === 1 && (BLOCKS.has(node.nodeName) || /^(P|H[1-6]|UL|OL|LI|BLOCKQUOTE|HR|FIGURE)$/.test(node.nodeName));
+    // what the piece of the text each top-level node was drawn from: {source, nodes, read}
+    const pieceOf = new WeakMap();
+    // the paragraphs of loose text (no <p> in the text): saved as loose text again
+    const looseParagraphs = new WeakSet();
+    // the blocks the desk draws as paragraphs (tidy)
+    const ARCHIVE_LAYOUT = new RegExp(`<(?:${[...BLOCKS].join('|')})\\b`, 'i');
+    // what nodes of the text read as, cleaned as they are saved: a picture block as <figure data-media>, without the tools;
+    // and spaces the page doesn't show left out (the browser drops a paragraph's last line breaks when Ryan types at its end)
+    function readOf(nodes) {
+      const box = document.createElement('div');
+      box.append(...nodes.map((node) => node.cloneNode(true)));
+      tidy(box, null, noNode, noNode);
+      return box.innerHTML.replace(/[ \t\n\r\f]+/g, ' ').replace(/ ?(<\/?(?:p|h[1-6]|ul|ol|li|blockquote|hr|br|figure|div)\b[^>]*>) ?/gi, '$1')
+        .replace(/<br>(<\/(?:p|h[1-6]|li|blockquote)>)/gi, '$1').trim();
+    }
+    // loose words at the top of a piece (a <div> that held paragraphs and words) become a paragraph of their own
+    function wrapLoose(root) {
+      let run = [];
+      const close = () => {
+        if (run.some((node) => (node.nodeType === 1 ? node.nodeName !== 'BR' : node.data.trim()))) { const p = document.createElement('p'); run[0].before(p); p.append(...run); }
+        run = [];
+      };
+      for (const node of [...root.childNodes]) {
+        if (node.nodeType === 3 || (node.nodeType === 1 && !blockish(node))) run.push(node);
+        else close();
+      }
+      close();
+    }
+    // the text as live nodes, piece by piece, each node knowing its piece; an article's own picture or video has no
+    // place in a project's text. A piece the desk shows nothing of keeps its place as an empty comment.
     function projectNodes(project, html) {
-      const blocks = String(html).replace(/\r\n/g, '\n').split(/\n{2,}/).map((chunk) => chunk.trim()).filter((chunk) => chunk && chunk !== '&nbsp;');
-      const wrapped = blocks.map((chunk) => (/^<(p|h[1-6]|ul|ol|blockquote|figure|div|hr|table)\b/i.test(chunk) ? chunk : `<p>${chunk.replace(/\n/g, '<br>')}</p>`)).join('');
-      const template = document.createElement('template');
-      template.innerHTML = wrapped;
-      const none = () => document.createTextNode('');
-      tidy(template.content, (media) => mediaBlock(project, media), none, none);
-      return template.content;
+      const fragment = document.createDocumentFragment();
+      for (const {source, loose, opens} of textPieces(html)) {
+        const template = document.createElement('template');
+        template.innerHTML = loose ? `<p>${source.replace(/\n/g, '<br>')}</p>` : source;
+        tidy(template.content, (media) => mediaBlock(project, media), noNode, noNode);
+        wrapLoose(template.content);
+        const nodes = [...template.content.childNodes].filter(counts);
+        if (!nodes.length) { nodes.push(document.createComment('')); template.content.append(nodes[0]); }
+        const piece = {source, opens, nodes, read: readOf(nodes)};
+        // a block in the old site's own layout (a <div>, a caption list): the desk draws it as paragraphs, and a change in
+        // it is saved so; keeping that layout needs an editor that keeps any markup (#80). Marked, and the page says so.
+        const layout = !loose && ARCHIVE_LAYOUT.test(source) && source.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim() !== '';
+        for (const node of nodes) {
+          pieceOf.set(node, piece);
+          if (loose && node.nodeName === 'P') looseParagraphs.add(node);
+          if (layout && node.nodeType === 1 && !node.matches('.pic-block')) node.dataset.layout = '';
+        }
+        fragment.append(template.content);
+      }
+      return fragment;
     }
-    // back to what the archive stores: paragraphs as HTML, picture blocks as <figure data-media>, nothing pasted along
+    // loose words back as loose text: a line break a new line, as the site reads it (a web address on a line of its own
+    // becomes a player there); one with an empty line in it stays one paragraph, as the desk shows it
+    function looseText(nodes) {
+      const box = document.createElement('div');
+      box.append(...nodes.map((node) => node.cloneNode(true)));
+      tidy(box, null, noNode, noNode);
+      const text = box.innerHTML.replace(/\n/g, ' ').replace(/<br\s*\/?>/gi, '\n').trim();
+      if (!text.replace(/&nbsp;/g, ' ').trim()) return '';
+      return /\n[ \t]*\n/.test(text) ? `<p>${text.replace(/\n/g, '<br>')}</p>` : text;
+    }
+    // a block of the text that was changed, cleaned: a paragraph of loose text, or one written on the desk, as loose text
+    function blockText(node) {
+      const box = document.createElement('div');
+      box.append(node.cloneNode(true));
+      tidy(box, null, noNode, noNode);
+      const only = box.childNodes.length === 1 && box.firstChild.nodeName === 'P' ? box.firstChild : null;
+      if (only && (looseParagraphs.has(node) || !pieceOf.has(node))) return looseText([...only.childNodes]);
+      return box.innerHTML.replace(/<figure data-media="([^"]*)"><\/figure>/g, '\n\n<figure data-media="$1"></figure>\n\n').replace(/<\/p>/g, '</p>\n\n').replace(/\n{3,}/g, '\n\n').trim();
+    }
+    // Back to the text as the archive stores it. A piece Ryan didn't change is written as it stands in the text, letter
+    // for letter (its markup, its links, its line breaks), so the site draws it as before; what he changed is cleaned:
+    // loose text as loose text, other blocks as HTML, picture blocks as <figure data-media="i,j"></figure>; the pieces
+    // joined by blank lines; nothing pasted along.
     function projectText(root = $('read-text')) {
-      const copy = root.cloneNode(true);
-      for (const mark of copy.querySelectorAll('.out-mark')) mark.remove();
-      const none = () => document.createTextNode('');
-      tidy(copy, null, none, none);
-      return copy.innerHTML.replace(/<figure data-media="([^"]*)"><\/figure>/g, '\n\n<figure data-media="$1"></figure>\n\n').replace(/<\/p>/g, '</p>\n\n').replace(/\n{3,}/g, '\n\n').trim();
+      const nodes = [...root.childNodes].filter(counts);
+      const out = [];
+      const opened = new Set();
+      // the tag a changed piece keeps open goes before the first of its words
+      let opens = '';
+      const emit = (text) => { if (text) { out.push(opens + text); opens = ''; } };
+      let loose = [];
+      const flush = () => { if (loose.length) emit(looseText(loose)); loose = []; };
+      for (let i = 0; i < nodes.length;) {
+        const piece = pieceOf.get(nodes[i]);
+        if (piece && piece.nodes.every((node, k) => nodes[i + k] === node) && readOf(piece.nodes) === piece.read) {
+          flush();
+          if (opens) { out.push(opens); opens = ''; }
+          out.push(piece.source);
+          i += piece.nodes.length;
+          continue;
+        }
+        const node = nodes[i++];
+        if (piece?.opens && !opened.has(piece)) { flush(); opened.add(piece); opens = piece.opens; }
+        if (node.nodeType === 8) continue;
+        if (!blockish(node)) { loose.push(node); continue; }
+        flush();
+        emit(blockText(node));
+      }
+      flush();
+      if (opens) out.push(opens);
+      return out.filter(Boolean).join('\n\n');
     }
-    // what a save of the page as it opens writes: the archive's text drawn and read back, which is not the same
-    // letter for letter (a line break becomes <br>, a mailto: link loses its address), so it is never stored
+    // what a save of the page as it opens writes: the archive's pieces joined again by blank lines, which the site draws
+    // as the archive but which is not the same letter for letter, so it is never stored
     const untouchedTexts = new Map();
     function untouchedText(project) {
       if (!untouchedTexts.has(project.id)) {
@@ -1538,6 +1675,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       $('read-title').setAttribute('aria-label', 'The article\'s title');
       $('read-text').setAttribute('aria-label', 'The article\'s text');
       $('read-rest').hidden = true;
+      $('layout-note').hidden = true;
       $('read-when').textContent = `${DATA.kinds?.[article.kind ?? 'story']?.label ?? 'Story'} · ${article.status === 'ready' ? 'ready for the site' : 'draft'} · started ${started(article)}`;
       if (document.activeElement !== $('read-title')) $('read-title').textContent = String(article.title ?? '');
       if (document.activeElement !== $('read-sum')) $('read-sum').textContent = String(article.summary ?? '');
@@ -1598,6 +1736,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       shownText = {key: pageKey, content};
       markEmpty();
       $('story-reset').hidden = record.content === undefined;
+      $('layout-note').hidden = !text.querySelector('[data-layout]');
       const placed = placedSrcs(project, content);
       const rest = project.images.filter((picture) => !placed.has(picture.src));
       const restKey = rest.map((picture) => picture.key).join('\n');
@@ -1686,13 +1825,14 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       const {project} = current();
       const content = projectText();
       const record = state.projects[project.id];
-      // Send to site skips an empty text (scripts/import-image-keywords.mjs), so the site keeps the text it has:
-      // the record keeps no change, and the page shows that text again. Nor does a page that reads as it opened
-      // (a click that moved nothing, a row put back): Send to site would write the text drawn and read back.
+      // Send to site skips an empty text, one with no words and no pictures (scripts/import-image-keywords.mjs deskText),
+      // so the site keeps the text it has: the record keeps no change, and the page shows that text again. Nor does a
+      // page that reads as it opened (a click that moved nothing, a row put back, words typed and taken out again).
+      const blank = blankText(content);
       const unchanged = content === untouchedText(project);
-      if (content && !unchanged) state.projects[project.id] = {...record, content};
+      if (!blank && !unchanged) state.projects[project.id] = {...record, content};
       else if (record && 'content' in record) { const rest = {...record}; delete rest.content; state.projects[project.id] = rest; }
-      shownText = !content ? {key: null, content: null} : {key: `project:${project.id}`, content: unchanged ? project.content : content};
+      shownText = blank ? {key: null, content: null} : {key: `project:${project.id}`, content: unchanged ? project.content : content};
       save();
       // the lead and Photographs follow a ✕ straight away
       renderProjectPage();
@@ -1702,7 +1842,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       const now = placedSrcs(project, content);
       const out = project.images.some((picture) => before.has(picture.src) && !now.has(picture.src));
       $('page-note').textContent = project.compCard ? 'On the site this page is a comp card, without its text.'
-        : !content ? 'An empty text is not sent: the site keeps the text it has, shown here again.'
+        : blank ? 'An empty text is not sent: the site keeps the text it has, shown here again.'
         : out && !$('read-text').querySelector('.out-mark') ? 'Out of the text: the site shows it under Photographs.' : '';
     }
     // the block of the text a node sits in (a direct child of the text)

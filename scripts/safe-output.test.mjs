@@ -26,7 +26,14 @@ test('only http(s) addresses become links', () => {
 
 test('a post text keeps paragraphs, emphasis, safe links and picture blocks; scripts, attributes and other tags go', () => {
   const out = storyHtml('<p style="x">Hi <b>there</b> <a href="javascript:alert(1)">x</a> <a href="https://reddymaekers.com/shop/" target="_blank">shop</a></p><script>bad()</script><div class="a">kept words</div><figure data-media="3,4"></figure><img src=x onerror=alert(1)><figure>junk</figure>');
-  assert.equal(out, '<p>Hi <b>there</b> <a>x</a> <a href="https://reddymaekers.com/shop/">shop</a></p>kept words<br><figure data-media="3,4"></figure>junk');
+  assert.equal(out, '<p>Hi <b>there</b> <a>x</a> <a href="https://reddymaekers.com/shop/" target="_blank">shop</a></p>kept words<br><figure data-media="3,4"></figure>junk');
+});
+
+test('a link keeps an e-mail address, and a new tab with its rel, as the archive\'s links do; nothing else', () => {
+  assert.equal(storyHtml('<a href="mailto:a@example.com">mail</a>'), '<a href="mailto:a@example.com">mail</a>');
+  assert.equal(storyHtml('<a href="https://example.com/x" target="_blank" rel="noopener">x</a>'), '<a href="https://example.com/x" target="_blank" rel="noopener">x</a>');
+  assert.equal(storyHtml('<a href="https://example.com/x" target="_top" rel="opener evil">x</a>'), '<a href="https://example.com/x">x</a>');
+  assert.equal(storyHtml('<a href="javascript:alert(1)" target="_blank" rel="noopener">x</a><a href="mailto:a b">y</a>'), '<a>x</a><a>y</a>');
 });
 
 test('a post text never lets a tag through half-way: an unclosed tag or comment is written out as text', () => {

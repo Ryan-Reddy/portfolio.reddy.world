@@ -14,6 +14,8 @@ import { readFile, stat, mkdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { extname, join, resolve } from 'node:path';
 import { chromium } from 'playwright';
+import { renderContent, segments } from '../src/lib/content.js';
+import { deskText } from './import-image-keywords.mjs';
 
 const root = resolve(new URL('../dist', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'));
 const signedIn = process.argv.includes('--signed-in');
@@ -317,6 +319,152 @@ try {
   check('every picture row taken out: the empty text is not stored, the page shows the site\'s text again and says why', picturesOnly >= 0 && rowsIn > 0
     && emptied.record?.content === undefined && emptied.blocks === rowsIn && emptied.note.trim() !== '' && !/Photographs/.test(emptied.note), JSON.stringify(emptied));
   await page.evaluate((id) => { delete window.imageDesk.state.projects[id]; window.imageDesk.render(); }, picturesOnlyId);
+  // the text cleared from the keyboard (Ctrl+A, Backspace) leaves <p><br></p>: no words and no pictures, as empty as
+  // nothing, so it is not stored either and the page says the same (review finding: Send to site would publish it)
+  await page.locator('#project-picker').selectOption(String(await indexOf('rmaekers/giant-swings')));
+  await page.locator('#read-text p').first().click();
+  await page.keyboard.press('Control+a');
+  await page.keyboard.press('Backspace');
+  const keyCleared = { record: await recordFor('rmaekers/giant-swings'), note: await page.locator('#page-note').textContent(), blocks: await page.locator('#read-text .media-block').count() };
+  check('the text cleared from the keyboard is not stored either: the page shows the site\'s text again and says why', keyCleared.record?.content === undefined
+    && keyCleared.note === emptied.note && keyCleared.blocks > 0, JSON.stringify({ ...keyCleared, record: keyCleared.record?.content?.slice(0, 60) }));
+  await page.evaluate(() => { delete window.imageDesk.state.projects['rmaekers/giant-swings']; window.imageDesk.render(); });
+  // Ryan's site never changes because he edited a few words on the desk (review finding). The desk reads a text in the
+  // pieces the site draws, and on every project a word added at the end of each paragraph, stored, written as Send to
+  // site writes it (deskText) and drawn as the site draws it (renderContent), gives the archive's text drawn the same
+  // way but for that paragraph, which keeps its words, links, pictures and players. On each project the word is typed
+  // too, and taken out again with Backspace, which stores nothing.
+  const WORD = ' Zqxw';
+  const drawn = (text, title) => renderContent(text, { title, figure: (ids) => `<div class="FIG" data-ids="${ids.join(',')}"></div>` });
+  const everyProject = await page.evaluate(() => window.imageDesk.DATA.projects.map((project) => ({ id: project.id, title: project.title, content: project.content, pieces: window.imageDesk.pieces(project.content) })));
+  const readApart = everyProject.filter((project) => JSON.stringify(project.pieces) !== JSON.stringify(segments(project.content))).map((project) => project.id);
+  check('the desk reads every project\'s text in the pieces the site draws', readApart.length === 0, readApart.slice(0, 5).join(' '));
+  // the last words of a block of the page, outside its picture blocks: where a word typed at its end goes. A line that
+  // is only a video's address is a player on the site; a word added to it makes it words with a player, as it should.
+  const lastWords = () => {
+    const text = document.querySelector('#read-text');
+    return [...text.children].filter((block) => !/^https?:\/\/\S*(youtu\.?be|vimeo)\S*$/i.test(block.textContent.trim())).map((block) => {
+      const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT, { acceptNode: (node) => (node.data.trim() && !node.parentElement.closest('.pic-block') ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP) });
+      let last = null;
+      for (let node = walker.nextNode(); node; node = walker.nextNode()) last = node;
+      return last && { block, last, at: last.data.trimEnd().length };
+    }).filter(Boolean);
+  };
+  await page.evaluate(`window.deskLastWords = ${lastWords}`);
+  const round = { edits: 0, exact: 0, ownParagraph: 0, layout: 0, typed: 0 };
+  const wrongEdits = [];
+  const typedLeft = [];
+  for (const [index, project] of everyProject.entries()) {
+    // each paragraph in turn, the word put in and taken out again as typing does
+    const edits = await page.evaluate(({ index, WORD }) => {
+      const desk = window.imageDesk;
+      const id = desk.DATA.projects[index].id;
+      const cursor = desk.flat.findIndex((item) => item.projectIndex === index);
+      if (cursor < 0) return null;
+      desk.__kept = desk.state.projects[id];
+      desk.state.cursor = cursor;
+      desk.render();
+      const text = document.querySelector('#read-text');
+      const input = () => text.dispatchEvent(new InputEvent('input', { bubbles: true }));
+      return window.deskLastWords().map(({ block, last, at }) => {
+        const piece = desk.pieceSource(block) ?? '';
+        last.insertData(at, WORD);
+        input();
+        const saved = desk.state.projects[id]?.content ?? null;
+        last.deleteData(at, WORD.length);
+        input();
+        return { saved, piece, left: desk.state.projects[id]?.content ?? null, words: block.textContent.trim().slice(0, 40), marked: block.hasAttribute('data-layout') };
+      });
+    }, { index, WORD });
+    if (edits === null) { wrongEdits.push({ id: project.id, why: 'not on the desk' }); continue; }
+    // and the first paragraph typed in for real: the caret at its end, the word typed, then Backspace
+    const typedPiece = await page.evaluate(() => {
+      const first = window.deskLastWords()[0];
+      if (!first) return null;
+      document.querySelector('#read-text').focus();
+      const range = document.createRange();
+      range.setStart(first.last, first.at);
+      getSelection().removeAllRanges();
+      getSelection().addRange(range);
+      return { piece: window.imageDesk.pieceSource(first.block) ?? '', words: first.block.textContent.trim().slice(0, 40), marked: first.block.hasAttribute('data-layout') };
+    });
+    if (typedPiece) {
+      await page.keyboard.type(WORD);
+      const saved = (await recordFor(project.id))?.content ?? null;
+      for (let i = 0; i < WORD.length; i++) await page.keyboard.press('Backspace');
+      const left = (await recordFor(project.id))?.content;
+      if (left !== undefined) typedLeft.push(project.id);
+      edits.push({ saved, piece: typedPiece.piece, left: null, words: typedPiece.words, marked: typedPiece.marked, typed: true });
+      round.typed++;
+    }
+    await page.evaluate((id) => { const desk = window.imageDesk; if (desk.__kept === undefined) delete desk.state.projects[id]; else desk.state.projects[id] = desk.__kept; delete desk.__kept; }, project.id);
+    const before = drawn(project.content, project.title);
+    const apart = [];
+    for (const edit of edits) {
+      round.edits++;
+      const sent = edit.saved === null ? null : deskText(edit.saved, project.content);
+      const after = sent === null ? '' : drawn(sent, project.title);
+      if (edit.left !== null) wrongEdits.push({ id: project.id, words: edit.words, why: 'the word taken out again still stores a text' });
+      if (sent === null || !after.includes(WORD)) { wrongEdits.push({ id: project.id, words: edit.words, typed: edit.typed, why: edit.saved === null ? 'nothing stored' : 'the word is not on the page' }); continue; }
+      if (after.replace(WORD, '') === before) { round.exact++; continue; }
+      apart.push({ before, after: after.replace(WORD, ''), piece: edit.piece, words: edit.words, marked: edit.marked, typed: edit.typed });
+    }
+    if (!apart.length) continue;
+    // what changed: the top-level nodes between the ones that read the same from the start and from the end, which
+    // must lie in the paragraph edited and hold the same words, links, pictures and players
+    const verdicts = await page.evaluate((list) => list.map(({ before, after, piece, marked }) => {
+      const nodes = (html) => { const t = document.createElement('template'); t.innerHTML = html; return [...t.content.childNodes].filter((n) => n.nodeType === 1 || n.textContent.trim()); };
+      const a = nodes(before);
+      const b = nodes(after);
+      let s = 0;
+      while (s < a.length && s < b.length && a[s].isEqualNode(b[s])) s++;
+      let e = 0;
+      while (e < a.length - s && e < b.length - s && a[a.length - 1 - e].isEqualNode(b[b.length - 1 - e])) e++;
+      const box = (list) => { const div = document.createElement('div'); div.append(...list.map((n) => n.cloneNode(true))); return div; };
+      const href = (value) => { try { return /^https?:/i.test(value) ? new URL(value).href : value; } catch { return value; } };
+      // the words in order; a line break is no space in textContent, so spaces are left out
+      const words = (div) => { const copy = div.cloneNode(true); for (const player of copy.querySelectorAll('figure.video-embed')) player.remove(); return copy.textContent.replace(/\s+/g, ''); };
+      const holds = (div) => ({
+        words: words(div),
+        pictures: [...div.querySelectorAll('.FIG')].map((f) => f.dataset.ids),
+        players: [...div.querySelectorAll('iframe')].map((f) => f.getAttribute('src')),
+        links: [...div.querySelectorAll('a[href]')].filter((link) => !link.closest('figure.video-embed')).map((link) => href(link.getAttribute('href'))),
+      });
+      const was = holds(box(a.slice(s, a.length - e)));
+      const now = holds(box(b.slice(s, b.length - e)));
+      const own = document.createElement('template');
+      own.innerHTML = piece;
+      const inPiece = own.content.textContent.replace(/\s+/g, '').includes(was.words) && was.pictures.every((ids) => piece.includes(`data-media="${ids}"`));
+      // the old site's own layout (its <div>s, a caption list) gone from it: only on a block the page marks as such
+      const layouts = (list) => [...box(list).querySelectorAll('div:not(.FIG), dl, dt, dd, section, article, header, footer, address, pre, table, figcaption')].filter((n) => !n.closest('figure.video-embed')).length;
+      const layout = layouts(a.slice(s, a.length - e)) > layouts(b.slice(s, b.length - e));
+      return { ok: JSON.stringify(was) === JSON.stringify(now) && inPiece && (!layout || marked), layout, was, now, inPiece, marked };
+    }), apart);
+    verdicts.forEach((verdict, i) => {
+      if (verdict.ok) { round.ownParagraph++; if (verdict.layout) round.layout++; }
+      else wrongEdits.push({ id: project.id, words: apart[i].words, typed: apart[i].typed, was: verdict.was, now: verdict.now, inPiece: verdict.inPiece });
+    });
+  }
+  await page.evaluate(() => window.imageDesk.render());
+  check('a word added to any paragraph, on every project: the site draws the rest of the page as before, and that paragraph keeps its words, links, pictures and players',
+    wrongEdits.length === 0 && round.edits > everyProject.length,
+    `${round.edits} edits on ${everyProject.length} projects (${round.typed} typed): ${round.exact} the same but for the word, ${round.ownParagraph} with only the markup of their own paragraph changed (${round.layout} of them a block marked as the old site's layout)${wrongEdits.length ? `; ${wrongEdits.length} wrong, as ${JSON.stringify(wrongEdits.slice(0, Number(process.env.SHOW_WRONG ?? 3)))}` : ''}`);
+  check('the word typed at the end of a paragraph and taken out again with Backspace stores nothing, on every project', round.typed > 0 && typedLeft.length === 0, typedLeft.slice(0, 5).join(' '));
+  // a block in the old site's own layout is marked on the page, which says what a change there does, before any is made;
+  // a page without one says nothing of it
+  await page.locator('#project-picker').selectOption(String(await indexOf('rrproductions/sander-kleinenberg-felix-leiter-the-one-official-music-video')));
+  const layoutPage = { marked: await page.locator('#read-text [data-layout]').count(), note: await page.locator('#layout-note').isVisible() };
+  await page.locator('#project-picker').selectOption(String(seeded));
+  const plainPage = { marked: await page.locator('#read-text [data-layout]').count(), note: await page.locator('#layout-note').isVisible() };
+  const markedProjects = await page.evaluate(() => {
+    const desk = window.imageDesk;
+    const ids = desk.DATA.projects.filter((project, index) => { desk.state.cursor = desk.flat.findIndex((item) => item.projectIndex === index); desk.render(); return document.querySelector('#read-text [data-layout]'); }).map((project) => project.id);
+    desk.render();
+    return ids;
+  });
+  await page.locator('#project-picker').selectOption(String(seeded));
+  check('a block in the old site\'s own layout is marked, and the page says what a change there does; a page without one says nothing', layoutPage.marked > 0 && layoutPage.note && plainPage.marked === 0 && !plainPage.note,
+    JSON.stringify({ layoutPage, plainPage, markedProjects }));
   // the modelling page is a comp card: the site shows no text there, so the note promises no Photographs
   await page.locator('#project-picker').selectOption(String(await indexOf('vaguelyvulgar/photo-cv')));
   await page.locator('#read-text .media-block button[data-move="out"]').first().click();

@@ -18,7 +18,8 @@ export const httpUrl = (value) => {
 
 // A post's text as edited on the desk (the desk's own tidy() keeps the same): paragraphs, headings (an h1
 // becomes an h2 and an h5 or h6 an h4, as the page shows them), bold, italic, links, lists, quotes, rules and
-// line breaks, without attributes (a link keeps a web address or a site-relative href), and the archive's
+// line breaks, without attributes (a link keeps a web address, a site-relative href or a mailto:, and a new tab's
+// target="_blank" and rel), and the archive's
 // picture blocks <figure data-media="3,4"></figure>. Scripts and styles go with their content; any other tag
 // goes and its words stay; a block of text (a div, a table cell) ends in a line break. Whatever is left that
 // could still open a tag or a comment (an unclosed "<img ..." or "<!--") is written out as text.
@@ -28,6 +29,8 @@ const BREAKS = new Set(['div', 'section', 'article', 'header', 'footer', 'addres
 const attr = (value) => value.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
 // a site-relative link stays only when a browser reads it as this site: no "//", no backslash, no control characters
 const siteHref = (href) => (/^\/(?![/\\])/.test(href) && !/[\u0000-\u001f\u007f\\]/.test(href) ? href : undefined);
+// and an e-mail address, as the archive's texts link them (mailto:)
+const mailHref = (href) => (/^mailto:[^\s"<>\\]+$/i.test(href) ? href : undefined);
 export function storyHtml(html) {
   const kept = [];
   const keep = (tag) => `\u0000${kept.push(tag) - 1}\u0000`;
@@ -47,8 +50,11 @@ export function storyHtml(html) {
       if (closing) return tagName === 'br' || tagName === 'hr' ? '' : keep(`</${tagName}>`);
       if (tagName !== 'a') return keep(`<${tagName}>`);
       const href = (attrs.match(/\bhref\s*=\s*"([^"]*)"/i)?.[1] ?? '').replace(/&amp;/g, '&').trim();
-      const safe = httpUrl(href) ?? siteHref(href);
-      return keep(safe ? `<a href="${attr(safe)}">` : '<a>');
+      const safe = httpUrl(href) ?? siteHref(href) ?? mailHref(href);
+      // a link that opens in a new tab keeps doing so
+      const blank = safe && /\btarget\s*=\s*"_blank"/i.test(attrs) ? ' target="_blank"' : '';
+      const rel = safe && attrs.match(/\brel\s*=\s*"((?:noopener|noreferrer|nofollow)(?:\s+(?:noopener|noreferrer|nofollow))*)\s*"/i)?.[1];
+      return keep(safe ? `<a href="${attr(safe)}"${blank}${rel ? ` rel="${rel}"` : ''}>` : '<a>');
     })
     // nothing that is left can open a tag or a comment
     .replace(/</g, '&lt;').replace(/>/g, '&gt;')
