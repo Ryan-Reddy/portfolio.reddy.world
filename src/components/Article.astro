@@ -150,3 +150,18 @@ const jsonLd = [
     </aside>
   </article>
 </Base>
+
+<script>
+  // a video's player loads only when the visitor presses play (src/lib/article-video.js)
+  for (const figure of document.querySelectorAll<HTMLElement>('.article-video[data-player]')) {
+    const play = figure.querySelector('.video-play');
+    play?.addEventListener('click', () => {
+      const frame = document.createElement('iframe');
+      frame.src = figure.dataset.player ?? '';
+      frame.title = play.getAttribute('aria-label')?.replace(/^Play the /, '') ?? 'video';
+      frame.allow = 'autoplay; fullscreen; picture-in-picture';
+      frame.allowFullscreen = true;
+      figure.querySelector('.video-frame')?.replaceChildren(frame);
+    }, { once: true });
+  }
+</script>

@@ -9,11 +9,13 @@
 //   scripts/desk-pictures.mjs made of them (`photos`), each as a project's picture is written
 //   (scripts/import-image-keywords.mjs): what Ryan said it shows as its alt, its keywords for the page's
 //   ImageObject (`hero.keywords`, `figures`), and its photographer as the caption "Photo: <name>".
+// - Its videos: a YouTube or Vimeo link the text holds becomes a play button; the player loads on play.
 // - Running it twice gives the same files: the dates come from the draft (when it was first published, when it
 //   last changed), not from the day of the send.
 import { storyHtml, httpUrl } from '../src/lib/safe-output.js';
 import { cutAt, DESCRIPTION_MIN, DESCRIPTION_MAX } from '../src/lib/snippet.js';
 import { KINDS } from '../src/lib/article-kinds.js';
+import { videoFigure } from '../src/lib/article-video.js';
 
 const clean = (value) => String(value ?? '').replace(/\s+/g, ' ').trim();
 const plain = (html) => clean(String(html ?? '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'"));
@@ -130,7 +132,9 @@ export function articleFile(id, article, { software = [], photos = {} } = {}) {
     if (!copy || !picture || picture.removed) return '';
     return `<figure class="article-figure"><img src="${attr(copy.src)}" srcset="${attr(copy.srcset)}" sizes="(max-width: 900px) 100vw, 46rem" width="${copy.width}" height="${copy.height}" alt="${attr(clean(picture.alt))}" loading="lazy" decoding="async">${captionOf(creditOf(picture))}</figure>`;
   });
-  lines.push(`updated: ${day(article.at ?? article.readyAt ?? article.created)}`, `desk: ${str(id)}`, '---', '', body, '');
+  // a video: a play button that loads the player (src/lib/article-video.js)
+  const withVideos = body.replace(/<figure data-video="([^"]+)"><\/figure>/g, (_, key) => videoFigure(key));
+  lines.push(`updated: ${day(article.at ?? article.readyAt ?? article.created)}`, `desk: ${str(id)}`, '---', '', withVideos, '');
   return lines.join('\n');
 }
 

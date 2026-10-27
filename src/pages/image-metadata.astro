@@ -267,6 +267,11 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     .reading .pic-tools { position: absolute; top: .4rem; right: .4rem; display: flex; gap: .25rem; }
     .reading .pic-tools button { min-height: 2rem; min-width: 2rem; padding: 0 .55rem; border: 0; border-radius: 3px; background: rgba(36,33,28,.85); color: #f8f4e9; font-size: .85rem; cursor: pointer; }
     .reading .pic-tools button:focus-visible { outline: 2px solid #f8f4e9; outline-offset: 1px; }
+    .reading .video-block .poster { aspect-ratio: 16 / 9; display: flex; align-items: center; justify-content: center; gap: .5rem; background: #111; color: #f5f5f0; font-size: .95rem; }
+    .reading .video-block .poster span { font-size: 2.2rem; line-height: 1; }
+    .video-form { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
+    .video-form[hidden] { display: none; }
+    .video-form input { flex: 1 1 14rem; min-width: 0; }
     .reading .drop-above { box-shadow: 0 -3px 0 #8b3a1a; }
     .reading .drop-below { box-shadow: 0 3px 0 #8b3a1a; }
     .state[data-ready="true"] { border-color: var(--gold); color: var(--gold); }
@@ -476,11 +481,12 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
 
   <main class="workbench" id="article-bench" hidden>
     <section class="stage" aria-label="How the article reads">
-      <div class="stage-bar"><span class="count" id="article-view">Write on the page</span><span class="spacer"></span><button id="add-picture-here" class="quiet" type="button">＋ Picture</button><button id="show-elsewhere" class="quiet" type="button">On the wall and as a link</button><button id="back-to-projects" class="quiet" type="button">← Back to the projects</button></div>
+      <div class="stage-bar"><span class="count" id="article-view">Write on the page</span><span class="spacer"></span><button id="add-picture-here" class="quiet" type="button">＋ Picture</button><button id="add-video-here" class="quiet" type="button">＋ Video</button><button id="show-elsewhere" class="quiet" type="button">On the wall and as a link</button><button id="back-to-projects" class="quiet" type="button">← Back to the projects</button></div>
       <!-- the article as its page shows it, and where it is written: title, summary and text edit in place -->
       <article class="reading" id="reading">
         <span class="when" id="read-when"></span>
         <p class="hint" id="page-note" aria-live="polite"></p>
+        <form class="video-form" id="video-form" hidden><input id="video-url" type="url" inputmode="url" autocomplete="off" placeholder="Paste a YouTube or Vimeo link" aria-label="A YouTube or Vimeo link"><button type="submit">Add</button><button id="video-cancel" class="quiet" type="button">Cancel</button></form>
         <h2 class="reading-title" id="read-title" contenteditable="true" data-placeholder="The article's title" aria-label="The article's title"></h2>
         <p class="dek" id="read-dek" hidden></p>
         <div class="lead" id="read-lead" hidden></div>
@@ -538,7 +544,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
           </details>
           <details class="box" data-box="text">
             <summary><span class="box-name">The text</span><span class="box-line"></span><span class="box-tick" aria-hidden="true">✓</span></summary>
-            <div class="box-body"><p class="hint">Write on the page, left. Ctrl+B and Ctrl+I work; move a picture with ↑ ↓ or drag it.</p></div>
+            <div class="box-body"><p class="hint">Write on the page, left. Ctrl+B and Ctrl+I work; move a picture or video with ↑ ↓ or drag it. ＋ Video takes a YouTube or Vimeo link; the site loads it only on play.</p></div>
           </details>
           <details class="box" data-box="pictures">
             <summary><span class="box-name">Pictures</span><span class="box-line"></span><span class="box-tick" aria-hidden="true">✓</span></summary>
@@ -889,7 +895,8 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     const holdsBlocks = (node) => [...node.children].some((c) => /^(P|H[1-6]|UL|OL|BLOCKQUOTE|HR|FIGURE|TABLE|DIV)$/.test(c.tagName) || c.classList.contains('pics'));
     // `pictures(media)`: what a <figure data-media> becomes (the desk's picture block); without it the figure stays, empty.
     // An article's own picture is <figure data-picture="id">; `photos(id)` makes its block, else it stays a figure.
-    function tidy(root, pictures = null, photos = null) {
+    // An article's video is <figure data-video="youtube:<id>">; `videos(key)` makes its block, else it stays a figure.
+    function tidy(root, pictures = null, photos = null, videos = null) {
       for (const child of [...root.childNodes]) {
         if (child.nodeType === 8) { child.remove(); continue; }
         if (child.nodeType !== 1) continue;
@@ -906,8 +913,14 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
           else { const figure = document.createElement('figure'); figure.dataset.picture = photo; child.replaceWith(figure); }
           continue;
         }
+        const video = child.dataset?.video;
+        if ((tag === 'FIGURE' || child.classList.contains('pics')) && video !== undefined && VIDEO_KEY.test(video)) {
+          if (videos) child.replaceWith(videos(video));
+          else { const figure = document.createElement('figure'); figure.dataset.video = video; child.replaceWith(figure); }
+          continue;
+        }
         if (DROP.has(tag)) { child.remove(); continue; }
-        tidy(child, pictures, photos);
+        tidy(child, pictures, photos, videos);
         if (RENAME[tag]) {
           const next = document.createElement(RENAME[tag]);
           next.append(...child.childNodes);
@@ -1449,17 +1462,36 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     function photoNodes(article, html, make) {
       const template = document.createElement('template');
       template.innerHTML = html;
-      tidy(template.content, null, (id) => (article.pictures?.[id] && !article.pictures[id].removed ? make(id, article.pictures[id]) : document.createTextNode('')));
+      tidy(template.content, null, (id) => (article.pictures?.[id] && !article.pictures[id].removed ? make(id, article.pictures[id]) : document.createTextNode('')), videoBlock);
       return template.content;
     }
     // a picture in the page's text: shown as the page shows it, with ↑ ↓ to move it and ✕ to take it out of the
     // text (it stays in the pictures list); it can be dragged too. Stored as <figure data-picture="id"> (tidy)
+    const blockTool = (move, label, text) => { const button = el('button', {type: 'button', textContent: text}); button.dataset.move = move; button.setAttribute('aria-label', label); return button; };
     function pictureBlock(id, picture) {
-      const tool = (move, label, text) => { const button = el('button', {type: 'button', textContent: text}); button.dataset.move = move; button.setAttribute('aria-label', label); return button; };
       const figure = el('figure', {className: 'pic-block', contentEditable: 'false', draggable: true},
         photoImg(picture, picture.alt),
-        el('span', {className: 'pic-tools'}, tool('up', 'Move the picture up', '↑'), tool('down', 'Move the picture down', '↓'), tool('out', 'Take the picture out of the text', '✕')));
+        el('span', {className: 'pic-tools'}, blockTool('up', 'Move the picture up', '↑'), blockTool('down', 'Move the picture down', '↓'), blockTool('out', 'Take the picture out of the text', '✕')));
       figure.dataset.picture = id;
+      return figure;
+    }
+    // ---------- a video in the text (Ryan, 2026-10-27, #77: "A") ----------
+    // A YouTube or Vimeo link, read with the patterns of src/lib/article-video.js, kept as <figure data-video="youtube:<id>">.
+    // The desk shows a plain frame (nothing loads from YouTube here); the site's play button loads the player.
+    const VIDEO_KEY = /^(?:youtube:[\w-]{11}|vimeo:\d{1,12})$/;
+    function videoKey(url) {
+      const text = String(url ?? '').trim();
+      const youtube = /(?:youtu\.be\/|youtube(?:-nocookie)?\.com\/(?:watch\?(?:[^\s"'<]*&(?:amp;)?)?v=|embed\/|shorts\/|live\/))([\w-]{11})/.exec(text);
+      if (youtube) return `youtube:${youtube[1]}`;
+      const vimeo = /vimeo\.com\/(?:video\/)?(\d{1,12})/.exec(text);
+      return vimeo ? `vimeo:${vimeo[1]}` : null;
+    }
+    function videoBlock(key) {
+      const host = key.startsWith('youtube:') ? 'YouTube' : 'Vimeo';
+      const figure = el('figure', {className: 'pic-block video-block', contentEditable: 'false', draggable: true},
+        el('span', {className: 'poster'}, el('span', {textContent: '▶'}), host),
+        el('span', {className: 'pic-tools'}, blockTool('up', 'Move the video up', '↑'), blockTool('down', 'Move the video down', '↓'), blockTool('out', 'Take the video out of the text', '✕')));
+      figure.dataset.video = key;
       return figure;
     }
     const markEmpty = () => { const text = $('read-text'); text.dataset.empty = String(!text.textContent.trim() && !text.querySelector('.pic-block')); };
@@ -1637,6 +1669,25 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       else $('read-text').append(figure);
       saveText();
     }
+    // ＋ Video on the page: a link, put after the paragraph the cursor is in (else at the end)
+    const closeVideoForm = () => { $('video-form').hidden = true; $('video-url').value = ''; };
+    $('add-video-here').addEventListener('click', () => {
+      if (elsewhere) $('show-elsewhere').click();
+      $('video-form').hidden = false;
+      $('video-url').focus();
+    });
+    $('video-cancel').addEventListener('click', closeVideoForm);
+    $('video-form').addEventListener('submit', (event) => {
+      event.preventDefault();
+      const key = videoKey($('video-url').value);
+      if (!key) { $('page-note').textContent = 'That is not a YouTube or Vimeo link.'; return; }
+      const block = lastRange && $('read-text').contains(lastRange.startContainer) ? topBlock(lastRange.startContainer) : null;
+      if (block) block.after(videoBlock(key));
+      else $('read-text').append(videoBlock(key));
+      saveText();
+      closeVideoForm();
+      $('page-note').textContent = 'Video added. On the site it loads only when someone presses play.';
+    });
     // ＋ Picture on the page: add one from this computer and put it after the paragraph the cursor is in
     let placeAdded = false;
     $('add-picture-here').addEventListener('click', () => { placeAdded = true; $('pic-input').click(); });

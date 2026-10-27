@@ -306,6 +306,23 @@ try {
   check('✕ takes it out of the text; it stays in the pictures list', (await order()) === 'One. Two. pq1' && (await pen.page.locator('#pic-list .pic-row').count()) === 2, await order());
   await pen.page.locator('#read-text .pic-block[data-picture="pq1"]').dragTo(pen.page.locator('#read-text p').first(), { targetPosition: { x: 10, y: 2 } });
   check('dragging a picture moves it', (await order()) === 'pq1 One. Two.', await order());
+  // ＋ Video: a YouTube or Vimeo link becomes a block in the text, moved like a picture; nothing loads from YouTube
+  const videos = [];
+  pen.page.on('request', (request) => { if (/youtube|ytimg|vimeo/.test(request.url())) videos.push(request.url()); });
+  await pen.page.locator('#read-text p').last().click();
+  await pen.page.locator('#add-video-here').click();
+  await pen.page.locator('#video-url').fill('https://example.com/clip.mp4');
+  await pen.page.locator('#video-form button[type="submit"]').click();
+  check('a link that is not YouTube or Vimeo is refused, and the page says so', /not a YouTube or Vimeo link/.test(await pen.page.locator('#page-note').textContent()) && (await pen.page.locator('#read-text .video-block').count()) === 0);
+  await pen.page.locator('#video-url').fill('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+  await pen.page.locator('#video-form button[type="submit"]').click();
+  const withVideo = () => pen.page.evaluate(() => [...window.imageDesk.state.articles[window.imageDesk.state.article].content.matchAll(/<p>([^<]*)<\/p>|data-picture="(\w+)"|data-video="([\w:-]+)"/g)].map((m) => m[1] ?? m[2] ?? m[3]).join(' '));
+  check('＋ Video puts the video after the paragraph the cursor is in', (await withVideo()) === 'pq1 One. Two. youtube:dQw4w9WgXcQ' && await pen.page.locator('#video-form').isHidden(), await withVideo());
+  await pen.page.locator('#read-text .video-block button[data-move="up"]').click();
+  check('↑ moves the video too', (await withVideo()) === 'pq1 One. youtube:dQw4w9WgXcQ Two.', await withVideo());
+  await pen.page.locator('#read-text .video-block button[data-move="out"]').click();
+  check('✕ takes the video out of the text', (await withVideo()) === 'pq1 One. Two.', await withVideo());
+  check('the desk loads nothing from YouTube or Vimeo', videos.length === 0, videos.join(' '));
   // ＋ Picture on the page: signed out it can't upload, and the page says why
   const [chooser] = await Promise.all([pen.page.waitForEvent('filechooser'), pen.page.locator('#add-picture-here').click()]);
   await chooser.setFiles({ name: 'here.png', mimeType: 'image/png', buffer: Buffer.from('89504e470d0a1a0a', 'hex') });
