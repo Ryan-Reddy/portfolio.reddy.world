@@ -53,8 +53,23 @@ async function open(context, hash = '') {
   return { page, errors };
 }
 const progress = (page) => page.locator('#progress-label').textContent();
-// a keyword typed into the project's keyword box, as Ryan does: type, then Enter
-const addWord = async (page, word) => { await page.locator('#project-chips input').fill(word); await page.locator('#project-chips input').press('Enter'); };
+// the desk's boxes: folded to one line, or open; a click on the line opens one again
+const box = (page, scope, name) => page.locator(`[data-boxes="${scope}"] > details.box[data-box="${name}"]`);
+const openBox = async (page, scope, name) => { if (!(await box(page, scope, name).evaluate((b) => b.open))) await box(page, scope, name).locator(':scope > summary').click(); };
+// every box of a list as Ryan sees it: its state, open or folded, how bright, the ✓ and its line
+const boxes = async (page, scope) => {
+  await page.mouse.move(1, 1);
+  await page.waitForTimeout(250);
+  return page.evaluate((s) => [...document.querySelectorAll(`[data-boxes="${s}"] > details.box`)].filter((b) => !b.hidden).map((b) => ({
+    name: b.dataset.box, state: b.dataset.state, open: b.open, opacity: Number(getComputedStyle(b).opacity),
+    tick: getComputedStyle(b.querySelector(':scope > summary .box-tick')).visibility, line: b.querySelector(':scope > summary .box-line').textContent,
+  })), scope);
+};
+const show = (list) => list.map((b) => `${b.name}:${b.state}${b.open ? ':open' : ''}`).join(' ');
+// only the first box still to do is open
+const onlyNextOpen = (list) => { const open = list.filter((b) => b.open); const next = list.find((b) => b.state === 'todo'); return next ? open.length === 1 && open[0].name === next.name : open.length === 0; };
+// a keyword typed into the project's keyword box, as Ryan does: open the box, type, then Enter
+const addWord = async (page, word) => { await openBox(page, 'project', 'keywords'); await page.locator('#project-chips input').fill(word); await page.locator('#project-chips input').press('Enter'); };
 const saved = (page) => page.locator('.top [data-desk-saved]').textContent();
 const waitFor = (page, fn, arg, timeout = 15000) => page.waitForFunction(fn, arg, { timeout }).then(() => true, () => false);
 const shoot = (page, name) => shots && page.screenshot({ path: join(shots, `${name}.png`) });
@@ -71,8 +86,32 @@ try {
   const seeded = await page.evaluate(() => window.imageDesk.DATA.projects.findIndex((project) => project.id === 'rmaekers/lightsurface-mk1-set'));
   await page.locator('#project-picker').selectOption(String(seeded));
   const chips = await page.locator('#project-chips .chip').allTextContents();
-  check('a project shows the keywords the site has', chips.length === 5, chips.join(' | '));
+  const siteWords = await page.evaluate((i) => window.imageDesk.DATA.projects[i].keywords.length, seeded);
+  check('a project shows the keywords the site has', chips.length > 0 && chips.length === siteWords, chips.join(' | '));
   check('opening a project changes nothing', await page.evaluate(() => Object.keys(window.imageDesk.state.projects).length === 0));
+  // progressive disclosure: only the next box is open; a handled one is one dim line with a ✓
+  let list = await boxes(page, 'project');
+  check('a project opens only its next box', onlyNextOpen(list), show(list));
+  const handled = list.filter((b) => b.state === 'done' && !b.open);
+  check('a handled box is folded, dimmed, with a ✓ and a line of what it holds', handled.length > 0 && handled.every((b) => b.opacity < 0.7 && b.tick === 'visible' && b.line.trim()), JSON.stringify(handled));
+  check('the keywords box says what it holds', list.find((b) => b.name === 'keywords').line === chips.map((chip) => chip.replace(/×$/, '')).join(', '), list.find((b) => b.name === 'keywords').line);
+  await openBox(page, 'project', 'keywords');
+  check('a click opens a folded box again, at full contrast', (({ open, opacity }) => open && opacity === 1)((await boxes(page, 'project')).find((b) => b.name === 'keywords')));
+  // a box handled by Ryan folds once he moves on, and the next one to do opens
+  const bare = await page.evaluate((other) => window.imageDesk.DATA.projects.findIndex((project, index) => !project.summary && index !== other), seeded);
+  await page.locator('#project-picker').selectOption(String(bare));
+  list = await boxes(page, 'project');
+  check('a project without a summary opens on the summary', list.find((b) => b.open)?.name === 'summary', show(list));
+  await page.locator('#summary').fill('Written on the desk');
+  check('still open while typing in it', await box(page, 'project', 'summary').evaluate((b) => b.open));
+  await page.locator('#project-title').click();
+  list = await boxes(page, 'project');
+  const summaryBox = list.find((b) => b.name === 'summary');
+  check('moving on folds the handled box and dims it', !summaryBox.open && summaryBox.state === 'done' && summaryBox.opacity < 0.7 && summaryBox.line === 'Written on the desk', JSON.stringify(summaryBox));
+  check('and only the next box to do is open', onlyNextOpen(list), show(list));
+  await page.evaluate((i) => { delete window.imageDesk.state.projects[window.imageDesk.DATA.projects[i].id]; window.imageDesk.render(); }, bare);
+  await page.locator('#project-picker').selectOption(String(seeded));
+  await openBox(page, 'project', 'keywords');
   // a word left in the box lands on the project it was typed on, not on the next one (review finding)
   await page.locator('#project-chips input').fill('pendingword');
   await page.keyboard.press('Alt+ArrowRight');
@@ -80,6 +119,7 @@ try {
   check('a pending keyword stays on its own project when moving on', /pendingword/.test(after.here) && after.next === null, JSON.stringify(after));
   await page.locator('#project-picker').selectOption(String(seeded));
   // removing the last chip with Backspace keeps the focus in the box
+  await openBox(page, 'project', 'keywords');
   await page.locator('#project-chips input').click();
   await page.keyboard.press('Backspace');
   check('Backspace removes a chip and keeps the focus in the box', await page.evaluate(() => document.activeElement?.closest('#project-chips') !== null && !window.imageDesk.state.projects['rmaekers/lightsurface-mk1-set'].tags.includes('pendingword')));
@@ -88,10 +128,15 @@ try {
   check('removing every keyword leaves none', (await page.locator('#project-chips .chip').count()) === 0);
   await page.evaluate(() => { delete window.imageDesk.state.projects['rmaekers/lightsurface-mk1-set']; window.imageDesk.render(); });
   await page.locator('#tab-picture').click();
+  list = await boxes(page, 'picture');
+  check('a picture opens only its next box', onlyNextOpen(list), show(list));
+  check('From WordPress is folded, quiet, without a ✓', (({ open, state, tick, opacity }) => !open && state === 'quiet' && tick === 'hidden' && opacity < 0.7)(list.find((b) => b.name === 'wordpress')), JSON.stringify(list.find((b) => b.name === 'wordpress')));
+  await openBox(page, 'picture', 'wordpress');
   const wp = await page.locator('#wp-picture').innerText();
   check('a picture shows its WordPress file name', /\.(jpe?g|png|webp|gif)/i.test(wp), wp.replace(/\s+/g, ' ').slice(0, 120));
   check('a picture shows what it says today', (await page.locator('#description').inputValue()).length > 0, await page.locator('#description').inputValue());
   await page.locator('#tab-project').click();
+  await openBox(page, 'project', 'summary');
   await page.locator('#summary').fill('A desk check summary');
   await page.locator('#tab-preview').click();
   check('the summary shows on the wall preview', (await page.locator('#preview-wall .lead-text .desc').textContent()) === 'A desk check summary');
@@ -153,7 +198,12 @@ try {
   const pen = await open(writer);
   await pen.page.locator('#new-article').click();
   check('＋ Article opens an empty draft', await pen.page.locator('#article-bench').isVisible() && await pen.page.locator('#project-bench').isHidden());
+  let articleBoxes = await boxes(pen.page, 'article');
+  check('a new article opens only its title', onlyNextOpen(articleBoxes) && articleBoxes.find((b) => b.open)?.name === 'title', show(articleBoxes));
   await pen.page.locator('#article-title').fill('Street interviews');
+  await openBox(pen.page, 'article', 'summary');
+  articleBoxes = await boxes(pen.page, 'article');
+  check('the title, handled, folded when Ryan moved on', (({ open, state, line }) => !open && state === 'done' && line === 'Street interviews')(articleBoxes.find((b) => b.name === 'title')), show(articleBoxes));
   await pen.page.locator('#article-summary').fill('What people on the street told me.');
   await pen.page.locator('#read-text').click();
   await pen.page.keyboard.type('First paragraph of the draft.');
@@ -164,10 +214,15 @@ try {
   // the desk may also hold drafts seeded from the repo (src/data/article-seeds/): this one is found by its title
   const mine = stored.filter((article) => article.title === 'Street interviews');
   check('the draft is saved and stamped', mine.length === 1 && mine[0].status === 'draft' && mine[0].at > 0, JSON.stringify(mine));
+  articleBoxes = await boxes(pen.page, 'article');
+  check('writing the text on the page folds the summary and the text box', ['summary', 'text'].every((name) => (({ open, state }) => !open && state === 'done')(articleBoxes.find((b) => b.name === name))), show(articleBoxes));
   // an interview needs its person before it can be published; a story with enough words can
+  await openBox(pen.page, 'article', 'about');
   await pen.page.locator('#article-kind').selectOption('interview');
+  check('an interview opens the person, the next thing to fill in', await box(pen.page, 'article', 'person').evaluate((b) => !b.hidden && b.open && b.dataset.state === 'todo'));
   check('an interview without its person cannot be published yet', await pen.page.locator('#publish-article').isDisabled() && /the person/.test(await pen.page.locator('#publish-hint').textContent()));
   await pen.page.locator('#article-kind').selectOption('story');
+  await openBox(pen.page, 'article', 'publish');
   await pen.page.locator('#publish-article').click();
   const published = await pen.page.evaluate(() => window.imageDesk.state.articles[window.imageDesk.state.article]);
   check('Publish marks it ready, with its address fixed', published.status === 'ready' && published.slug === 'street-interviews' && published.readyAt > 0, JSON.stringify(published).slice(0, 160));
@@ -199,8 +254,28 @@ try {
   });
   check('a picture shows in the list and as a block in the text', (await pen.page.locator('#pic-list .pic-row').count()) === 1 && (await pen.page.locator('#read-text .pic-block[data-picture="pq1"]').count()) === 1);
   check('publishing waits for what the picture shows', /what every picture shows/.test(await pen.page.locator('#publish-hint').textContent()));
-  await pen.page.locator('#pic-list textarea').fill('A street corner in Utrecht');
+  await openBox(pen.page, 'article', 'pictures');
+  const row = pen.page.locator('#pic-list > details.box[data-box="pq1"]');
+  check('a picture just added opens with its tools', await row.evaluate((b) => b.open && b.dataset.state === 'todo'));
+  await row.locator('textarea').fill('A street corner in Utrecht');
   check('saying what it shows lets it publish', await pen.page.locator('#publish-article').isEnabled());
+  // an article's picture gets a project picture's tools: keywords with the rated ideas, and its photographer
+  await row.locator('.chips input').fill('street interview');
+  await row.locator('.chips input').press('Enter');
+  await row.locator('details.drawer > summary').click();
+  const idea = row.locator('.ideas .idea button').first();
+  const ideaWord = await idea.textContent();
+  check('the picture has the rated ideas list', (await row.locator('.ideas .idea').count()) > 5 && (await row.locator('.subtabs button').count()) === 6, String(await row.locator('.ideas .idea').count()));
+  await idea.click();
+  await row.locator('[data-credit="name"]').fill('Jan Fotograaf');
+  await row.locator('[data-credit="url"]').fill('https://example.com/jan');
+  const pq1 = await pen.page.evaluate(() => window.imageDesk.state.articles[window.imageDesk.state.article].pictures.pq1);
+  check('its keywords and photographer are saved with the picture', pq1.tags === `street interview, ${ideaWord}` && pq1.credit?.name === 'Jan Fotograaf' && pq1.credit?.url === 'https://example.com/jan', JSON.stringify(pq1));
+  check('still open while working in it', await row.evaluate((b) => b.open));
+  check('1280 px: the panel with a picture open fits its width', await pen.page.evaluate(() => { const tab = document.querySelector('.article-panel .tab'); return tab.scrollWidth <= tab.clientWidth; }));
+  await pen.page.locator('#article-heading').click();
+  const rowNow = await pen.page.evaluate(() => { const b = document.querySelector('#pic-list > details.box[data-box="pq1"]'); return { open: b.open, state: b.dataset.state, line: b.querySelector('.box-line').textContent }; });
+  check('described and credited, it folds to one line', !rowNow.open && rowNow.state === 'done' && rowNow.line === 'A street corner in Utrecht · Photo: Jan Fotograaf', JSON.stringify(rowNow));
   await pen.page.locator('#read-text p').first().click();
   await pen.page.keyboard.press('End');
   await pen.page.keyboard.type(' More.');
@@ -211,6 +286,7 @@ try {
   await pen.page.keyboard.type(' today');
   check('typing the title on the page renames the draft', await pen.page.evaluate(() => window.imageDesk.state.articles[window.imageDesk.state.article].title === 'Street interviews today')
     && (await pen.page.locator('#article-title').inputValue()) === 'Street interviews today');
+  await openBox(pen.page, 'article', 'title');
   await pen.page.locator('#article-title').fill('Street interviews');
   check('and the title field changes the page', (await pen.page.locator('#read-title').textContent()) === 'Street interviews');
   // pictures in the page's text: ↑ ↓ move them, ✕ takes one out of the text, dragging moves one too
@@ -231,6 +307,23 @@ try {
   check('✕ takes it out of the text; it stays in the pictures list', (await order()) === 'One. Two. pq1' && (await pen.page.locator('#pic-list .pic-row').count()) === 2, await order());
   await pen.page.locator('#read-text .pic-block[data-picture="pq1"]').dragTo(pen.page.locator('#read-text p').first(), { targetPosition: { x: 10, y: 2 } });
   check('dragging a picture moves it', (await order()) === 'pq1 One. Two.', await order());
+  // ＋ Video: a YouTube or Vimeo link becomes a block in the text, moved like a picture; nothing loads from YouTube
+  const videos = [];
+  pen.page.on('request', (request) => { if (/youtube|ytimg|vimeo/.test(request.url())) videos.push(request.url()); });
+  await pen.page.locator('#read-text p').last().click();
+  await pen.page.locator('#add-video-here').click();
+  await pen.page.locator('#video-url').fill('https://example.com/clip.mp4');
+  await pen.page.locator('#video-form button[type="submit"]').click();
+  check('a link that is not YouTube or Vimeo is refused, and the page says so', /not a YouTube or Vimeo link/.test(await pen.page.locator('#page-note').textContent()) && (await pen.page.locator('#read-text .video-block').count()) === 0);
+  await pen.page.locator('#video-url').fill('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+  await pen.page.locator('#video-form button[type="submit"]').click();
+  const withVideo = () => pen.page.evaluate(() => [...window.imageDesk.state.articles[window.imageDesk.state.article].content.matchAll(/<p>([^<]*)<\/p>|data-picture="(\w+)"|data-video="([\w:-]+)"/g)].map((m) => m[1] ?? m[2] ?? m[3]).join(' '));
+  check('＋ Video puts the video after the paragraph the cursor is in', (await withVideo()) === 'pq1 One. Two. youtube:dQw4w9WgXcQ' && await pen.page.locator('#video-form').isHidden(), await withVideo());
+  await pen.page.locator('#read-text .video-block button[data-move="up"]').click();
+  check('↑ moves the video too', (await withVideo()) === 'pq1 One. youtube:dQw4w9WgXcQ Two.', await withVideo());
+  await pen.page.locator('#read-text .video-block button[data-move="out"]').click();
+  check('✕ takes the video out of the text', (await withVideo()) === 'pq1 One. Two.', await withVideo());
+  check('the desk loads nothing from YouTube or Vimeo', videos.length === 0, videos.join(' '));
   // ＋ Picture on the page: signed out it can't upload, and the page says why
   const [chooser] = await Promise.all([pen.page.waitForEvent('filechooser'), pen.page.locator('#add-picture-here').click()]);
   await chooser.setFiles({ name: 'here.png', mimeType: 'image/png', buffer: Buffer.from('89504e470d0a1a0a', 'hex') });
@@ -263,6 +356,20 @@ try {
     check('390 px, ' + tab + ' tab: no sideways scroll', await small.page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), String(await small.page.evaluate(() => document.documentElement.scrollWidth)));
     await shoot(small.page, 'phone-' + tab);
   }
+  // the article at phone width: its bar and its boxes fit too
+  await small.page.locator('#new-article').click();
+  check('390 px, article: no sideways scroll', await small.page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), String(await small.page.evaluate(() => document.documentElement.scrollWidth)));
+  // a draft with pictures, one open with its tools and ideas
+  await small.page.evaluate(() => window.imageDesk.openArticle(Object.keys(window.imageDesk.DATA.seeds)[0]));
+  await openBox(small.page, 'article', 'pictures');
+  const firstRow = small.page.locator('#pic-list > details.box').first();
+  if (!(await firstRow.evaluate((b) => b.open))) await firstRow.locator(':scope > summary').click();
+  await firstRow.locator('details.drawer > summary').click();
+  check('390 px, an article picture open with its ideas: no sideways scroll', await small.page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), String(await small.page.evaluate(() => document.documentElement.scrollWidth)));
+  await shoot(small.page, 'phone-article-picture');
+  await small.page.locator('#show-elsewhere').click();
+  check('390 px, article on the wall and as a link: no sideways scroll', await small.page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), String(await small.page.evaluate(() => document.documentElement.scrollWidth)));
+  await shoot(small.page, 'phone-article');
   check('390 px: no page errors', small.errors.length === 0, small.errors.join(' / '));
   await phone.close();
 

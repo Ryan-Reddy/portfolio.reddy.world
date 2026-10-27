@@ -65,6 +65,12 @@ const software = defineCollection({
   }),
 });
 
+// what the desk gives an article's picture beyond its alt: keywords, and the photographer who took it
+const pictureWords = {
+  keywords: z.array(z.string()).optional(),
+  credit: z.object({ name: z.string(), url: z.url().optional() }).optional(),
+};
+
 // One article per file (reddy.world#183, decision 4 B): interviews, stories, case studies, projects,
 // recipes, writing and poems, at /portfolio/<kind's path>/<file name>/ (src/lib/article-kinds.js).
 // Nothing is written on the page but Ryan's own words and, in an interview, the interviewee's answers.
@@ -101,8 +107,11 @@ const articles = defineCollection({
     // when it went online: the feed's date (the update when there is none)
     published: z.coerce.date().optional(),
     // the picture across the top, in public/images/articles/<slug>/, alt in the article's language;
-    // `share`: a JPEG copy for link cards (LinkedIn and others read JPEG and PNG, not always WebP)
-    hero: z.object({ file: z.string(), alt: z.string().min(1), share: z.string().optional() }).optional(),
+    // `share`: a JPEG copy for link cards (LinkedIn and others read JPEG and PNG, not always WebP);
+    // its keywords (the ImageObject's) and its photographer (the caption), as Ryan gave them on the desk
+    hero: z.object({ file: z.string(), alt: z.string().min(1), share: z.string().optional(), ...pictureWords }).optional(),
+    // the pictures in the text, for the structured data (the text itself shows them, with their credit)
+    figures: z.array(z.object({ file: z.string(), alt: z.string().min(1), ...pictureWords })).optional(),
     // Ryan's own words above the article, quoted and dated in the PR that adds them
     intro: z.object({ text: z.string(), lang: z.string().default('en') }).optional(),
     // the case study it belongs to, when there is one (an interview done for it)

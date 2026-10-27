@@ -7,6 +7,7 @@ import { getEntry, render } from 'astro:content';
 import { PERSON_ID, ORIGIN, SITE, BASE } from '../lib/portfolios.js';
 import { pictureAt } from '../lib/software.js';
 import { imageRights } from '../lib/image-rights.js';
+import { httpUrl } from '../lib/safe-output.js';
 import { KINDS, articlePath, articleImages } from '../lib/article-kinds.js';
 import '../styles/software.css';
 
@@ -43,6 +44,27 @@ function linkedParts(text, links = {}) {
   return parts;
 }
 const roleParts = who ? linkedParts(who.role, who.roleLinks) : [];
+// the pictures in the text, for the structured data
+const figures = await Promise.all((d.figures ?? []).map(async (f) => ({ ...f, ...(await pictureAt(articleImages(entry.id), f.file)) })));
+// a picture as an ImageObject: Ryan's own carry his rights; one he credited to a photographer is theirs
+// (as on a project's page, src/pages/[portfolio]/[slug].astro)
+const imageObject = (p) => {
+  const object = {
+    '@type': 'ImageObject',
+    contentUrl: `${ORIGIN}${p.url}`,
+    url: `${ORIGIN}${p.url}`,
+    width: p.width,
+    height: p.height,
+    caption: p.alt,
+    keywords: p.keywords?.length ? p.keywords.join(', ') : undefined,
+    ...imageRights(p.url, PERSON_ID),
+  };
+  return p.credit?.name
+    ? { ...object, creator: { '@type': 'Person', name: p.credit.name, url: httpUrl(p.credit.url) }, creditText: p.credit.name, copyrightNotice: undefined }
+    : object;
+};
+const heroImage = hero && imageObject({ ...hero, keywords: d.hero.keywords, credit: d.hero.credit });
+const heroCredit = d.hero?.credit;
 const day = (date) => date.toISOString().slice(0, 10);
 
 const jsonLd = [
@@ -71,15 +93,8 @@ const jsonLd = [
       worksFor: who.org ? { '@type': 'Organization', name: who.org, url: who.orgUrl, sameAs: who.orgSameAs } : undefined,
     } : undefined,
     isPartOf: related ? { '@type': 'CreativeWork', '@id': `${relatedUrl}#work`, name: related.data.title, url: relatedUrl } : undefined,
-    image: hero ? {
-      '@type': 'ImageObject',
-      contentUrl: `${ORIGIN}${hero.url}`,
-      url: `${ORIGIN}${hero.url}`,
-      width: hero.width,
-      height: hero.height,
-      caption: hero.alt,
-      ...imageRights(hero.url, PERSON_ID),
-    } : undefined,
+    // the lead first: search engines take the first as the article's picture
+    image: figures.length ? [heroImage, ...figures.map(imageObject)].filter(Boolean) : heroImage || undefined,
   },
   {
     '@context': 'https://schema.org',
@@ -121,6 +136,7 @@ const jsonLd = [
     {hero && (
       <figure class="case-hero">
         <img src={hero.src} srcset={hero.srcset} sizes="(max-width: 1152px) 100vw, 1120px" width={hero.width} height={hero.height} alt={hero.alt} fetchpriority="high" decoding="async">
+        {heroCredit && <figcaption><span class="photo-credit">Photo: {httpUrl(heroCredit.url) ? <a href={httpUrl(heroCredit.url)} rel="noopener">{heroCredit.name}</a> : heroCredit.name}</span></figcaption>}
       </figure>
     )}
 
@@ -134,3 +150,18 @@ const jsonLd = [
     </aside>
   </article>
 </Base>
+
+<script>
+  // a video's player loads only when the visitor presses play (src/lib/article-video.js)
+  for (const figure of document.querySelectorAll<HTMLElement>('.article-video[data-player]')) {
+    const play = figure.querySelector('.video-play');
+    play?.addEventListener('click', () => {
+      const frame = document.createElement('iframe');
+      frame.src = figure.dataset.player ?? '';
+      frame.title = play.getAttribute('aria-label')?.replace(/^Play the /, '') ?? 'video';
+      frame.allow = 'autoplay; fullscreen; picture-in-picture';
+      frame.allowFullscreen = true;
+      figure.querySelector('.video-frame')?.replaceChildren(frame);
+    }, { once: true });
+  }
+</script>
