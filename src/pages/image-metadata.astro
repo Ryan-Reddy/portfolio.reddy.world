@@ -264,6 +264,10 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     .reading .pic-tools { position: absolute; top: .4rem; right: .4rem; display: flex; gap: .25rem; }
     .reading .pic-tools button { min-height: 2rem; min-width: 2rem; padding: 0 .55rem; border: 0; border-radius: 3px; background: rgba(36,33,28,.85); color: #f8f4e9; font-size: .85rem; cursor: pointer; }
     .reading .pic-tools button:focus-visible { outline: 2px solid #f8f4e9; outline-offset: 1px; }
+    /* where ✕ took a row of pictures out: one line, its Put it back at the top right, where the ✕ was */
+    .reading .out-mark { display: flex; align-items: flex-start; justify-content: space-between; gap: .8rem; min-height: 3rem; margin: .4rem 0; padding: .4rem .4rem .4rem .8rem; border: 1px dashed var(--line); color: var(--muted); font-size: .9rem; line-height: 1.4; }
+    .reading .out-mark span { padding-top: .3rem; }
+    .reading .out-mark button { flex: none; min-height: 2rem; padding: 0 .7rem; font-size: .85rem; }
     .reading .video-block .poster { aspect-ratio: 16 / 9; display: flex; align-items: center; justify-content: center; gap: .5rem; background: #111; color: #f5f5f0; font-size: .95rem; }
     .reading .video-block .poster span { font-size: 2.2rem; line-height: 1; }
     .video-form { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
@@ -346,7 +350,9 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       .nav { flex: 1 1 100%; }
       .progress { flex: 1 1 10rem; min-width: 0; }
       .workbench { height: auto; grid-template-columns: 1fr; grid-template-rows: auto; }
-      .stage { height: 52dvh; }
+      /* the window scrolls here: nothing in the stage anchors it, or swapping the page and a picture (another bar)
+         would move the tabs under the finger */
+      .stage { height: 52dvh; overflow-anchor: none; }
       .stage-bar { padding: .4rem .6rem; gap: .5rem; }
       .stage-bar .count { white-space: nowrap; }
       /* the page's bar label can be long ("On the wall, as a link, in search"): it wraps rather than run off */
@@ -782,7 +788,14 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       showStage();
       if (leaving) {
         renderReading();
-        $('reading').querySelector(`img[data-key="${CSS.escape(current().image.key)}"]`)?.scrollIntoView({block: 'center'});
+        // only the page scrolls: scrollIntoView scrolls the window too, and on a phone the tab tapped would move away
+        const reading = $('reading');
+        const img = reading.querySelector(`img[data-key="${CSS.escape(current().image.key)}"]`);
+        if (img) {
+          const box = img.getBoundingClientRect();
+          const view = reading.getBoundingClientRect();
+          reading.scrollTop += box.top - view.top - (view.height - box.height) / 2;
+        }
       }
     }
     for (const t of ['project', 'picture', 'preview']) $(`tab-${t}`).addEventListener('click', () => showTab(t));
@@ -1013,11 +1026,36 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       return template.content;
     }
     // back to what the archive stores: paragraphs as HTML, picture blocks as <figure data-media>, nothing pasted along
-    function projectText() {
-      const copy = $('read-text').cloneNode(true);
+    function projectText(root = $('read-text')) {
+      const copy = root.cloneNode(true);
+      for (const mark of copy.querySelectorAll('.out-mark')) mark.remove();
       const none = () => document.createTextNode('');
       tidy(copy, null, none, none);
       return copy.innerHTML.replace(/<figure data-media="([^"]*)"><\/figure>/g, '\n\n<figure data-media="$1"></figure>\n\n').replace(/<\/p>/g, '</p>\n\n').replace(/\n{3,}/g, '\n\n').trim();
+    }
+    // what a save of the page as it opens writes: the archive's text drawn and read back, which is not the same
+    // letter for letter (a line break becomes <br>, a mailto: link loses its address), so it is never stored
+    const untouchedTexts = new Map();
+    function untouchedText(project) {
+      if (!untouchedTexts.has(project.id)) {
+        const page = el('div', {}, projectNodes(project, project.content));
+        if (!page.childNodes.length) page.innerHTML = '<p><br></p>';
+        untouchedTexts.set(project.id, projectText(page));
+      }
+      return untouchedTexts.get(project.id);
+    }
+    // where ✕ took a row of pictures out, until the page is drawn again: what became of it, and the way back. Its
+    // button sits where the ✕ was, so a second click there puts the row back rather than taking out the next one
+    function outMark(figure) {
+      const back = el('button', {type: 'button', textContent: 'Put it back'});
+      const mark = el('div', {className: 'out-mark', contentEditable: 'false'},
+        el('span', {textContent: current().project.compCard ? 'Out of the text.' : 'Out of the text: the site shows it under Photographs.'}), back);
+      back.addEventListener('click', () => {
+        mark.replaceWith(figure);
+        saveText();
+        figure.querySelector('[data-move="out"]')?.focus();
+      });
+      return mark;
     }
     // the pictures a text places, by their src: the site shows the others under Photographs
     const placedSrcs = (project, content) => new Set([...String(content ?? '').matchAll(/data-media="([^"]*)"/g)]
@@ -1455,6 +1493,17 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     let elsewhere = false;
     // what #read-text shows: 'project:<id>' or 'article:<id>', and the text it was drawn from
     let shownText = {key: null, content: null};
+    // The browser keeps one undo history for the whole desk: Ctrl+Z would put the words of the page shown before
+    // (another article or project) back into this one, and save them here. Taking a part of the page out and back in
+    // drops its undo steps (checked in Edge).
+    const forgetUndo = (node) => { const [parent, next] = [node.parentNode, node.nextSibling]; node.remove(); parent.insertBefore(node, next); };
+    // the text drawn again; an empty text starts with one paragraph, so the first line typed is a paragraph too
+    function drawText(nodes) {
+      const text = $('read-text');
+      if (nodes.childNodes.length) text.replaceChildren(nodes);
+      else text.innerHTML = '<p><br></p>';
+      forgetUndo(text);
+    }
     function showStage() {
       const article = Boolean(openArticleRecord());
       const picture = !article && tab === 'picture';
@@ -1477,6 +1526,11 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
         if ($('reading').contains(document.activeElement)) document.activeElement.blur();
         $('block-tools').hidden = true;
         $('reading').scrollTop = 0;
+        // and the undo steps of its title and summary and of the boxes beside it, but the one typed in (the text's go
+        // when it is drawn again)
+        for (const field of [$('read-title'), $('read-sum'), ...$('bench').querySelectorAll('textarea, input:not([type="file"])')]) {
+          if (field !== document.activeElement) forgetUndo(field);
+        }
       }
       if (!article) return renderProjectPage();
       $('reading').dataset.kind = 'article';
@@ -1501,10 +1555,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       const text = $('read-text');
       const content = String(article.content ?? '');
       if (shownText.key !== `article:${state.article}` || (content !== shownText.content && !text.contains(document.activeElement))) {
-        // an empty text starts with one paragraph, so the first line typed is a paragraph too
-        const nodes = photoNodes(article, cleanHtml(content), pictureBlock);
-        if (nodes.childNodes.length) text.replaceChildren(nodes);
-        else text.innerHTML = '<p><br></p>';
+        drawText(photoNodes(article, cleanHtml(content), pictureBlock));
       }
       shownText = {key: `article:${state.article}`, content};
       markEmpty();
@@ -1542,9 +1593,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       // the text is drawn again only for another project, or when it changed elsewhere (the edit bar, another device)
       const text = $('read-text');
       if (shownText.key !== pageKey || (content !== shownText.content && !text.contains(document.activeElement))) {
-        const nodes = projectNodes(project, content);
-        if (nodes.childNodes.length) text.replaceChildren(nodes);
-        else text.innerHTML = '<p><br></p>';
+        drawText(projectNodes(project, content));
       }
       shownText = {key: pageKey, content};
       markEmpty();
@@ -1638,23 +1687,31 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       const content = projectText();
       const record = state.projects[project.id];
       // Send to site skips an empty text (scripts/import-image-keywords.mjs), so the site keeps the text it has:
-      // the record keeps no change, and the page shows that text again
-      if (content) state.projects[project.id] = {...record, content};
+      // the record keeps no change, and the page shows that text again. Nor does a page that reads as it opened
+      // (a click that moved nothing, a row put back): Send to site would write the text drawn and read back.
+      const unchanged = content === untouchedText(project);
+      if (content && !unchanged) state.projects[project.id] = {...record, content};
       else if (record && 'content' in record) { const rest = {...record}; delete rest.content; state.projects[project.id] = rest; }
-      shownText = content ? {key: `project:${project.id}`, content} : {key: null, content: null};
+      shownText = !content ? {key: null, content: null} : {key: `project:${project.id}`, content: unchanged ? project.content : content};
       save();
       // the lead and Photographs follow a ✕ straight away
       renderProjectPage();
-      // pictures the archive's text places and this text no longer does: the site shows them under Photographs
+      // pictures the archive's text places and this text no longer does: the site shows them under Photographs (a row
+      // taken out with ✕ says so in its place)
       const before = placedSrcs(project, project.content);
       const now = placedSrcs(project, content);
       const out = project.images.some((picture) => before.has(picture.src) && !now.has(picture.src));
       $('page-note').textContent = project.compCard ? 'On the site this page is a comp card, without its text.'
         : !content ? 'An empty text is not sent: the site keeps the text it has, shown here again.'
-        : out ? 'Out of the text: the site shows it under Photographs. “Undo my changes to the text” brings it back.' : '';
+        : out && !$('read-text').querySelector('.out-mark') ? 'Out of the text: the site shows it under Photographs.' : '';
     }
     // the block of the text a node sits in (a direct child of the text)
     const topBlock = (node) => { let at = node?.nodeType === 1 ? node : node?.parentElement; while (at && at.parentElement !== $('read-text')) at = at.parentElement; return at; };
+    // a block the page shows: not a lone line break, an empty paragraph (the archive's texts keep many between their
+    // blocks) or the line where a row was taken out
+    const shows = (node) => !node.matches('br, .out-mark') && (node.textContent.trim() !== '' || node.matches('hr, .pic-block') || node.querySelector('img, hr, .pic-block') !== null);
+    // the block above or below that the page shows, so every move is one the page shows
+    const shownNeighbour = (block, up) => { let at = block; do at = up ? at.previousElementSibling : at.nextElementSibling; while (at && !shows(at)); return at; };
     $('read-text').addEventListener('input', saveText);
     $('read-text').addEventListener('click', (event) => {
       const button = event.target.closest?.('.pic-tools button');
@@ -1663,9 +1720,20 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       const figure = button.closest('.pic-block');
       const block = topBlock(figure);
       if (block !== figure) block.after(figure); // a picture inside a paragraph comes out of it first
-      if (button.dataset.move === 'up') figure.previousElementSibling?.before(figure);
-      else if (button.dataset.move === 'down') figure.nextElementSibling?.after(figure);
-      else figure.remove();
+      if (button.dataset.move === 'out' && figure.matches('.media-block')) {
+        const mark = outMark(figure);
+        figure.replaceWith(mark);
+        saveText();
+        mark.querySelector('button').focus();
+        return;
+      }
+      if (button.dataset.move === 'out') figure.remove();
+      else {
+        const other = shownNeighbour(figure, button.dataset.move === 'up');
+        // already first or last: nothing moves, and nothing is saved
+        if (!other && block === figure) return;
+        other?.[button.dataset.move === 'up' ? 'before' : 'after'](figure);
+      }
       saveText();
       if (figure.isConnected) button.focus();
     });
@@ -1709,9 +1777,10 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       event.preventDefault();
       const at = dropAt(event);
       clearDrop();
+      // dropped on itself (a click that slipped): nothing moves, and nothing is saved
       if (at) at.block[at.above ? 'before' : 'after'](dragged);
       dragged = null;
-      saveText();
+      if (at) saveText();
     });
     $('read-text').addEventListener('dragend', () => { dragged = null; clearDrop(); });
     // A paragraph (or a heading, list or quote) moves up or down past its neighbours, pictures included:
@@ -1746,7 +1815,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       getSelection().addRange(range);
     }
     function moveBlock(block, up) {
-      const other = up ? block.previousElementSibling : block.nextElementSibling;
+      const other = shownNeighbour(block, up);
       if (!other) return;
       const offset = caretIn(block);
       if (up) other.before(block);
@@ -1759,7 +1828,8 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     function placeBlockTools() {
       const tools = $('block-tools');
       const block = textBlock();
-      if (!block) { tools.hidden = true; return; }
+      // with the page hidden (a project's Picture tab) there is nothing to place them beside: they would stay at its top
+      if (!block || $('reading').hidden) { tools.hidden = true; return; }
       tools.hidden = false;
       const reading = $('reading').getBoundingClientRect();
       const box = block.getBoundingClientRect();
@@ -1776,8 +1846,8 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
         tools.style.left = '';
         tools.style.right = `${Math.max(0, reading.right - box.right)}px`;
       }
-      tools.querySelector('[data-move="up"]').disabled = !block.previousElementSibling;
-      tools.querySelector('[data-move="down"]').disabled = !block.nextElementSibling;
+      tools.querySelector('[data-move="up"]').disabled = !shownNeighbour(block, true);
+      tools.querySelector('[data-move="down"]').disabled = !shownNeighbour(block, false);
     }
     document.addEventListener('selectionchange', placeBlockTools);
     $('read-text').addEventListener('keydown', (event) => {
@@ -1822,6 +1892,10 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
         (field === 'title' ? $('read-sum') : $('read-text')).focus();
       });
       $(id).addEventListener('paste', (event) => { event.preventDefault(); document.execCommand('insertText', false, event.clipboardData.getData('text/plain').replace(/\s+/g, ' ')); });
+      // a picture dropped here would show and never be saved: these are words only
+      $(id).addEventListener('drop', (event) => {
+        if (dragged || event.dataTransfer?.types.includes('Files') || /<img\b/i.test(event.dataTransfer?.getData('text/html') ?? '')) event.preventDefault();
+      });
     }
     // the pictures the page will show: the lead and the ones in the text
     function shownPictures(article) {
@@ -2116,6 +2190,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       }
     };
     function setPerson(field, value) {
+      if (!openArticleRecord()) return;
       const article = state.articles[state.article];
       state.articles[state.article] = {...article, person: {...article.person, [field]: value}};
       save();
@@ -2174,7 +2249,9 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       renderReading();
       refreshBoxes('article', state.article);
     }
+    // with no article open (a box of the article's panel changed from a project's page) nothing is written
     function setArticle(field, value) {
+      if (!openArticleRecord()) return;
       state.articles[state.article] = {...state.articles[state.article], [field]: value};
       save();
       renderReading();

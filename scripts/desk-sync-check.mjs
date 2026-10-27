@@ -157,17 +157,24 @@ try {
   const pageText = written.content ?? '';
   check('the text written on the page is stored as the archive stores it', /\(page\)/.test(pageText) && pageText.includes('\n\n')
     && (pageText.match(/<figure data-media="0"><\/figure>/g) ?? []).length === 1 && !/pic-block|contenteditable|data-picture|data-video/.test(pageText), pageText);
-  // ✕ takes a picture row out of the text: the site shows it under Photographs, and so does the page
+  // ✕ takes a picture row out of the text: the site shows it under Photographs, and so does the page. A line in its
+  // place says so, with Put it back (review finding: the only way back undid every change to the text)
   await page.locator('#read-text .media-block button[data-move="out"]').click();
   written = await recordOf();
-  check('✕ takes the pictures out of the text, to Photographs below', !/data-media/.test(written.content) && (await page.locator('#read-rest img').count()) === 1
-    && (await page.locator('#read-rest .rest-title').textContent()) === 'Photographs (1)' && (await page.locator('#page-note').textContent()).trim() !== '', written.content);
+  const outLine = await page.evaluate(() => document.querySelector('#read-text .out-mark')?.textContent ?? '');
+  check('✕ takes the pictures out of the text, to Photographs below, and says so in its place', !/data-media/.test(written.content) && (await page.locator('#read-rest img').count()) === 1
+    && (await page.locator('#read-rest .rest-title').textContent()) === 'Photographs (1)' && /Photographs/.test(outLine) && /Put it back/.test(outLine), `${written.content} · ${outLine}`);
   // a picture dragged from Photographs into the text is refused: it would show there and never be saved (review finding)
   await page.locator('#read-rest img').first().dragTo(page.locator('#read-text p').first());
   const droppedIn = await page.evaluate(() => ({ loose: [...document.querySelectorAll('#read-text img')].filter((img) => !img.closest('.media-block')).length, note: document.querySelector('#page-note').textContent }));
   written = await recordOf();
   check('a picture dragged from Photographs into the text is refused, and the page says so', droppedIn.loose === 0 && !/data-media/.test(written.content)
     && /dropped/.test(droppedIn.note) && (await page.locator('#read-rest img').count()) === 1, JSON.stringify(droppedIn));
+  const putBack = page.locator('#read-text .out-mark button');
+  if (await putBack.count()) await putBack.click();
+  written = await recordOf();
+  check('Put it back puts the row back in its place, and the words written stay', (String(written.content).match(/<figure data-media="0"><\/figure>/g) ?? []).length === 1 && /\(page\)/.test(written.content)
+    && await page.locator('#read-rest').isHidden() && (await page.locator('#read-text .out-mark').count()) === 0, written.content);
   await openBox(page, 'project', 'text');
   await page.locator('#story-reset').click();
   written = await recordOf();
@@ -187,8 +194,13 @@ try {
     && await page.locator('#picture-view').isVisible() && await page.locator('#filmstrip').isVisible() && await page.locator('#reading').isHidden()
     && (await page.evaluate(() => window.imageDesk.flat[window.imageDesk.state.cursor].image.key)) === clickedKey && !/^Picture 1 of/.test(counter), `${clickedKey} · ${counter}`);
   await page.locator('#back-to-page').click();
-  check('← Its page goes back to the page, that picture outlined', await page.locator('#reading').isVisible() && (await page.locator('#tab-project').getAttribute('aria-selected')) === 'true'
-    && (await page.locator(`#reading img[data-key="${clickedKey}"]`).first().getAttribute('data-current')) === 'true');
+  const backInView = await page.evaluate((key) => {
+    const reading = document.querySelector('#reading').getBoundingClientRect();
+    const img = document.querySelector(`#reading img[data-key="${CSS.escape(key)}"]`).getBoundingClientRect();
+    return img.top >= reading.top - 1 && img.bottom <= reading.bottom + 1;
+  }, clickedKey);
+  check('← Its page goes back to the page, that picture outlined and in view', await page.locator('#reading').isVisible() && (await page.locator('#tab-project').getAttribute('aria-selected')) === 'true'
+    && (await page.locator(`#reading img[data-key="${clickedKey}"]`).first().getAttribute('data-current')) === 'true' && backInView);
   // another page opens at its top: another project, an article, and back (review finding)
   const scrollTo = (y) => page.evaluate((top) => { const reading = document.querySelector('#reading'); reading.scrollTop = top; return reading.scrollTop; }, y);
   const scrolls = { merchandising: await scrollTo(1500) };
@@ -202,15 +214,96 @@ try {
   scrolls.back = await page.evaluate(() => document.querySelector('#reading').scrollTop);
   await page.evaluate(() => { delete window.imageDesk.state.articles['scroll-check']; window.imageDesk.render(); });
   check('another page opens at its top', scrolls.merchandising > 0 && scrolls.giantDown > 0 && scrolls.articleDown > 0 && scrolls.giant === 0 && scrolls.article === 0 && scrolls.back === 0, JSON.stringify(scrolls));
+  // the paragraph tools stay with the page: after a picture and ← Its page none are left at its top corner (review finding)
+  await page.locator('#project-picker').selectOption(String(await indexOf('rmaekers/giant-swings')));
+  await page.locator('#read-text > p:not(:empty)').nth(2).click();
+  const toolsBeside = await waitFor(page, () => !document.querySelector('#block-tools').hidden, undefined, 3000);
+  await page.locator('#read-text img[data-key]').nth(3).click();
+  await page.locator('#back-to-page').click();
+  await page.waitForTimeout(150);
+  check('after a picture and ← Its page, no paragraph tools are left at the top', toolsBeside && await page.locator('#block-tools').isHidden(),
+    JSON.stringify(await page.evaluate(() => { const tools = document.querySelector('#block-tools'); return { hidden: tools.hidden, top: tools.style.top }; })));
+  // a picture dropped on the summary is refused: it would show there and never be saved (review finding)
+  await page.locator('#read-lead img').dragTo(page.locator('#read-sum'));
+  await page.locator('#read-text .media-block img').first().dragTo(page.locator('#read-sum'));
+  const onSummary = await page.evaluate(() => document.querySelectorAll('#read-sum img, #read-title img').length);
+  check('a picture dropped on the summary is refused', onSummary === 0 && (await recordFor('rmaekers/giant-swings')) === null, String(onSummary));
+  // ↑ ↓ move a row past what the page shows: the archive's texts keep empty paragraphs and lone line breaks between
+  // their blocks, and a move past one of those changed nothing on the page (review finding)
+  const shownOrder = () => page.evaluate(() => {
+    const shows = (node) => !node.matches('br') && (node.textContent.trim() !== '' || node.matches('hr') || node.querySelector('img, hr') !== null);
+    const kids = [...document.querySelector('#read-text').children];
+    const at = kids.findIndex((node, i) => node.matches('.media-block') && i > 0 && !shows(kids[i - 1]) && kids.slice(0, i - 1).some(shows));
+    return { at, shown: kids.slice(0, at).filter(shows).length, order: kids.filter(shows).map((node) => (node.dataset.media !== undefined ? `[${node.dataset.media}]` : node.textContent.trim().slice(0, 12))) };
+  });
+  const rowsBeforeUp = await shownOrder();
+  if (rowsBeforeUp.at >= 0) await page.locator('#read-text > *').nth(rowsBeforeUp.at).locator('button[data-move="up"]').click();
+  const rowsAfterUp = (await shownOrder()).order;
+  const wantUp = [...rowsBeforeUp.order];
+  wantUp.splice(rowsBeforeUp.shown - 1, 2, wantUp[rowsBeforeUp.shown], wantUp[rowsBeforeUp.shown - 1]);
+  check('↑ moves a picture row past the block the page shows above it, not past an empty line', rowsBeforeUp.at >= 0 && JSON.stringify(rowsAfterUp) === JSON.stringify(wantUp),
+    JSON.stringify({ before: rowsBeforeUp.order.slice(Math.max(0, rowsBeforeUp.shown - 2), rowsBeforeUp.shown + 2), after: rowsAfterUp.slice(Math.max(0, rowsBeforeUp.shown - 2), rowsBeforeUp.shown + 2) }));
+  await page.evaluate(() => { delete window.imageDesk.state.projects['rmaekers/giant-swings']; window.imageDesk.render(); });
+  // a click that moves nothing stores nothing, and neither does a page left as it was: the page's text is not the
+  // archive's text letter for letter, so a save would rewrite the site's text (review finding)
+  await page.locator('#project-picker').selectOption(String(seeded));
+  await page.locator('#read-text .media-block button[data-move="down"]').click();
+  const downOnLast = await recordFor('rmaekers/lightsurface-mk1-set');
+  await page.locator('#read-text .media-block').dragTo(page.locator('#read-text .media-block'), { sourcePosition: { x: 30, y: 30 }, targetPosition: { x: 40, y: 36 } });
+  const onItself = await recordFor('rmaekers/lightsurface-mk1-set');
+  const untouched = await page.evaluate(() => {
+    const desk = window.imageDesk;
+    const stored = [];
+    desk.DATA.projects.forEach((project, index) => {
+      const cursor = desk.flat.findIndex((item) => item.projectIndex === index);
+      if (cursor < 0 || desk.state.projects[project.id]) return;
+      desk.state.cursor = cursor;
+      desk.render();
+      document.querySelector('#read-text').dispatchEvent(new Event('input'));
+      if (desk.state.projects[project.id]?.content !== undefined) stored.push(project.id);
+      delete desk.state.projects[project.id];
+    });
+    desk.render();
+    return stored;
+  });
+  check('a click that moves nothing, or a page left as it was, stores no text', downOnLast === null && onItself === null && untouched.length === 0,
+    JSON.stringify({ downOnLast, onItself, untouched: untouched.length, some: untouched.slice(0, 3) }));
+  // the boxes beside the page share one undo history too: what was typed in a project's summary box doesn't come
+  // back into the next project's with Ctrl+Z (review finding)
+  await page.locator('#project-picker').selectOption(String(seeded));
+  await openBox(page, 'project', 'summary');
+  await page.locator('#summary').click();
+  await page.keyboard.type('Boxed words');
+  // picked as a click picks it: the focus goes to the picker (selectOption alone leaves it in the box)
+  await page.locator('#project-picker').focus();
+  await page.locator('#project-picker').selectOption(String(await indexOf('rmaekers/giant-swings')));
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press('Control+z');
+  await page.keyboard.press('Control+z');
+  const boxUndo = { box: await page.locator('#summary').inputValue(), next: await recordFor('rmaekers/giant-swings') };
+  check('Ctrl+Z on the next project brings nothing of the last one\'s summary box into it', !/Boxed/.test(boxUndo.box) && !JSON.stringify(boxUndo.next).includes('Boxed'), JSON.stringify(boxUndo));
+  await page.evaluate(() => { const s = window.imageDesk.state.projects; delete s['rmaekers/lightsurface-mk1-set']; delete s['rmaekers/giant-swings']; window.imageDesk.render(); });
   // a text of several picture rows with one taken out: Photographs starts below the whole text, not over its pictures (review finding)
   await page.locator('#project-picker').selectOption(String(await indexOf('rrproductions/making-of-a-kaleidoscope')));
-  await page.locator('#read-text .media-block button[data-move="out"]').first().click();
+  const kaleidoRows = await page.locator('#read-text .media-block').count();
+  const firstOut = page.locator('#read-text .media-block button[data-move="out"]').first();
+  await firstOut.scrollIntoViewIfNeeded();
+  const outBox = await firstOut.boundingBox();
+  const pointer = [outBox.x + outBox.width / 2, outBox.y + outBox.height / 2];
+  await page.mouse.click(...pointer);
   const layout = await page.evaluate(() => {
     const text = document.querySelector('#read-text').getBoundingClientRect();
     const rest = document.querySelector('#read-rest');
     return { rest: !rest.hidden, box: Math.round(text.height), content: document.querySelector('#read-text').scrollHeight, gap: Math.round(rest.getBoundingClientRect().top - text.bottom) };
   });
   check('with a picture row taken out, Photographs sits below the whole text', layout.rest && layout.box >= layout.content - 1 && layout.gap >= 0, JSON.stringify(layout));
+  // the line in its place is under the pointer, not the next row's ✕: a second click there puts the row back rather
+  // than taking out the next one (review finding)
+  const underPointer = await page.evaluate(([x, y]) => { const at = document.elementFromPoint(x, y); return { mark: Boolean(at?.closest('#read-text .out-mark')), next: Boolean(at?.closest('.pic-tools')) }; }, pointer);
+  await page.mouse.click(...pointer);
+  const twice = { rows: await page.locator('#read-text .media-block').count(), record: await recordFor('rrproductions/making-of-a-kaleidoscope') };
+  check('✕ twice at one spot: the row comes back, no other goes, and nothing is stored', underPointer.mark && !underPointer.next && twice.rows === kaleidoRows && twice.record?.content === undefined,
+    JSON.stringify({ underPointer, rows: kaleidoRows, now: twice.rows, stored: twice.record?.content !== undefined }));
   await page.evaluate(() => { delete window.imageDesk.state.projects['rrproductions/making-of-a-kaleidoscope']; window.imageDesk.render(); });
   // a text of pictures only, every row taken out: Send to site skips an empty text, so nothing is stored and the page
   // shows the site's text again, and says so (review finding)
@@ -495,6 +588,46 @@ try {
   const projectRecords = JSON.stringify(await pen.page.evaluate(() => window.imageDesk.state.projects));
   check('leaving it from its summary: the project shows its own, and nothing of the draft is saved to it', leftSum.kind === 'project' && !/Draft words/.test(leftSum.sum) && !leftSum.inPage
     && !projectRecords.includes('Draft words'), JSON.stringify(leftSum) + ' ' + projectRecords.slice(0, 200));
+  // Ctrl+Z on the project's page brings nothing of the draft into it: the browser keeps one undo history for the
+  // page, and the draft's cut paragraph came back into the project's text and was saved there (review finding); its
+  // deleted summary came back into the project's summary the same way
+  const undoOn = await pen.page.evaluate(() => { const desk = window.imageDesk; desk.state.cursor = desk.flat.findIndex((item) => item.project.id === 'rmaekers/lightsurface-mk1-set'); return desk.flat[desk.state.cursor].project.id; });
+  const pageNow = () => pen.page.evaluate((id) => ({ kind: document.querySelector('#reading').dataset.kind, text: document.querySelector('#read-text').textContent,
+    sum: document.querySelector('#read-sum').textContent, record: JSON.stringify(window.imageDesk.state.projects[id] ?? null) }), undoOn);
+  await pen.page.evaluate((id) => window.imageDesk.openArticle(id), draftId);
+  const draftSummary = (await pen.page.locator('#read-sum').textContent()).slice(0, 18);
+  await pen.page.locator('#read-sum').click();
+  await pen.page.keyboard.press('Control+a');
+  await pen.page.keyboard.press('Backspace');
+  await pen.page.keyboard.press('Alt+ArrowLeft');
+  await pen.page.keyboard.press('Control+z');
+  await pen.page.keyboard.press('Control+z');
+  const sumUndone = await pageNow();
+  await pen.page.evaluate((id) => window.imageDesk.openArticle(id), draftId);
+  await pen.page.locator('#read-text > p').last().click();
+  await pen.page.keyboard.press('End');
+  await pen.page.keyboard.press('Enter');
+  await pen.page.keyboard.type('A paragraph to cut.');
+  await pen.page.evaluate(() => {
+    const paragraphs = [...document.querySelectorAll('#read-text > p')];
+    const [from, to] = paragraphs.slice(-2);
+    const range = document.createRange();
+    range.setStart(from, from.childNodes.length);
+    range.setEnd(to, to.childNodes.length);
+    getSelection().removeAllRanges();
+    getSelection().addRange(range);
+  });
+  await pen.page.keyboard.press('Control+x');
+  await pen.page.keyboard.press('Alt+ArrowLeft');
+  await pen.page.keyboard.press('Control+z');
+  await pen.page.locator('#read-text > p').first().click();
+  await pen.page.keyboard.press('Control+z');
+  await pen.page.keyboard.press('Control+z');
+  const undone = await pageNow();
+  check('Ctrl+Z on the project\'s page brings nothing of the draft into it', [sumUndone, undone].every((now) => now.kind === 'project'
+    && ![now.text, now.sum, now.record].some((words) => words.includes('A paragraph') || words.includes(draftSummary))) && draftSummary.length > 10,
+    JSON.stringify([sumUndone, undone].map((now) => ({ ...now, text: now.text.slice(0, 80) }))));
+  await pen.page.evaluate((id) => { delete window.imageDesk.state.projects[id]; window.imageDesk.render(); }, undoOn);
   await pen.page.evaluate((id) => window.imageDesk.openArticle(id), draftId);
   // ＋ Picture on the page: signed out it can't upload, and the page says why
   const [chooser] = await Promise.all([pen.page.waitForEvent('filechooser'), pen.page.locator('#add-picture-here').click()]);
@@ -533,6 +666,16 @@ try {
   await small.page.locator('#project-picker').selectOption(String(await small.page.evaluate(() => window.imageDesk.DATA.projects.findIndex((project) => project.id === 'rmaekers/merchandising'))));
   check("390 px, a project's page with rows of pictures: no sideways scroll in it", await small.page.evaluate(() => document.querySelector('#reading').scrollWidth <= document.querySelector('#reading').clientWidth),
     String(await small.page.evaluate(() => document.querySelector('#reading').scrollWidth)));
+  // leaving the Picture tab scrolls the page to its picture, not the whole window: the tab tapped stays where it was (review finding)
+  await small.page.locator('#project-picker').selectOption(String(await small.page.evaluate(() => window.imageDesk.DATA.projects.findIndex((project) => project.id === 'rmaekers/giant-swings'))));
+  await small.page.locator('#tab-picture').click();
+  await small.page.locator('#filmstrip button').nth(3).click();
+  const tabsAt = () => small.page.evaluate(() => ({ y: Math.round(scrollY), tabs: Math.round(document.querySelector('#tab-project').getBoundingClientRect().top) }));
+  await small.page.evaluate(() => document.querySelector('#tab-project').scrollIntoView({ block: 'start' }));
+  const tabsBefore = await tabsAt();
+  await small.page.locator('#tab-project').click();
+  const tabsAfter = await tabsAt();
+  check('390 px, leaving the Picture tab: the window stays where it was, the tabs under the finger', tabsBefore.y > 0 && Math.abs(tabsAfter.tabs - tabsBefore.tabs) <= 1, JSON.stringify({ tabsBefore, tabsAfter }));
   // the article at phone width: its bar and its boxes fit too
   await small.page.locator('#new-article').click();
   check('390 px, article: no sideways scroll', await small.page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), String(await small.page.evaluate(() => document.documentElement.scrollWidth)));
