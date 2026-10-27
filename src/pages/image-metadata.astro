@@ -21,6 +21,12 @@ const projects = deskList.map((project) => {
   for (const { sources, ...rating } of ideas) ideaRatings[normalize(rating.tag)] ??= rating;
   return { ...project, ideas: ideas.map((idea) => [idea.tag, idea.sources]) };
 });
+// an article's pictures: the same rated list, from the keywords Ryan gave his projects and the word bank
+const articleIdeas = ideasFor([
+  { source: 'yours', words: deskList.flatMap((project) => project.keywords) },
+  { source: 'bank', words: bank },
+], ratings, { vocabulary });
+for (const { sources, ...rating } of articleIdeas) ideaRatings[normalize(rating.tag)] ??= rating;
 const ratingsInfo = {updatedAt: ratings.updatedAt, bing: Object.keys(ratings.bing ?? {}).length > 0, rising: RISING};
 const count = projects.reduce((sum, project) => sum + project.images.length, 0);
 // what an article can be, and the case studies it can belong to (src/content/articles/, src/lib/article-kinds.js)
@@ -28,7 +34,7 @@ const software = (await getCollection('software')).sort((a, b) => a.data.order -
 // drafts prepared in the repo, by desk id (src/data/article-seeds/<id>.json): each shows up once on the desk
 const seeds = Object.fromEntries(Object.entries(import.meta.glob('../data/article-seeds/*.json', { eager: true, import: 'default' }))
   .map(([file, seed]) => [file.split('/').pop().replace(/\.json$/, ''), seed]));
-const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRatings, kinds: KINDS, software, seeds }).replace(/</g, '\\u003c');
+const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRatings, articleIdeas: articleIdeas.map((idea) => [idea.tag, idea.sources]), kinds: KINDS, software, seeds }).replace(/</g, '\\u003c');
 ---
 <!doctype html>
 <html lang="en">
@@ -110,7 +116,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     .tabs { display: flex; gap: 0; padding: 0 1rem; border-bottom: 1px solid var(--line); }
     .tabs button { border: 0; border-bottom: 2px solid transparent; color: var(--muted); min-height: 2.6rem; padding: .4rem .9rem; }
     .tabs button[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--gold); font-weight: 600; }
-    .tab { overflow-y: auto; padding: 1rem; display: grid; align-content: start; gap: 1.1rem; }
+    .tab { overflow-y: auto; padding: 1rem; display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: 1.1rem; }
     .tab[hidden] { display: none; }
     section.block { display: grid; gap: .5rem; }
     section.block > h2 { margin: 0; font-size: .78rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
@@ -137,6 +143,25 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     .subtabs button { min-height: 0; padding: .25rem .6rem; font-size: .78rem; border-color: var(--line); color: var(--muted); }
     .subtabs button[aria-pressed="true"] { border-color: var(--gold); color: var(--gold); }
     .row-label { color: var(--muted); font-size: .75rem; }
+
+    /* boxes: only the next one open; a handled one folds to one line, dims and gets a ✓, a click opens it again */
+    details.box { border: 1px solid var(--line); background: var(--bg); transition: opacity .15s ease; }
+    details.box > summary { list-style: none; cursor: pointer; display: flex; align-items: baseline; gap: .55rem; padding: .6rem .75rem; min-height: 2.6rem; }
+    details.box > summary::-webkit-details-marker { display: none; }
+    details.box > summary::before { content: '▸'; color: var(--muted); font-size: .75rem; }
+    details.box[open] > summary::before { content: '▾'; }
+    details.box > summary .box-name { font-weight: 600; font-size: .88rem; white-space: nowrap; }
+    details.box > summary .box-line { flex: 1; min-width: 0; color: var(--muted); font-size: .8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    details.box[open] > summary .box-line { visibility: hidden; }
+    details.box > summary .box-tick { color: var(--gold); visibility: hidden; }
+    details.box[data-state="done"] > summary .box-tick { visibility: visible; }
+    details.box > .box-body { padding: 0 .75rem .75rem; display: grid; gap: .55rem; }
+    details.box[data-state="todo"]:not([open]) { border-color: #5a5a56; }
+    details.box[data-state="done"]:not([open]), details.box[data-state="quiet"]:not([open]) { opacity: .55; }
+    details.box:not([open]):hover, details.box:not([open]):focus-within { opacity: 1; }
+    .box-list, .pic-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: .45rem; }
+    .box-list > details.box, .pic-list > details.box { min-width: 0; }
+    @media (prefers-reduced-motion: reduce) { details.box { transition: none; } }
 
     /* the post's own text */
     .story { min-height: 10rem; max-height: 26rem; overflow-y: auto; padding: .7rem .85rem; background: var(--surface); border: 1px solid #5a5a56; line-height: 1.55; font-size: .92rem; }
@@ -218,9 +243,9 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     .reading-text h2, .reading-text h3, .reading-text h4 { font-family: var(--display); }
     .reading-text a, .reading .dek a { color: #8b3a1a; }
     .row2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: .6rem; }
-    .pic-list { display: grid; gap: .6rem; }
-    .pic-row { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); gap: .6rem; padding: .5rem; border: 1px solid var(--line); }
-    .pic-row img { width: 5.5rem; height: 4.2rem; object-fit: cover; background: #111; }
+    details.box.pic-row > summary { align-items: center; }
+    .pic-row > summary img { flex: 0 0 auto; width: 3.4rem; height: 2.6rem; object-fit: cover; background: #111; }
+    details.box.pic-row[open] > summary .box-line { visibility: visible; }
     .pic-row textarea { min-height: 3.4rem; }
     .pic-row .row { display: flex; flex-wrap: wrap; gap: .3rem; }
     .pic-row .row button { min-height: 2rem; padding: .2rem .55rem; font-size: .78rem; }
@@ -290,6 +315,9 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       .stage { height: 52dvh; }
       .stage-bar { padding: .4rem .6rem; gap: .5rem; }
       .stage-bar .count { white-space: nowrap; }
+      /* the article's bar label is longer ("On the wall, as a link, in search"): it wraps rather than run off */
+      #article-bench .stage-bar .count { white-space: normal; flex: 1 1 100%; }
+      #article-bench .stage-bar .spacer { display: none; }
       .stage-bar button.lead { min-height: 2.2rem; padding: .3rem .6rem; font-size: .82rem; }
       .panel { border-left: 0; border-top: 1px solid var(--line); }
       .tab { overflow: visible; }
@@ -352,36 +380,44 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       </div>
 
       <div class="tab" role="tabpanel" id="pane-project" aria-labelledby="tab-project">
-        <section class="block">
-          <label for="summary">Short summary</label>
-          <textarea id="summary" placeholder="One or two lines in your own words"></textarea>
-          <p class="hint" id="summary-hint"></p>
-        </section>
-
-        <section class="block">
-          <h2>Keywords for every picture in this project</h2>
-          <div class="chips" id="project-chips"></div>
-          <p class="hint" id="project-keywords-hint"></p>
-          <details class="drawer" id="ideas">
-            <summary>Ideas</summary>
-            <div>
-              <div class="subtabs" id="idea-tabs"></div>
-              <div id="idea-list" class="ideas"></div>
-              <p class="hint" id="idea-hint"></p>
+        <div class="box-list" data-boxes="project">
+          <details class="box" data-box="summary">
+            <summary><span class="box-name">Summary</span><span class="box-line"></span><span class="box-tick" aria-hidden="true">✓</span></summary>
+            <div class="box-body">
+              <textarea id="summary" aria-label="Short summary" placeholder="One or two lines in your own words"></textarea>
+              <p class="hint" id="summary-hint"></p>
             </div>
           </details>
-        </section>
 
-        <section class="block">
-          <h2>The post's text</h2>
-          <div class="story" id="story" contenteditable="true" role="textbox" aria-multiline="true" aria-label="The post's text"></div>
-          <p class="hint">Edit the words; the picture blocks keep the pictures in place. <button class="link" id="story-reset" type="button">Undo my changes to the text</button></p>
-        </section>
+          <details class="box" data-box="keywords">
+            <summary><span class="box-name">Keywords</span><span class="box-line"></span><span class="box-tick" aria-hidden="true">✓</span></summary>
+            <div class="box-body">
+              <div class="chips" id="project-chips"></div>
+              <p class="hint" id="project-keywords-hint"></p>
+              <details class="drawer" id="ideas">
+                <summary>Ideas</summary>
+                <div>
+                  <div class="subtabs" id="idea-tabs"></div>
+                  <div id="idea-list" class="ideas"></div>
+                  <p class="hint" id="idea-hint"></p>
+                </div>
+              </details>
+            </div>
+          </details>
 
-        <details class="drawer">
-          <summary>From WordPress</summary>
-          <div><dl class="wp" id="wp-project"></dl></div>
-        </details>
+          <details class="box" data-box="text">
+            <summary><span class="box-name">The text</span><span class="box-line"></span><span class="box-tick" aria-hidden="true">✓</span></summary>
+            <div class="box-body">
+              <div class="story" id="story" contenteditable="true" role="textbox" aria-multiline="true" aria-label="The post's text"></div>
+              <p class="hint">Picture blocks keep the pictures in place. <button class="link" id="story-reset" type="button">Undo my changes</button></p>
+            </div>
+          </details>
+
+          <details class="box" data-box="wordpress">
+            <summary><span class="box-name">From WordPress</span><span class="box-line"></span><span class="box-tick" aria-hidden="true">✓</span></summary>
+            <div class="box-body"><dl class="wp" id="wp-project"></dl></div>
+          </details>
+        </div>
 
         <div class="bottom">
           <button id="done" class="primary" type="button">Done, next project →</button>
@@ -391,32 +427,38 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       </div>
 
       <div class="tab" role="tabpanel" id="pane-picture" aria-labelledby="tab-picture" hidden>
-        <section class="block">
-          <label for="description">What someone who can't see this picture should hear</label>
-          <textarea id="description" placeholder="Who or what is in it, and where"></textarea>
-          <p class="hint">This is the picture's alt text on the site.</p>
-        </section>
-        <section class="block">
-          <h2>Keywords for this picture only</h2>
-          <div class="chips" id="image-chips"></div>
-          <p class="hint">Dashed: the project's keywords, which every picture already has.</p>
-          <div class="ideas" id="image-ideas"></div>
-        </section>
-        <details class="drawer" id="credit-panel">
-          <summary id="credit-summary">Photographer</summary>
-          <div>
-            <label>This picture by <input id="credit-image-name" autocomplete="off" placeholder="Name as it should appear"></label>
-            <label>Their site <input id="credit-image-url" inputmode="url" autocomplete="off" placeholder="https://…"></label>
-            <label>Every picture in this project by <input id="credit-project-name" autocomplete="off" placeholder="Name as it should appear"></label>
-            <label>Their site <input id="credit-project-url" inputmode="url" autocomplete="off" placeholder="https://…"></label>
-            <p class="hint" id="credit-shown" aria-live="polite"></p>
-            <button id="next-uncredited" type="button">Next picture without a photographer →</button>
-          </div>
-        </details>
-        <details class="drawer" open>
-          <summary>From WordPress</summary>
-          <div><dl class="wp" id="wp-picture"></dl></div>
-        </details>
+        <div class="box-list" data-boxes="picture">
+          <details class="box" data-box="description">
+            <summary><span class="box-name">What it shows</span><span class="box-line"></span><span class="box-tick" aria-hidden="true">✓</span></summary>
+            <div class="box-body">
+              <textarea id="description" aria-label="What someone who can't see this picture should hear" placeholder="Who or what is in it, and where"></textarea>
+              <p class="hint">Its alt text on the site, for someone who can't see it.</p>
+            </div>
+          </details>
+          <details class="box" data-box="keywords">
+            <summary><span class="box-name">Keywords</span><span class="box-line"></span><span class="box-tick" aria-hidden="true">✓</span></summary>
+            <div class="box-body">
+              <div class="chips" id="image-chips"></div>
+              <p class="hint">Dashed: from the project.</p>
+              <div class="ideas" id="image-ideas"></div>
+            </div>
+          </details>
+          <details class="box" data-box="credit" id="credit-panel">
+            <summary><span class="box-name">Photographer</span><span class="box-line"></span><span class="box-tick" aria-hidden="true">✓</span></summary>
+            <div class="box-body">
+              <label>This picture by <input id="credit-image-name" autocomplete="off" placeholder="Name as it should appear"></label>
+              <label>Their site <input id="credit-image-url" inputmode="url" autocomplete="off" placeholder="https://…"></label>
+              <label>Every picture in this project by <input id="credit-project-name" autocomplete="off" placeholder="Name as it should appear"></label>
+              <label>Their site <input id="credit-project-url" inputmode="url" autocomplete="off" placeholder="https://…"></label>
+              <p class="hint" id="credit-shown" aria-live="polite"></p>
+              <button id="next-uncredited" type="button">Next picture without a photographer →</button>
+            </div>
+          </details>
+          <details class="box" data-box="wordpress">
+            <summary><span class="box-name">From WordPress</span><span class="box-line"></span><span class="box-tick" aria-hidden="true">✓</span></summary>
+            <div class="box-body"><dl class="wp" id="wp-picture"></dl></div>
+          </details>
+        </div>
       </div>
 
       <div class="tab" role="tabpanel" id="pane-preview" aria-labelledby="tab-preview" hidden>
@@ -454,52 +496,67 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
         <div class="meta"><span id="article-when"></span><span class="state" id="article-state">Draft: only you see it</span></div>
       </div>
       <div class="tab">
-        <section class="block">
-          <label for="article-title">Title</label>
-          <input id="article-title" autocomplete="off" placeholder="The article's title">
-        </section>
-        <section class="block row2">
-          <label>Kind <select id="article-kind"></select></label>
-          <label>Language <select id="article-lang"><option value="en">English</option><option value="nl">Nederlands</option></select></label>
-          <label>Year <input id="article-year" type="number" min="1990" max="2100" inputmode="numeric"></label>
-        </section>
-        <section class="block" id="article-person">
-          <h2>The person you interviewed</h2>
-          <label>The words before their name <input id="article-byline" autocomplete="off" placeholder="Inzichten van, In conversation with…"></label>
-          <div class="row2">
-            <label>Name <input id="person-name" autocomplete="off"></label>
-            <label>Their profile <input id="person-profile" inputmode="url" autocomplete="off" placeholder="https://…"></label>
-          </div>
-          <label>Role <input id="person-role" autocomplete="off" placeholder="As they describe it"></label>
-          <div class="row2">
-            <label>Organisation <input id="person-org" autocomplete="off"></label>
-            <label>Its site <input id="person-org-url" inputmode="url" autocomplete="off" placeholder="https://…"></label>
-          </div>
-          <p class="hint">The organisation's name in the role links to its site.</p>
-        </section>
-        <section class="block">
-          <label>Belongs to a case study <select id="article-related"><option value="">None</option></select></label>
-        </section>
-        <section class="block">
-          <label for="article-summary">Short summary</label>
-          <textarea id="article-summary" placeholder="One or two lines in your own words: shown on the wall and under the title"></textarea>
-        </section>
-        <section class="block">
-          <h2>The text</h2>
-          <p class="hint">Write on the page, on the left: the title, the summary and the text. Paragraphs, headings, bold, italic, links and lists are kept; Ctrl+B and Ctrl+I work. A picture in the text moves with ↑ and ↓, or by dragging it.</p>
-        </section>
-        <section class="block" aria-labelledby="pictures-title">
-          <h2 id="pictures-title">Pictures</h2>
-          <div class="pic-list" id="pic-list"></div>
-          <label class="add-pics">＋ Add pictures <input id="pic-input" type="file" accept="image/*" multiple hidden></label>
-          <p class="hint" id="pic-hint">They stay private in your account until the article is published. ★ makes one the lead picture across the top; "In the text" puts it after the paragraph your cursor is in on the page.</p>
-        </section>
-        <section class="block">
-          <h2>Publishing</h2>
-          <p class="hint" id="publish-hint"></p>
-          <div class="bottom"><button id="publish-article" class="primary" type="button">Publish</button><button id="unpublish-article" class="quiet" type="button" hidden>Back to draft</button></div>
-          <p class="hint" id="article-address"></p>
-        </section>
+        <div class="box-list" data-boxes="article">
+          <details class="box" data-box="title">
+            <summary><span class="box-name">Title</span><span class="box-line"></span><span class="box-tick" aria-hidden="true">✓</span></summary>
+            <div class="box-body"><input id="article-title" aria-label="Title" autocomplete="off" placeholder="The article's title"></div>
+          </details>
+          <details class="box" data-box="about">
+            <summary><span class="box-name">Kind</span><span class="box-line"></span><span class="box-tick" aria-hidden="true">✓</span></summary>
+            <div class="box-body row2">
+              <label>Kind <select id="article-kind"></select></label>
+              <label>Language <select id="article-lang"><option value="en">English</option><option value="nl">Nederlands</option></select></label>
+              <label>Year <input id="article-year" type="number" min="1990" max="2100" inputmode="numeric"></label>
+            </div>
+          </details>
+          <details class="box" data-box="person" id="article-person">
+            <summary><span class="box-name">The person</span><span class="box-line"></span><span class="box-tick" aria-hidden="true">✓</span></summary>
+            <div class="box-body">
+              <label>The words before their name <input id="article-byline" autocomplete="off" placeholder="Inzichten van, In conversation with…"></label>
+              <div class="row2">
+                <label>Name <input id="person-name" autocomplete="off"></label>
+                <label>Their profile <input id="person-profile" inputmode="url" autocomplete="off" placeholder="https://…"></label>
+              </div>
+              <label>Role <input id="person-role" autocomplete="off" placeholder="As they describe it"></label>
+              <div class="row2">
+                <label>Organisation <input id="person-org" autocomplete="off"></label>
+                <label>Its site <input id="person-org-url" inputmode="url" autocomplete="off" placeholder="https://…"></label>
+              </div>
+              <p class="hint">The organisation's name in the role links to its site.</p>
+            </div>
+          </details>
+          <details class="box" data-box="related">
+            <summary><span class="box-name">Case study</span><span class="box-line"></span><span class="box-tick" aria-hidden="true">✓</span></summary>
+            <div class="box-body"><select id="article-related" aria-label="Belongs to a case study"><option value="">None</option></select></div>
+          </details>
+          <details class="box" data-box="summary">
+            <summary><span class="box-name">Summary</span><span class="box-line"></span><span class="box-tick" aria-hidden="true">✓</span></summary>
+            <div class="box-body">
+              <textarea id="article-summary" aria-label="Short summary" placeholder="One or two lines in your own words"></textarea>
+              <p class="hint">On the wall and under the title.</p>
+            </div>
+          </details>
+          <details class="box" data-box="text">
+            <summary><span class="box-name">The text</span><span class="box-line"></span><span class="box-tick" aria-hidden="true">✓</span></summary>
+            <div class="box-body"><p class="hint">Write on the page, left. Ctrl+B and Ctrl+I work; move a picture with ↑ ↓ or drag it.</p></div>
+          </details>
+          <details class="box" data-box="pictures">
+            <summary><span class="box-name">Pictures</span><span class="box-line"></span><span class="box-tick" aria-hidden="true">✓</span></summary>
+            <div class="box-body">
+              <div class="pic-list" id="pic-list" data-boxes="pictures"></div>
+              <label class="add-pics">＋ Add pictures <input id="pic-input" type="file" accept="image/*" multiple hidden></label>
+              <p class="hint" id="pic-hint">Private until you publish. ★ is the lead; "In the text" goes after your cursor.</p>
+            </div>
+          </details>
+          <details class="box" data-box="publish">
+            <summary><span class="box-name">Publishing</span><span class="box-line"></span><span class="box-tick" aria-hidden="true">✓</span></summary>
+            <div class="box-body">
+              <p class="hint" id="publish-hint"></p>
+              <div class="bottom"><button id="publish-article" class="primary" type="button">Publish</button><button id="unpublish-article" class="quiet" type="button" hidden>Back to draft</button></div>
+              <p class="hint" id="article-address"></p>
+            </div>
+          </details>
+        </div>
         <div class="bottom"><button id="delete-article" class="quiet" type="button">Delete this draft</button></div>
         <p class="note" id="article-note" aria-live="polite"></p>
       </div>
@@ -516,6 +573,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
   <dialog id="keys">
     <h2>How this desk works</h2>
     <p>Each project opens on what the site has today. Change anything; it saves by itself, to your account when you are signed in.</p>
+    <p>Only the next thing to do is open. A box you finished folds to one dim line with a ✓; click it to open it again.</p>
     <p><strong>Project</strong>: the short summary, the keywords every picture gets, and the post's text. <strong>Picture</strong>: what the picture shows, its own keywords and its photographer. <strong>Preview</strong>: how it looks on the wall and on its page.</p>
     <p>The ★ is the lead picture: it heads the page, the card and the wall. Keys: Alt+← and Alt+→ change project, Ctrl+Enter marks it done.</p>
     <p><strong>＋ Article</strong> starts a new piece for the wall. It stays a draft, only for you and saved to your account, until you publish it.</p>
@@ -549,7 +607,8 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     const tags = (value = '') => [...new Map(String(value).split(',').map((tag) => tag.trim()).filter(Boolean).map((tag) => [tag.toLowerCase(), tag])).values()];
     const same = (a, b) => a.toLowerCase() === b.toLowerCase();
     // desk-sync.js (below) stamps each change and copies it to Ryan's account when he is signed in
-    const save = () => { window.deskSync?.stamp(state); try { localStorage.setItem(STORE, JSON.stringify(state)); } catch {} window.deskSync?.saved(); };
+    // (and the boxes follow: one Ryan just handled folds, below)
+    const save = () => { window.deskSync?.stamp(state); try { localStorage.setItem(STORE, JSON.stringify(state)); } catch {} window.deskSync?.saved(); refreshAllBoxes(); };
     const current = () => flat[state.cursor] ?? flat[0];
     const projectRecord = (project) => state.projects[project.id] ?? {};
     const recordFor = (image) => state.images[image.key] ?? state.images[image.url] ?? {};
@@ -604,6 +663,73 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     }
     window.imageDesk = {DATA, STORE, state, flat, pinned: linkedIndex >= 0, render: (options) => render(options)};
 
+    // ---------- boxes: only the next thing open ----------
+    // Ryan, 2026-10-27: "progressive dicsclosure and also boxes that autocompact once they have been handled, also
+    // become more dim less contrast once tackled". Each box is handled ('done', a ✓), still to do ('todo') or optional
+    // and empty ('quiet'), and says in one line what it holds. Another project, picture or article opens only the
+    // first box still to do. A box that becomes handled folds: at once when Ryan filled it from elsewhere, or when
+    // he moves on from it; then the next one to do opens. A click opens any box again.
+    const boxSpecs = {}; // per list (data-boxes): box name -> () => [state, line], filled in below
+    const boxContext = {};
+    const boxesOf = (scope) => [...document.querySelectorAll(`[data-boxes="${scope}"] > details.box`)].filter((box) => !box.hidden);
+    function openNext(scope, except = null) {
+      const list = boxesOf(scope);
+      if (list.some((box) => box.open && box !== except)) return;
+      const next = list.find((box) => box.dataset.state === 'todo');
+      if (next) next.open = true;
+    }
+    function refreshBoxes(scope, context) {
+      const specs = boxSpecs[scope];
+      const fresh = context !== undefined && boxContext[scope] !== context;
+      if (context !== undefined) boxContext[scope] = context;
+      for (const box of boxesOf(scope)) {
+        const spec = typeof specs === 'function' ? specs(box.dataset.box) : specs?.[box.dataset.box]?.();
+        if (!spec) continue;
+        const [state, line] = spec;
+        const was = box.dataset.state;
+        box.dataset.state = state;
+        box.querySelector(':scope > summary .box-line').textContent = line;
+        if (!fresh && was === 'todo' && state === 'done' && box.open && !box.contains(document.activeElement)) {
+          box.open = false;
+          openNext(scope, box);
+        }
+      }
+      if (fresh) {
+        let opened = false;
+        for (const box of boxesOf(scope)) {
+          box.open = !opened && box.dataset.state === 'todo';
+          opened ||= box.open;
+        }
+      }
+    }
+    const refreshAllBoxes = () => { for (const scope of Object.keys(boxSpecs)) refreshBoxes(scope); };
+    // the boxes Ryan is working in, with their state when he went in: one handled since folds once he moves on
+    const entered = new Map();
+    function leave(target) {
+      for (const [box, was] of entered) {
+        if (box.contains(target)) continue;
+        entered.delete(box);
+        const scope = box.parentElement?.dataset.boxes;
+        if (!box.isConnected || !scope) continue;
+        refreshBoxes(scope);
+        if (was === 'done' || box.dataset.state !== 'done' || !box.open) continue;
+        box.open = false;
+        // the next one to do opens, unless Ryan is going into another box of the list himself
+        if (!boxesOf(scope).some((other) => other.contains(target))) openNext(scope, box);
+      }
+    }
+    function enter(target) {
+      for (let box = target?.closest?.('details.box'); box; box = box.parentElement?.closest('details.box')) {
+        if (!entered.has(box)) entered.set(box, box.dataset.state);
+      }
+    }
+    // with the mouse, only on the click: a box folding while the button is down would move what is under it
+    let pressing = false;
+    document.addEventListener('pointerdown', () => { pressing = true; }, true);
+    document.addEventListener('pointerup', () => setTimeout(() => { pressing = false; }), true);
+    document.addEventListener('focusin', (event) => { if (!pressing) leave(event.target); enter(event.target); });
+    document.addEventListener('click', (event) => { leave(event.target); enter(event.target); }, true);
+
     // ---------- tabs ----------
     let tab = 'project';
     function showTab(name) {
@@ -619,10 +745,12 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     // ---------- keyword chips ----------
     // The callers bind onAdd and onRemove to the project or picture the chips were drawn for, so a word still
     // in the box when Ryan moves on lands where he typed it, not on the next project.
-    function renderChips(containerId, words, {inherited = [], onRemove, onAdd, placeholder}) {
+    // `container`: the box's id, or the box itself (an article picture's)
+    function renderChips(container, words, {inherited = [], onRemove, onAdd, placeholder}) {
+      const box = typeof container === 'string' ? $(container) : container;
       const input = el('input', {type: 'text', placeholder, autocomplete: 'off'});
       input.setAttribute('aria-label', placeholder);
-      const refocus = () => $(containerId).querySelector('input')?.focus();
+      const refocus = () => box.querySelector('input')?.focus();
       input.addEventListener('keydown', (event) => {
         if ((event.key === 'Enter' || event.key === ',') && input.value.trim()) {
           event.preventDefault();
@@ -643,7 +771,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
         input.value = '';
         onAdd(word, {quiet: true});
       });
-      $(containerId).replaceChildren(
+      box.replaceChildren(
         ...inherited.map((word) => el('span', {className: 'chip inherited', textContent: word, title: 'From the project'})),
         ...words.map((word) => {
           const remove = el('button', {type: 'button', textContent: '×', title: `Remove “${word}”`});
@@ -657,7 +785,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     }
     const toggled = (words, word) => (words.some((w) => same(w, word)) ? words.filter((w) => !same(w, word)) : [...words, word]);
     // a quiet change is drawn a moment later, unless Ryan is typing in those chips again
-    const later = (containerId, draw) => setTimeout(() => { if (!$(containerId).contains(document.activeElement)) draw(); }, 300);
+    const later = (container, draw) => setTimeout(() => { if (!(typeof container === 'string' ? $(container) : container).contains(document.activeElement)) draw(); }, 300);
     function setProjectTags(list, project = current().project, {quiet = false} = {}) {
       setProject(project, 'tags', list.join(', '), project.keywords.join(', '));
       const draw = () => { if (current().project === project) { renderProjectWords(); renderPreview(); } };
@@ -697,27 +825,33 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     ];
     const FROM = {yours: 'from your captions', search: 'what clients search for', related: 'related, more read', bank: 'your word lists'};
     const key = (word) => String(word).toLowerCase().replace(/\s+/g, ' ').trim();
-    let ideaFilter = 'all';
-    function renderIdeas() {
-      const {project} = current();
-      const chosen = projectTags(project);
+    // the filter chosen per list: the project's ideas, and the one for every article picture
+    const ideaFilters = {};
+    // the rated ideas `pairs` ([word, sources]) into `tabs`, `list` and `hint`; `toggle(word)` adds or removes one
+    function drawIdeas({tabs, list, hint}, pairs, chosen, toggle, filterKey) {
+      const filter = ideaFilters[filterKey] ?? 'all';
       const has = (word) => chosen.some((w) => same(w, word));
-      const add = (word) => () => setProjectTags(toggled(projectTags(current().project), word));
-      const ideas = project.ideas.map(([tag, sources]) => ({...(DATA.ratings[key(tag)] ?? {tag, badge: '', level: null, trend: null}), tag, sources}));
+      const ideas = pairs.map(([tag, sources]) => ({...(DATA.ratings[key(tag)] ?? {tag, badge: '', level: null, trend: null}), tag, sources}));
       const rising = (idea) => typeof idea.trend === 'number' && idea.trend >= DATA.ratingsInfo.rising;
-      $('idea-tabs').replaceChildren(...IDEA_FILTERS.map((f) => {
+      tabs.replaceChildren(...IDEA_FILTERS.map((f) => {
         const n = f.id === 'all' ? ideas.length : f.id === 'rising' ? ideas.filter(rising).length : ideas.filter((idea) => idea.sources.includes(f.id)).length;
         const button = el('button', {type: 'button', textContent: `${f.label} ${n}`});
-        button.setAttribute('aria-pressed', String(f.id === ideaFilter));
+        button.setAttribute('aria-pressed', String(f.id === filter));
         button.disabled = !n && f.id !== 'all';
-        button.addEventListener('click', () => { ideaFilter = f.id; renderIdeas(); });
+        button.addEventListener('click', () => { ideaFilters[filterKey] = f.id; drawIdeas({tabs, list, hint}, pairs, chosen, toggle, filterKey); });
         return button;
       }));
-      const shown = ideas.filter((idea) => ideaFilter === 'all' || (ideaFilter === 'rising' ? rising(idea) : idea.sources.includes(ideaFilter)));
-      $('idea-list').replaceChildren(...(shown.length
-        ? shown.map((idea) => ideaButton(idea.tag, has(idea.tag), add(idea.tag), idea.badge ? {...idea, title: [idea.title, idea.sources.map((s) => FROM[s]).join(', ')].filter(Boolean).join(' · ')} : null))
-        : [el('span', {className: 'hint', textContent: 'Nothing here for this project.'})]));
-      $('idea-hint').textContent = `Dots: readers of the topic on Wikipedia in 30 days (● 100+, ●● 1,000+, ●●● 10,000+). ≈: a phrase rated by its closest page. ↑: rising, a quarter or more above a year before, against Wikipedia as a whole${DATA.ratingsInfo.bing ? '; Bing: searches in the Netherlands in 4 weeks' : ''}.${DATA.ratingsInfo.updatedAt ? ` Numbers from ${new Date(DATA.ratingsInfo.updatedAt).toLocaleDateString('en-GB', {day: 'numeric', month: 'short'})}.` : ''}`;
+      const shown = ideas.filter((idea) => filter === 'all' || (filter === 'rising' ? rising(idea) : idea.sources.includes(filter)));
+      list.replaceChildren(...(shown.length
+        ? shown.map((idea) => ideaButton(idea.tag, has(idea.tag), () => toggle(idea.tag), idea.badge ? {...idea, title: [idea.title, idea.sources.map((s) => FROM[s]).join(', ')].filter(Boolean).join(' · ')} : null))
+        : [el('span', {className: 'hint', textContent: 'Nothing here.'})]));
+      const day = DATA.ratingsInfo.updatedAt ? ` Numbers of ${new Date(DATA.ratingsInfo.updatedAt).toLocaleDateString('en-GB', {day: 'numeric', month: 'short'})}.` : '';
+      hint.textContent = `● 100+ · ●● 1,000+ · ●●● 10,000+ Wikipedia readers in 30 days. ≈ closest page. ↑ rising${DATA.ratingsInfo.bing ? '. Bing: searches in NL, 4 weeks' : ''}.${day}`;
+    }
+    function renderIdeas() {
+      const {project} = current();
+      drawIdeas({tabs: $('idea-tabs'), list: $('idea-list'), hint: $('idea-hint')}, project.ideas, projectTags(project),
+        (word) => setProjectTags(toggled(projectTags(current().project), word)), 'project');
     }
     function renderProjectWords() {
       const {project} = current();
@@ -733,8 +867,8 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       const record = projectRecord(project);
       const changed = isCleared(record, 'tags') || Boolean(String(record.tags ?? '').trim());
       $('project-keywords-hint').textContent = words.length
-        ? (changed ? 'Your keywords on this desk. Every picture in the project gets them.' : 'The keywords the site has for this project today.')
-        : 'No keywords yet. Four to eight accurate words are better than many.';
+        ? (changed ? 'Yours. Every picture in the project gets them.' : 'What the site has today.')
+        : 'Four to eight good words beat many.';
       renderIdeas();
       return input;
     }
@@ -848,9 +982,9 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       const {project} = current();
       const summary = summaryOf(project);
       if (document.activeElement !== $('summary')) $('summary').value = summary;
-      $('summary-hint').textContent = summary
-        ? 'Shown on the wall and under the title on the page.'
-        : (project.excerpt ? `Without one, the wall shows WordPress's excerpt: “${project.excerpt.slice(0, 140)}${project.excerpt.length > 140 ? '…' : ''}”` : 'Shown on the wall and under the title on the page.');
+      $('summary-hint').textContent = summary || !project.excerpt
+        ? 'On the wall and under the title.'
+        : `Empty, the wall shows WordPress's: “${project.excerpt.slice(0, 90)}${project.excerpt.length > 90 ? '…' : ''}”`;
       renderProjectWords();
       renderStory();
       wpRows('wp-project', [
@@ -865,7 +999,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     $('summary').addEventListener('input', () => {
       const {project} = current();
       setProject(project, 'summary', $('summary').value.trim(), project.summary);
-      $('summary-hint').textContent = 'Shown on the wall and under the title on the page.';
+      $('summary-hint').textContent = 'On the wall and under the title.';
     });
 
     // ---------- the Picture tab ----------
@@ -917,18 +1051,22 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       fill('credit-project-name', shared.name ?? '');
       fill('credit-project-url', shared.url ?? '');
       $('credit-image-name').placeholder = ARCHIVE_CREDITS[image.key]?.name || shared.name || 'Name as it should appear';
-      $('credit-panel').open = isModelling(project) || Boolean(creditFor(project, image));
       refreshCredit();
+    }
+    // the box's line: the photographer, or for the modelling pictures how many still have none
+    function creditLine(project, image) {
+      const credit = creditFor(project, image);
+      if (credit) return `Photo: ${credit.name.trim()}`;
+      if (!isModelling(project)) return 'None';
+      return `None · ${uncredited().length} of ${flat.filter(({project: p}) => isModelling(p)).length} modelling pictures open`;
     }
     function refreshCredit() {
       const {project, image} = current();
       const credit = creditFor(project, image);
-      const all = flat.filter(({project: p}) => isModelling(p)).length;
       const open = uncredited().length;
-      $('credit-summary').textContent = credit ? `Photographer: ${credit.name.trim()}` : (isModelling(project) ? `Photographer · ${open} of ${all} modelling pictures still open` : 'Photographer');
       const site = credit?.url?.trim() ?? '';
-      $('credit-shown').textContent = credit ? `Caption on the site: Photo: ${credit.name.trim()}${site && isWebAddress(site) ? `, linked to ${site}` : ''}` : 'No photographer for this picture yet.';
-      if (['credit-project-url', 'credit-image-url'].some((id) => $(id).value.trim() && !isWebAddress($(id).value.trim()))) $('credit-shown').textContent += ' A site needs to start with https://.';
+      $('credit-shown').textContent = credit ? `Caption: Photo: ${credit.name.trim()}${site && isWebAddress(site) ? `, linked to ${site}` : ''}` : '';
+      if (['credit-project-url', 'credit-image-url'].some((id) => $(id).value.trim() && !isWebAddress($(id).value.trim()))) $('credit-shown').textContent += ' A site starts with https://.';
       $('next-uncredited').hidden = !isModelling(project) || !open;
     }
     $('credit-panel').addEventListener('input', (event) => {
@@ -948,8 +1086,48 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       if (next < 0) return;
       state.cursor = next;
       render();
+      // going through the photographers: that box stays the open one
+      for (const box of boxesOf('picture')) box.open = box === $('credit-panel');
       $('credit-image-name').focus({preventScroll: true});
     });
+
+    // ---------- what each box of a project and of a picture holds ----------
+    const wordCount = (html) => plainText(html).split(' ').filter(Boolean).length;
+    boxSpecs.project = {
+      summary: () => {
+        const {project} = current();
+        const summary = summaryOf(project);
+        return [summary ? 'done' : 'todo', summary || (project.excerpt ? 'Empty: the wall shows WordPress\'s excerpt' : 'Not written yet')];
+      },
+      keywords: () => { const words = projectTags(current().project); return [words.length ? 'done' : 'todo', words.join(', ') || 'None yet']; },
+      text: () => {
+        const {project} = current();
+        const record = projectRecord(project);
+        const n = wordCount(record.content !== undefined ? record.content : project.content);
+        return [n ? 'done' : 'quiet', n ? `${n} words` : 'No text'];
+      },
+      wordpress: () => {
+        const {wordpress} = current().project;
+        const count = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+        return ['quiet', [count(wordpress.categories.length, 'category', 'categories'), count(wordpress.tags.length, 'tag', 'tags'), wordpress.excerpt ? 'an excerpt' : ''].filter(Boolean).join(' · ')];
+      },
+    };
+    boxSpecs.picture = {
+      // handled once someone wrote what it shows: Ryan here, or a person in the archive (not a made-up alt)
+      description: () => {
+        const {image} = current();
+        const written = String(pick(recordFor(image), 'description', image.description || image.existingDescription || '')).trim();
+        return [written ? 'done' : 'todo', descriptionOf(image) || 'Not described yet'];
+      },
+      keywords: () => {
+        const {project, image} = current();
+        const shared = projectTags(project);
+        const mine = imageTags(project, image);
+        return [shared.length || mine.length ? 'done' : 'todo', [shared.length ? `${shared.length} from the project` : '', mine.join(', ')].filter(Boolean).join(' + ') || 'None yet'];
+      },
+      credit: () => { const {project, image} = current(); return [creditFor(project, image) ? 'done' : isModelling(project) ? 'todo' : 'quiet', creditLine(project, image)]; },
+      wordpress: () => ['quiet', current().image.wordpress.file || '—'],
+    };
 
     // ---------- the Preview tab: the wall's tile and lead row, and the page's top ----------
     function renderPreview() {
@@ -1037,6 +1215,8 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       renderStage();
       renderProject();
       renderPicture();
+      refreshBoxes('project', project.id);
+      refreshBoxes('picture', current().image.key);
       updateProgress();
       if (keepTab) showTab(tab);
     }
@@ -1349,36 +1529,99 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       const inText = [...String(article.content ?? '').matchAll(/data-picture="([a-z0-9]+)"/gi)].map((m) => m[1]);
       return [...new Set([article.hero, ...inText].filter((id) => id && article.pictures?.[id]))];
     }
-    function setPicture(id, field, value) {
-      const article = state.articles[state.article];
-      state.articles[state.article] = {...article, pictures: {...article.pictures, [id]: {...article.pictures[id], [field]: value}}};
+    // A picture's field on the article it belongs to (`articleId`: the one it was drawn for, so a word still in the
+    // box when Ryan opens another article lands where he typed it). An article's picture gets what a project's
+    // picture gets (Ryan, 2026-10-27: "the images get the same metadata tools"): what it shows (`alt`), its
+    // keywords (`tags`, with the rated ideas) and its photographer (`credit`); Send to site writes them
+    // (scripts/desk-articles.mjs).
+    function setPicture(id, field, value, articleId = state.article) {
+      const article = state.articles[articleId];
+      if (!article?.pictures?.[id]) return;
+      state.articles[articleId] = {...article, pictures: {...article.pictures, [id]: {...article.pictures[id], [field]: value}}};
       save();
+      if (articleId !== state.article) return;
       renderReading();
       renderPublish();
+    }
+    const livePictures = (article) => Object.entries(article?.pictures ?? {}).filter(([, picture]) => picture && !picture.removed);
+    const pictureWords = (picture) => tags(picture?.tags ?? '');
+    // handled: described and credited (Ryan's example of a box that is done, on #77)
+    const pictureHandled = (picture) => Boolean(String(picture.alt ?? '').trim() && picture.credit?.name?.trim());
+    const pictureLine = (picture) => [String(picture.alt ?? '').trim() || 'Not described yet', picture.credit?.name?.trim() ? `Photo: ${picture.credit.name.trim()}` : 'no photographer'].join(' · ');
+    boxSpecs.pictures = (id) => { const picture = openArticleRecord()?.pictures?.[id]; return picture ? [pictureHandled(picture) ? 'done' : 'todo', pictureLine(picture)] : null; };
+    // one picture as a box: folded to its thumbnail and what it shows, open with its tools
+    function pictureRow(id, picture, article) {
+      const articleId = state.article;
+      const now = () => state.articles[articleId]?.pictures?.[id] ?? {};
+      const row = el('details', {className: 'box pic-row'},
+        el('summary', {}, photoImg(picture, ''), el('span', {className: 'box-line'}), el('span', {className: 'box-tick', textContent: '✓'})));
+      row.dataset.box = id;
+      const alt = el('textarea', {value: picture.alt ?? '', placeholder: 'Who or what is in it, and where'});
+      alt.setAttribute('aria-label', `What ${picture.name} shows, for someone who can't see it`);
+      alt.addEventListener('input', () => setPicture(id, 'alt', alt.value, articleId));
+      const chips = el('div', {className: 'chips'});
+      const ideas = {tabs: el('div', {className: 'subtabs'}), list: el('div', {className: 'ideas'}), hint: el('p', {className: 'hint'})};
+      const setWords = (list, {quiet = false} = {}) => {
+        setPicture(id, 'tags', list.join(', '), articleId);
+        if (quiet) later(chips, drawWords);
+        else drawWords();
+      };
+      function drawWords() {
+        const words = pictureWords(now());
+        renderChips(chips, words, {
+          placeholder: 'Add a keyword',
+          onRemove: (word) => setWords(pictureWords(now()).filter((w) => !same(w, word))),
+          onAdd: (word, options) => { const had = pictureWords(now()); setWords([...had, ...tags(word).filter((w) => !had.some((x) => same(x, w)))], options); },
+        });
+        drawIdeas(ideas, DATA.articleIdeas ?? [], words, (word) => setWords(toggled(pictureWords(now()), word)), 'article');
+      }
+      drawWords();
+      const credit = (field, placeholder) => {
+        const input = el('input', {value: picture.credit?.[field] ?? '', placeholder, autocomplete: 'off'});
+        input.dataset.credit = field;
+        if (field === 'url') input.inputMode = 'url';
+        input.addEventListener('input', () => {
+          const [name, url] = ['name', 'url'].map((f) => row.querySelector(`[data-credit="${f}"]`).value.trim());
+          setPicture(id, 'credit', {name, url}, articleId);
+        });
+        input.addEventListener('keydown', (event) => { if (event.key === 'Enter') event.preventDefault(); });
+        return input;
+      };
+      const lead = el('button', {type: 'button', textContent: article.hero === id ? '★ Lead picture' : '☆ Lead'});
+      lead.setAttribute('aria-pressed', String(article.hero === id));
+      lead.addEventListener('click', () => { setArticle('hero', article.hero === id ? undefined : id); renderPictureList(); });
+      const place = el('button', {type: 'button', textContent: 'In the text'});
+      place.addEventListener('click', () => placePicture(id));
+      const remove = el('button', {type: 'button', className: 'quiet', textContent: 'Remove'});
+      remove.addEventListener('click', () => {
+        const current = state.articles[state.article];
+        const content = String(current.content ?? '').replace(new RegExp(`<figure data-picture="${id}"></figure>`, 'g'), '');
+        state.articles[state.article] = {...current, content, hero: current.hero === id ? undefined : current.hero, pictures: {...current.pictures, [id]: {...current.pictures[id], removed: true}}};
+        save();
+        render();
+      });
+      row.append(el('div', {className: 'box-body'},
+        alt,
+        el('span', {className: 'row-label', textContent: 'Keywords'}), chips,
+        el('details', {className: 'drawer'}, el('summary', {textContent: 'Ideas'}), el('div', {}, ideas.tabs, ideas.list, ideas.hint)),
+        el('div', {className: 'row2'}, el('label', {}, 'Photo by', credit('name', 'Name as it should appear')), el('label', {}, 'Their site', credit('url', 'https://…'))),
+        el('div', {className: 'row'}, lead, place, remove)));
+      return row;
     }
     function renderPictureList() {
       const article = openArticleRecord();
       if (!article) return;
-      const pictures = Object.entries(article.pictures ?? {}).filter(([, picture]) => picture && !picture.removed);
-      $('pic-list').replaceChildren(...pictures.map(([id, picture]) => {
-        const alt = el('textarea', {value: picture.alt ?? '', placeholder: 'What someone who can\'t see it should hear'});
-        alt.setAttribute('aria-label', `What ${picture.name} shows`);
-        alt.addEventListener('input', () => setPicture(id, 'alt', alt.value));
-        const lead = el('button', {type: 'button', textContent: article.hero === id ? '★ Lead picture' : '☆ Lead'});
-        lead.setAttribute('aria-pressed', String(article.hero === id));
-        lead.addEventListener('click', () => { setArticle('hero', article.hero === id ? undefined : id); renderPictureList(); });
-        const place = el('button', {type: 'button', textContent: 'In the text'});
-        place.addEventListener('click', () => placePicture(id));
-        const remove = el('button', {type: 'button', className: 'quiet', textContent: 'Remove'});
-        remove.addEventListener('click', () => {
-          const current = state.articles[state.article];
-          const content = String(current.content ?? '').replace(new RegExp(`<figure data-picture="${id}"></figure>`, 'g'), '');
-          state.articles[state.article] = {...current, content, hero: current.hero === id ? undefined : current.hero, pictures: {...current.pictures, [id]: {...current.pictures[id], removed: true}}};
-          save();
-          render();
-        });
-        return el('div', {className: 'pic-row'}, photoImg(picture, ''), el('div', {}, alt, el('div', {className: 'row'}, lead, place, remove)));
-      }));
+      // the rows are drawn again (a lead chosen, a picture added): each keeps whether it was open
+      const list = $('pic-list');
+      const sameArticle = list.dataset.article === state.article;
+      const wasOpen = new Map([...list.children].map((row) => [row.dataset.box, row.open]));
+      list.dataset.article = state.article;
+      list.replaceChildren(...livePictures(article).map(([id, picture]) => pictureRow(id, picture, article)));
+      if (sameArticle) for (const row of list.children) row.open = wasOpen.get(row.dataset.box) ?? false;
+      refreshBoxes('pictures', state.article);
+      // a picture just added is the next to do
+      const added = sameArticle ? [...list.children].find((row) => !wasOpen.has(row.dataset.box) && row.dataset.state === 'todo') : null;
+      if (added && ![...list.children].some((row) => row.open)) added.open = true;
     }
     // a picture into the page's text after the paragraph the cursor is in (else at the end)
     let lastRange = null;
@@ -1416,8 +1659,9 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
           renderPictureList();
           renderReading();
           renderPublish();
-          $('pic-hint').textContent = `${file.name} added. Say what it shows, for someone who can't see it.`;
-          $('page-note').textContent = place ? `${file.name} added: say what it shows under Pictures, on the right.` : '';
+          document.querySelector('[data-boxes="article"] > [data-box="pictures"]').open = true;
+          $('pic-hint').textContent = `${file.name} added: say what it shows.`;
+          $('page-note').textContent = place ? `${file.name} added: say what it shows, on the right.` : '';
         } catch (error) {
           $('pic-hint').textContent = `${file.name} was not added: ${error.message}.`;
           $('page-note').textContent = place ? `${file.name} was not added: ${error.message}.` : '';
@@ -1511,12 +1755,45 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       $('unpublish-article').hidden = !ready;
       $('publish-article').disabled = missing.length > 0;
       $('publish-hint').textContent = ready
-        ? 'Ready: your next Send to site puts it on the site as a pull request with a preview, live when you merge it. Back to draft takes it off the site again with the send after.'
-        : missing.length ? `A draft is saved to your account and never goes to the site. To publish it needs ${missing.join(', ')}.` : 'A draft is saved to your account and never goes to the site until you publish it.';
+        ? 'Ready: the next Send to site makes a preview; it goes live when you merge it. Back to draft takes it off again.'
+        : missing.length ? `A draft, only in your account. To publish it needs ${missing.join(', ')}.` : 'A draft, only in your account, until you publish it.';
       const slug = slugOf(article);
       $('article-address').textContent = slug ? `Its address: reddy.world/portfolio/${kinds[kindOf(article)]?.path ?? 'stories'}/${slug}/` : '';
       $('article-person').hidden = kindOf(article) !== 'interview';
+      refreshBoxes('article');
     }
+    // what each box of an article holds
+    const LANGUAGES = {en: 'English', nl: 'Nederlands'};
+    boxSpecs.article = (name) => {
+      const article = openArticleRecord();
+      if (!article) return null;
+      const said = (value) => String(value ?? '').replace(/\s+/g, ' ').trim();
+      const mark = (ok, empty = 'todo') => (ok ? 'done' : empty);
+      switch (name) {
+        case 'title': return [mark(said(article.title)), said(article.title) || 'No title yet'];
+        case 'about': return ['done', [kinds[kindOf(article)]?.label ?? 'Story', LANGUAGES[article.lang ?? 'en'] ?? article.lang, article.year ?? new Date(article.created ?? Date.now()).getFullYear()].join(' · ')];
+        case 'person': {
+          const person = article.person ?? {};
+          const line = said(person.name) ? `${said(article.byline)} ${said(person.name)}${said(person.role) ? `, ${said(person.role)}` : ''}`.trim() : 'Name, role and the words before the name';
+          return [mark(said(person.name) && said(person.role) && said(article.byline)), line];
+        }
+        case 'related': { const study = (DATA.software ?? []).find((item) => item.id === article.related); return [mark(study, 'quiet'), study?.title ?? 'None']; }
+        case 'summary': return [mark(said(article.summary)), said(article.summary) || 'Not written yet'];
+        case 'text': { const n = wordCount(article.content); return [mark(n), n ? `${n} words` : 'Not written yet']; }
+        case 'pictures': {
+          const pictures = livePictures(article);
+          const open = pictures.filter(([, picture]) => !pictureHandled(picture)).length;
+          if (!pictures.length) return ['quiet', 'None yet'];
+          return [mark(!open), `${pictures.length} picture${pictures.length === 1 ? '' : 's'}${open ? ` · ${open} to finish` : ''}`];
+        }
+        case 'publish': {
+          if (article.status === 'ready') return ['done', 'Ready for the site'];
+          const missing = missingFor(article);
+          return ['todo', missing.length ? `Draft · needs ${missing.length === 1 ? missing[0] : `${missing.length} things`}` : 'Draft · ready to publish'];
+        }
+        default: return null;
+      }
+    };
     function setPerson(field, value) {
       const article = state.articles[state.article];
       state.articles[state.article] = {...article, person: {...article.person, [field]: value}};
@@ -1524,7 +1801,12 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       renderReading();
       renderPublish();
     }
-    $('article-kind').addEventListener('change', () => { setArticle('kind', $('article-kind').value); renderPublish(); });
+    $('article-kind').addEventListener('change', () => {
+      setArticle('kind', $('article-kind').value);
+      renderPublish();
+      // an interview: the person is the next thing to fill in
+      if (!$('article-person').hidden && $('article-person').dataset.state === 'todo') $('article-person').open = true;
+    });
     $('article-lang').addEventListener('change', () => setArticle('lang', $('article-lang').value));
     $('article-year').addEventListener('input', () => setArticle('year', Number($('article-year').value) || undefined));
     $('article-byline').addEventListener('input', () => { setArticle('byline', $('article-byline').value); renderPublish(); });
@@ -1569,6 +1851,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       $('project-picker').value = `article:${state.article}`;
       resetDelete();
       renderReading();
+      refreshBoxes('article', state.article);
     }
     function setArticle(field, value) {
       state.articles[state.article] = {...state.articles[state.article], [field]: value};

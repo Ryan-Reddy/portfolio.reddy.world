@@ -6,7 +6,9 @@
 // - The search description is his own words, cut to a search result's length (src/lib/snippet.js): the summary,
 //   with the start of the text after it when the summary alone is short. Nothing is added.
 // - Its pictures: the lead picture across the top and the ones in the text, as the web copies
-//   scripts/desk-pictures.mjs made of them (`photos`), each with what Ryan said it shows.
+//   scripts/desk-pictures.mjs made of them (`photos`), each as a project's picture is written
+//   (scripts/import-image-keywords.mjs): what Ryan said it shows as its alt, its keywords for the page's
+//   ImageObject (`hero.keywords`, `figures`), and its photographer as the caption "Photo: <name>".
 // - Running it twice gives the same files: the dates come from the draft (when it was first published, when it
 //   last changed), not from the day of the send.
 import { storyHtml, httpUrl } from '../src/lib/safe-output.js';
@@ -19,6 +21,31 @@ const day = (ms) => new Date(ms).toISOString().slice(0, 10);
 // YAML for a string: JSON's quoting is valid YAML and keeps every character as it is
 const str = (value) => JSON.stringify(String(value));
 const attr = (value) => String(value).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+// a picture's keywords: one of each, no web addresses (as for a project's pictures)
+const keywordsOf = (picture) => {
+  const seen = new Map();
+  for (const word of String(picture?.tags ?? '').split(',').map(clean).filter((w) => w && !w.includes('://'))) if (!seen.has(word.toLowerCase())) seen.set(word.toLowerCase(), word);
+  return [...seen.values()];
+};
+// its photographer: the name as typed, the site only when it is an http(s) address
+const creditOf = (picture) => {
+  const name = clean(picture?.credit?.name);
+  if (!name) return null;
+  const url = httpUrl(clean(picture.credit.url));
+  return url ? { name, url } : { name };
+};
+// the keywords and the credit as front matter, indented under a picture
+function pictureLines(picture, indent) {
+  const lines = [];
+  const keywords = keywordsOf(picture);
+  if (keywords.length) lines.push(`${indent}keywords:`, ...keywords.map((word) => `${indent}  - ${str(word)}`));
+  const credit = creditOf(picture);
+  if (credit) lines.push(`${indent}credit:`, `${indent}  name: ${str(credit.name)}`, ...(credit.url ? [`${indent}  url: ${str(credit.url)}`] : []));
+  return lines;
+}
+// the caption under a picture in the text: its photographer, linked to their site
+const captionOf = (credit) => (credit ? `<figcaption><span class="photo-credit">Photo: ${credit.url ? `<a href="${attr(credit.url)}" rel="noopener">${attr(credit.name)}</a>` : attr(credit.name)}</span></figcaption>` : '');
+
 /** The address an article gets from its title, as the site writes addresses */
 export const slugFrom = (title) => String(title ?? '').normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80);
 
@@ -84,6 +111,13 @@ export function articleFile(id, article, { software = [], photos = {} } = {}) {
   if (lead) {
     lines.push('hero:', `  file: ${str(photos[article.hero].file)}`, `  alt: ${str(clean(lead.alt))}`);
     if (photos[article.hero].share) lines.push(`  share: ${str(photos[article.hero].share)}`);
+    lines.push(...pictureLines(lead, '  '));
+  }
+  // the pictures in the text, for the page's structured data, in the order the text has them
+  const inText = shownPictures(article).filter((pid) => pid !== article.hero && photos[pid]);
+  if (inText.length) {
+    lines.push('figures:');
+    for (const pid of inText) lines.push(`  - file: ${str(photos[pid].file)}`, `    alt: ${str(clean(article.pictures[pid].alt))}`, ...pictureLines(article.pictures[pid], '    '));
   }
   // Ryan's own words above the article
   const intro = String(article.intro?.text ?? '').trim();
@@ -94,7 +128,7 @@ export function articleFile(id, article, { software = [], photos = {} } = {}) {
     const copy = photos[pid];
     const picture = article.pictures?.[pid];
     if (!copy || !picture || picture.removed) return '';
-    return `<figure class="article-figure"><img src="${attr(copy.src)}" srcset="${attr(copy.srcset)}" sizes="(max-width: 900px) 100vw, 46rem" width="${copy.width}" height="${copy.height}" alt="${attr(clean(picture.alt))}" loading="lazy" decoding="async"></figure>`;
+    return `<figure class="article-figure"><img src="${attr(copy.src)}" srcset="${attr(copy.srcset)}" sizes="(max-width: 900px) 100vw, 46rem" width="${copy.width}" height="${copy.height}" alt="${attr(clean(picture.alt))}" loading="lazy" decoding="async">${captionOf(creditOf(picture))}</figure>`;
   });
   lines.push(`updated: ${day(article.at ?? article.readyAt ?? article.created)}`, `desk: ${str(id)}`, '---', '', body, '');
   return lines.join('\n');

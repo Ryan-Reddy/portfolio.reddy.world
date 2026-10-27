@@ -86,3 +86,23 @@ test('words of a role link only when the role has them; no words are added', () 
   const front = frontOf(articleFile('i1', { ...story, kind: 'interview', byline: 'With', person }));
   assert.deepEqual(front.person.roleLinks, { Example: 'https://example.com/' });
 });
+
+test("an article's pictures carry what a project's do: alt, keywords and the photographer as the caption", () => {
+  const copy = (pid) => ({ file: `${pid}.webp`, src: `/portfolio/images/articles/street-interviews-for-nia/${pid}.webp`, srcset: `/portfolio/images/articles/street-interviews-for-nia/${pid}.webp 800w`, width: 800, height: 600 });
+  const article = { ...story, hero: 'plead', content: '<p>First.</p><figure data-picture="ptext"></figure>',
+    pictures: {
+      plead: { path: 'desk-uploads/a-lead.jpg', alt: 'A street corner', tags: 'street, Utrecht, street, https://x.example', credit: { name: 'Jan Fotograaf', url: 'https://example.com/jan' } },
+      ptext: { path: 'desk-uploads/b-text.jpg', alt: 'A bench', tags: 'bench', credit: { name: 'Els', url: 'javascript:alert(1)' } },
+    } };
+  const text = articleFile('a2', article, { photos: { plead: copy('plead'), ptext: copy('ptext') } });
+  const front = frontOf(text);
+  assert.deepEqual(front.hero.keywords, ['street', 'Utrecht']);
+  assert.deepEqual(front.hero.credit, { name: 'Jan Fotograaf', url: 'https://example.com/jan' });
+  assert.deepEqual(front.figures, [{ file: 'ptext.webp', alt: 'A bench', keywords: ['bench'], credit: { name: 'Els' } }]);
+  // in the text the credit is the caption; a site that is not http(s) is left out
+  assert.match(text, /alt="A bench" loading="lazy" decoding="async"><figcaption><span class="photo-credit">Photo: Els<\/span><\/figcaption><\/figure>/);
+  // a picture with no keywords or photographer gets neither
+  const bare = frontOf(articleFile('a2', { ...article, pictures: { ...article.pictures, plead: { path: 'x', alt: 'A street corner' } } }, { photos: { plead: copy('plead'), ptext: copy('ptext') } }));
+  assert.equal(bare.hero.keywords, undefined);
+  assert.equal(bare.hero.credit, undefined);
+});
