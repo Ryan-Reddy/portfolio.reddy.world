@@ -86,7 +86,8 @@ try {
   const seeded = await page.evaluate(() => window.imageDesk.DATA.projects.findIndex((project) => project.id === 'rmaekers/lightsurface-mk1-set'));
   await page.locator('#project-picker').selectOption(String(seeded));
   const chips = await page.locator('#project-chips .chip').allTextContents();
-  check('a project shows the keywords the site has', chips.length === 5, chips.join(' | '));
+  const siteWords = await page.evaluate((i) => window.imageDesk.DATA.projects[i].keywords.length, seeded);
+  check('a project shows the keywords the site has', chips.length > 0 && chips.length === siteWords, chips.join(' | '));
   check('opening a project changes nothing', await page.evaluate(() => Object.keys(window.imageDesk.state.projects).length === 0));
   // progressive disclosure: only the next box is open; a handled one is one dim line with a ✓
   let list = await boxes(page, 'project');
