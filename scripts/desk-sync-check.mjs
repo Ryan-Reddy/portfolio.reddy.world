@@ -324,6 +324,19 @@ try {
   await pen.page.locator('#read-text .video-block button[data-move="out"]').click();
   check('✕ takes the video out of the text', (await withVideo()) === 'pq1 One. Two.', await withVideo());
   check('the desk loads nothing from YouTube or Vimeo', videos.length === 0, videos.join(' '));
+  // moving paragraphs: Alt+↑ / Alt+↓, or ↑ ↓ beside the paragraph the cursor is in; the cursor stays put
+  await pen.page.locator('#read-text p').last().click();
+  await pen.page.keyboard.press('End');
+  await pen.page.keyboard.press('Alt+ArrowUp');
+  check('Alt+↑ moves the paragraph above the one before it', (await order()) === 'pq1 Two. One.', await order());
+  await pen.page.keyboard.type('!');
+  check('the cursor stays where it was in the moved paragraph', (await order()) === 'pq1 Two.! One.', await order());
+  check('↑ ↓ show beside the paragraph the cursor is in', await pen.page.locator('#block-tools').isVisible());
+  await pen.page.locator('#block-tools button[data-move="down"]').click();
+  check('↓ beside it moves it back down', (await order()) === 'pq1 One. Two.!', await order());
+  await pen.page.locator('#block-tools button[data-move="up"]').click();
+  await pen.page.locator('#block-tools button[data-move="up"]').click();
+  check('↑ moves a paragraph past a picture too', (await order()) === 'Two.! pq1 One.', await order());
   // ＋ Picture on the page: signed out it can't upload, and the page says why
   const [chooser] = await Promise.all([pen.page.waitForEvent('filechooser'), pen.page.locator('#add-picture-here').click()]);
   await chooser.setFiles({ name: 'here.png', mimeType: 'image/png', buffer: Buffer.from('89504e470d0a1a0a', 'hex') });
