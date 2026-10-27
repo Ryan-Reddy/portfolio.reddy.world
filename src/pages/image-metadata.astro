@@ -272,6 +272,14 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     .video-form { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
     .video-form[hidden] { display: none; }
     .video-form input { flex: 1 1 14rem; min-width: 0; }
+    /* ↑ ↓ beside the paragraph the cursor is in */
+    .reading { position: relative; }
+    .reading .block-tools { position: absolute; z-index: 1; display: flex; gap: .25rem; }
+    .reading .block-tools[hidden] { display: none; }
+    .reading .block-tools.beside { flex-direction: column; }
+    .reading .block-tools button { min-height: 1.8rem; min-width: 1.8rem; padding: 0 .45rem; border: 0; border-radius: 3px; background: rgba(36,33,28,.85); color: #f8f4e9; font-size: .8rem; cursor: pointer; }
+    .reading .block-tools button:disabled { opacity: .35; cursor: default; }
+    .reading .block-tools button:focus-visible { outline: 2px solid #24211c; outline-offset: 1px; }
     .reading .drop-above { box-shadow: 0 -3px 0 #8b3a1a; }
     .reading .drop-below { box-shadow: 0 3px 0 #8b3a1a; }
     .state[data-ready="true"] { border-color: var(--gold); color: var(--gold); }
@@ -492,6 +500,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
         <div class="lead" id="read-lead" hidden></div>
         <p class="sum" id="read-sum" contenteditable="true" data-placeholder="A short summary: one or two lines, shown on the wall and under the title" aria-label="Short summary"></p>
         <div class="reading-text" id="read-text" contenteditable="true" role="textbox" aria-multiline="true" aria-label="The article's text"></div>
+        <div class="block-tools" id="block-tools" hidden><button type="button" data-move="up" aria-label="Move this paragraph up (Alt+↑)">↑</button><button type="button" data-move="down" aria-label="Move this paragraph down (Alt+↓)">↓</button></div>
       </article>
       <div class="elsewhere" id="elsewhere" hidden></div>
     </section>
@@ -1545,6 +1554,86 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       saveText();
     });
     $('read-text').addEventListener('dragend', () => { dragged = null; clearDrop(); });
+    // A paragraph (or a heading, list or quote) moves up or down past its neighbours, pictures included:
+    // with ↑ ↓ beside the block the cursor is in, or Alt+↑ / Alt+↓. The cursor stays where it was
+    // (Ryan, 2026-10-27: "i also want to move the text alineas around").
+    function textBlock() {
+      const selection = getSelection();
+      const node = selection.rangeCount ? selection.anchorNode : null;
+      if (!node || !$('read-text').contains(node)) return null;
+      const block = topBlock(node);
+      return block && !block.matches('.pic-block, .video-block') ? block : null;
+    }
+    // where the cursor is in a block, counted in characters, and back again after the move
+    function caretIn(block) {
+      const selection = getSelection();
+      if (!selection.rangeCount || !block.contains(selection.anchorNode)) return 0;
+      const range = document.createRange();
+      range.selectNodeContents(block);
+      range.setEnd(selection.anchorNode, selection.anchorOffset);
+      return range.toString().length;
+    }
+    function putCaret(block, offset) {
+      const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
+      let node = walker.nextNode();
+      let left = offset;
+      while (node && left > node.length) { left -= node.length; node = walker.nextNode(); }
+      const range = document.createRange();
+      if (node) range.setStart(node, Math.min(left, node.length));
+      else range.setStart(block, 0);
+      range.collapse(true);
+      getSelection().removeAllRanges();
+      getSelection().addRange(range);
+    }
+    function moveBlock(block, up) {
+      const other = up ? block.previousElementSibling : block.nextElementSibling;
+      if (!other) return;
+      const offset = caretIn(block);
+      if (up) other.before(block);
+      else other.after(block);
+      $('read-text').focus({preventScroll: true});
+      putCaret(block, offset);
+      saveText();
+      placeBlockTools();
+    }
+    function placeBlockTools() {
+      const tools = $('block-tools');
+      const block = textBlock();
+      if (!block) { tools.hidden = true; return; }
+      tools.hidden = false;
+      const reading = $('reading').getBoundingClientRect();
+      const box = block.getBoundingClientRect();
+      const top = box.top - reading.top + $('reading').scrollTop;
+      // in the margin beside the block when it fits, so no words are covered; else just above its right end
+      tools.classList.add('beside');
+      if (reading.right - box.right >= tools.offsetWidth + 6) {
+        tools.style.top = `${top}px`;
+        tools.style.left = `${box.right - reading.left + 4}px`;
+        tools.style.right = '';
+      } else {
+        tools.classList.remove('beside');
+        tools.style.top = `${Math.max(0, top - tools.offsetHeight - 2)}px`;
+        tools.style.left = '';
+        tools.style.right = `${Math.max(0, reading.right - box.right)}px`;
+      }
+      tools.querySelector('[data-move="up"]').disabled = !block.previousElementSibling;
+      tools.querySelector('[data-move="down"]').disabled = !block.nextElementSibling;
+    }
+    document.addEventListener('selectionchange', placeBlockTools);
+    $('read-text').addEventListener('keydown', (event) => {
+      if (!event.altKey || (event.key !== 'ArrowUp' && event.key !== 'ArrowDown')) return;
+      const block = textBlock();
+      if (!block) return;
+      event.preventDefault();
+      moveBlock(block, event.key === 'ArrowUp');
+    });
+    // a click on ↑ ↓ keeps the cursor in the text, so the block it's in is the one that moves
+    $('block-tools').addEventListener('mousedown', (event) => event.preventDefault());
+    $('block-tools').addEventListener('click', (event) => {
+      const button = event.target.closest('button');
+      const block = textBlock();
+      if (button && block) moveBlock(block, button.dataset.move === 'up');
+    });
     // the title and the summary on the page: plain words, one line for the title
     for (const [id, field, input] of [['read-title', 'title', 'article-title'], ['read-sum', 'summary', 'article-summary']]) {
       $(id).addEventListener('input', () => {
