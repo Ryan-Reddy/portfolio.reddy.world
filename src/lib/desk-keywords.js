@@ -116,6 +116,8 @@ export function deskProjects() {
       hero: post.featured?.url ?? '',
       // the site heads the page with the featured picture only when it is not one of the post's photos ([slug].astro 87-95)
       leadSrc: post.featured && post.layout !== 'comp-card' && !projectPhotos.some((m) => m.url === post.featured.url) ? picture(post.featured).src : '',
+      // the modelling page is a comp card: the site shows neither its text nor Photographs on it ([slug].astro 81-90)
+      compCard: post.layout === 'comp-card',
       originalSuggestions,
       currentKeywords: unique([...originalSuggestions, ...post.kinds.map((kind) => KIND_LABEL[kind]), ...post.categories, ...post.tags]),
       // the customer-search phrases alone (no titles or tags): the third column finds related words for these

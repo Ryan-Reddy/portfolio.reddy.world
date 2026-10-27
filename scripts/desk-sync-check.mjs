@@ -162,20 +162,107 @@ try {
   written = await recordOf();
   check('✕ takes the pictures out of the text, to Photographs below', !/data-media/.test(written.content) && (await page.locator('#read-rest img').count()) === 1
     && (await page.locator('#read-rest .rest-title').textContent()) === 'Photographs (1)' && (await page.locator('#page-note').textContent()).trim() !== '', written.content);
+  // a picture dragged from Photographs into the text is refused: it would show there and never be saved (review finding)
+  await page.locator('#read-rest img').first().dragTo(page.locator('#read-text p').first());
+  const droppedIn = await page.evaluate(() => ({ loose: [...document.querySelectorAll('#read-text img')].filter((img) => !img.closest('.media-block')).length, note: document.querySelector('#page-note').textContent }));
+  written = await recordOf();
+  check('a picture dragged from Photographs into the text is refused, and the page says so', droppedIn.loose === 0 && !/data-media/.test(written.content)
+    && /dropped/.test(droppedIn.note) && (await page.locator('#read-rest img').count()) === 1, JSON.stringify(droppedIn));
   await openBox(page, 'project', 'text');
   await page.locator('#story-reset').click();
   written = await recordOf();
   check('Undo my changes to the text brings the archive\'s text back', written.content === undefined && (await page.locator('#read-text .media-block').count()) === 1, JSON.stringify(written));
-  // a click on a picture on the page opens it large on the Picture tab; ← Its page goes back
-  const onText = page.locator('#read-text .media-block img[data-key]').first();
-  const clickedKey = await onText.getAttribute('data-key');
-  await onText.click();
-  check('a click on a picture on the page opens it large, on the Picture tab', (await page.locator('#tab-picture').getAttribute('aria-selected')) === 'true'
-    && await page.locator('#picture-view').isVisible() && await page.locator('#filmstrip').isVisible() && await page.locator('#reading').isHidden()
-    && (await page.evaluate(() => window.imageDesk.flat[window.imageDesk.state.cursor].image.key)) === clickedKey, clickedKey);
-  await page.locator('#back-to-page').click();
-  check('← Its page goes back to the page', await page.locator('#reading').isVisible() && (await page.locator('#tab-project').getAttribute('aria-selected')) === 'true');
   await page.evaluate(() => { delete window.imageDesk.state.projects['rmaekers/lightsurface-mk1-set']; window.imageDesk.render(); });
+  const indexOf = (id) => page.evaluate((i) => window.imageDesk.DATA.projects.findIndex((project) => project.id === i), id);
+  const recordFor = (id) => page.evaluate((i) => window.imageDesk.state.projects[i] ?? null, id);
+  // a click on a picture on the page opens it large on the Picture tab, the cursor on that picture; ← Its page goes back
+  // to it. On a project of many pictures, one the desk is not on yet (review finding: with one picture it proved nothing)
+  await page.locator('#project-picker').selectOption(String(await indexOf('rmaekers/merchandising')));
+  const onText = page.locator('#reading img[data-key]').nth(4);
+  const clickedKey = await onText.getAttribute('data-key');
+  const keyBefore = await page.evaluate(() => window.imageDesk.flat[window.imageDesk.state.cursor].image.key);
+  await onText.click();
+  const counter = await page.locator('#image-counter').textContent();
+  check('a click on a picture on the page opens it large, on the Picture tab', keyBefore !== clickedKey && (await page.locator('#tab-picture').getAttribute('aria-selected')) === 'true'
+    && await page.locator('#picture-view').isVisible() && await page.locator('#filmstrip').isVisible() && await page.locator('#reading').isHidden()
+    && (await page.evaluate(() => window.imageDesk.flat[window.imageDesk.state.cursor].image.key)) === clickedKey && !/^Picture 1 of/.test(counter), `${clickedKey} · ${counter}`);
+  await page.locator('#back-to-page').click();
+  check('← Its page goes back to the page, that picture outlined', await page.locator('#reading').isVisible() && (await page.locator('#tab-project').getAttribute('aria-selected')) === 'true'
+    && (await page.locator(`#reading img[data-key="${clickedKey}"]`).first().getAttribute('data-current')) === 'true');
+  // another page opens at its top: another project, an article, and back (review finding)
+  const scrollTo = (y) => page.evaluate((top) => { const reading = document.querySelector('#reading'); reading.scrollTop = top; return reading.scrollTop; }, y);
+  const scrolls = { merchandising: await scrollTo(1500) };
+  await page.locator('#project-picker').selectOption(String(await indexOf('rmaekers/giant-swings')));
+  scrolls.giant = await page.evaluate(() => document.querySelector('#reading').scrollTop);
+  scrolls.giantDown = await scrollTo(1500);
+  await page.evaluate(() => { const s = window.imageDesk.state; s.articles['scroll-check'] = { title: 'A long draft', summary: '', content: '<p>A paragraph of the long draft.</p>'.repeat(120), status: 'draft', created: Date.now() }; window.imageDesk.openArticle('scroll-check'); });
+  scrolls.article = await page.evaluate(() => document.querySelector('#reading').scrollTop);
+  scrolls.articleDown = await scrollTo(1500);
+  await page.locator('#back-to-projects').click();
+  scrolls.back = await page.evaluate(() => document.querySelector('#reading').scrollTop);
+  await page.evaluate(() => { delete window.imageDesk.state.articles['scroll-check']; window.imageDesk.render(); });
+  check('another page opens at its top', scrolls.merchandising > 0 && scrolls.giantDown > 0 && scrolls.articleDown > 0 && scrolls.giant === 0 && scrolls.article === 0 && scrolls.back === 0, JSON.stringify(scrolls));
+  // a text of several picture rows with one taken out: Photographs starts below the whole text, not over its pictures (review finding)
+  await page.locator('#project-picker').selectOption(String(await indexOf('rrproductions/making-of-a-kaleidoscope')));
+  await page.locator('#read-text .media-block button[data-move="out"]').first().click();
+  const layout = await page.evaluate(() => {
+    const text = document.querySelector('#read-text').getBoundingClientRect();
+    const rest = document.querySelector('#read-rest');
+    return { rest: !rest.hidden, box: Math.round(text.height), content: document.querySelector('#read-text').scrollHeight, gap: Math.round(rest.getBoundingClientRect().top - text.bottom) };
+  });
+  check('with a picture row taken out, Photographs sits below the whole text', layout.rest && layout.box >= layout.content - 1 && layout.gap >= 0, JSON.stringify(layout));
+  await page.evaluate(() => { delete window.imageDesk.state.projects['rrproductions/making-of-a-kaleidoscope']; window.imageDesk.render(); });
+  // a text of pictures only, every row taken out: Send to site skips an empty text, so nothing is stored and the page
+  // shows the site's text again, and says so (review finding)
+  const picturesOnly = await page.evaluate(() => window.imageDesk.DATA.projects.findIndex((project) => !project.compCard && /data-media/.test(project.content)
+    && !project.content.replace(/<figure data-media="[^"]*"><\/figure>/g, '').replace(/<[^>]+>|&nbsp;|\s/g, '')));
+  const picturesOnlyId = await page.evaluate((i) => window.imageDesk.DATA.projects[i]?.id, picturesOnly);
+  await page.locator('#project-picker').selectOption(String(picturesOnly));
+  const rowsIn = await page.locator('#read-text .media-block').count();
+  for (let i = 0; i < rowsIn; i++) await page.locator('#read-text .media-block button[data-move="out"]').first().click();
+  const emptied = { id: picturesOnlyId, rows: rowsIn, record: await recordFor(picturesOnlyId), blocks: await page.locator('#read-text .media-block').count(), note: await page.locator('#page-note').textContent() };
+  check('every picture row taken out: the empty text is not stored, the page shows the site\'s text again and says why', picturesOnly >= 0 && rowsIn > 0
+    && emptied.record?.content === undefined && emptied.blocks === rowsIn && emptied.note.trim() !== '' && !/Photographs/.test(emptied.note), JSON.stringify(emptied));
+  await page.evaluate((id) => { delete window.imageDesk.state.projects[id]; window.imageDesk.render(); }, picturesOnlyId);
+  // the modelling page is a comp card: the site shows no text there, so the note promises no Photographs
+  await page.locator('#project-picker').selectOption(String(await indexOf('vaguelyvulgar/photo-cv')));
+  await page.locator('#read-text .media-block button[data-move="out"]').first().click();
+  const compNote = await page.locator('#page-note').textContent();
+  check('on the comp card the note promises no Photographs: the site shows no text there', compNote.trim() !== '' && !/Photographs/.test(compNote), compNote);
+  await page.evaluate(() => { delete window.imageDesk.state.projects['vaguelyvulgar/photo-cv']; window.imageDesk.render(); });
+  // moving on with the caret on the page (review findings): the next project's page shows its own words, its text has
+  // no ↑ ↓ of the old one, and a key typed next lands nowhere
+  const nextId = await page.evaluate(() => { const ids = window.imageDesk.DATA.projects.map((p) => p.id); return ids[ids.indexOf('rmaekers/lightsurface-mk1-set') + 1]; });
+  const nextSummary = await page.evaluate((id) => window.imageDesk.DATA.projects.find((p) => p.id === id).summary, nextId);
+  const onPageNow = () => page.evaluate(() => ({ on: window.imageDesk.flat[window.imageDesk.state.cursor].project.id, sum: document.querySelector('#read-sum').textContent,
+    tools: !document.querySelector('#block-tools').hidden, inPage: document.querySelector('#reading').contains(document.activeElement) }));
+  await page.locator('#project-picker').selectOption(String(seeded));
+  await page.locator('#read-text p').first().click();
+  const toolsShown = await waitFor(page, () => !document.querySelector('#block-tools').hidden, undefined, 3000);
+  await page.keyboard.press('Alt+ArrowRight');
+  const fromText = await onPageNow();
+  await page.keyboard.type('!');
+  check('Alt+→ from the text: the next page has no ↑ ↓ of the old one, and no caret', toolsShown && fromText.on === nextId && !fromText.tools && !fromText.inPage
+    && (await recordFor(nextId)) === null, JSON.stringify({ toolsShown, fromText, next: await recordFor(nextId) }));
+  await page.locator('#project-picker').selectOption(String(seeded));
+  await page.locator('#read-sum').click();
+  await page.keyboard.type('Alpha summary');
+  await page.keyboard.press('Alt+ArrowRight');
+  const fromSummary = await onPageNow();
+  await page.keyboard.type('!');
+  check('Alt+→ from the summary: the next page shows its own summary, and the next key saves nothing to it', fromSummary.on === nextId && fromSummary.sum === nextSummary && !fromSummary.inPage
+    && (await recordFor(nextId)) === null && (await recordFor('rmaekers/lightsurface-mk1-set'))?.summary === 'Alpha summary', JSON.stringify({ fromSummary, nextSummary, next: await recordFor(nextId) }));
+  await page.evaluate((id) => { const s = window.imageDesk.state.projects; delete s['rmaekers/lightsurface-mk1-set']; delete s[id]; window.imageDesk.render(); }, nextId);
+  await page.locator('#project-picker').selectOption(String(seeded));
+  await page.locator('#read-sum').click();
+  await page.keyboard.press('Control+Enter');
+  const fromDone = await onPageNow();
+  await page.keyboard.type('x');
+  check('Ctrl+Enter in the summary marks it done and moves on, with no caret in the next text', fromDone.on === nextId && !fromDone.inPage
+    && await page.evaluate(() => (window.imageDesk.state.projects['rmaekers/lightsurface-mk1-set']?.reviewed ?? window.imageDesk.DATA.projects.find((p) => p.id === 'rmaekers/lightsurface-mk1-set').done) === true)
+    && (await recordFor(nextId)) === null, JSON.stringify({ fromDone, next: await recordFor(nextId) }));
+  await page.evaluate((id) => { const s = window.imageDesk.state.projects; delete s['rmaekers/lightsurface-mk1-set']; delete s[id]; window.imageDesk.render(); }, nextId);
+  await page.locator('#project-picker').selectOption(String(seeded));
   await page.locator('#tab-picture').click();
   list = await boxes(page, 'picture');
   check('a picture opens only its next box', onlyNextOpen(list), show(list));
@@ -389,6 +476,26 @@ try {
   await pen.page.locator('#block-tools button[data-move="up"]').click();
   await pen.page.locator('#block-tools button[data-move="up"]').click();
   check('↑ moves a paragraph past a picture too', (await order()) === 'Two.! pq1 One.', await order());
+  // leaving the article with the caret on its page (review findings): its ↑ ↓ and the caret stay behind, and nothing
+  // of the draft is saved to the project
+  const draftId = await pen.page.evaluate(() => window.imageDesk.state.article);
+  const left = () => pen.page.evaluate(() => ({ kind: document.querySelector('#reading').dataset.kind, sum: document.querySelector('#read-sum').textContent,
+    tools: !document.querySelector('#block-tools').hidden, inPage: document.querySelector('#reading').contains(document.activeElement) }));
+  const toolsBefore = await pen.page.locator('#block-tools').isVisible();
+  await pen.page.keyboard.press('Alt+ArrowLeft');
+  const leftText = await left();
+  check('leaving the article from its text: its ↑ ↓ and the caret stay behind', toolsBefore && leftText.kind === 'project' && !leftText.tools && !leftText.inPage, JSON.stringify(leftText));
+  await pen.page.evaluate((id) => window.imageDesk.openArticle(id), draftId);
+  await pen.page.locator('#read-sum').click();
+  await pen.page.keyboard.press('End');
+  await pen.page.keyboard.type(' Draft words');
+  await pen.page.keyboard.press('Alt+ArrowLeft');
+  const leftSum = await left();
+  await pen.page.keyboard.type('?');
+  const projectRecords = JSON.stringify(await pen.page.evaluate(() => window.imageDesk.state.projects));
+  check('leaving it from its summary: the project shows its own, and nothing of the draft is saved to it', leftSum.kind === 'project' && !/Draft words/.test(leftSum.sum) && !leftSum.inPage
+    && !projectRecords.includes('Draft words'), JSON.stringify(leftSum) + ' ' + projectRecords.slice(0, 200));
+  await pen.page.evaluate((id) => window.imageDesk.openArticle(id), draftId);
   // ＋ Picture on the page: signed out it can't upload, and the page says why
   const [chooser] = await Promise.all([pen.page.waitForEvent('filechooser'), pen.page.locator('#add-picture-here').click()]);
   await chooser.setFiles({ name: 'here.png', mimeType: 'image/png', buffer: Buffer.from('89504e470d0a1a0a', 'hex') });

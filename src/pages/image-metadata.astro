@@ -254,6 +254,9 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     .reading [contenteditable="true"]:focus { box-shadow: 0 0 0 2px #c9b98f; }
     .reading [contenteditable="true"]:empty::before { content: attr(data-placeholder); color: #8a8376; }
     .reading .reading-text { position: relative; min-height: 8rem; }
+    /* each part's row as tall as the part: with that min-height the text's row would stop at the room left on screen,
+       and what follows the text (a project's Photographs) would be drawn over its pictures */
+    .reading { grid-auto-rows: max-content; }
     .reading #page-note { color: #6d675c; }
     .reading #page-note:empty { display: none; }
     .reading .reading-text[data-empty="true"]::before { content: "Write the text here."; position: absolute; color: #8a8376; pointer-events: none; }
@@ -460,7 +463,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
           <details class="box" data-box="text">
             <summary><span class="box-name">The text</span><span class="box-line"></span><span class="box-tick" aria-hidden="true">✓</span></summary>
             <div class="box-body">
-              <p class="hint">Write on the page, left. Move a picture row with ↑ ↓ or drag it; ✕ takes it out of the text, to Photographs below. A click on a picture opens it large. <button class="link" id="story-reset" type="button" hidden>Undo my changes to the text</button></p>
+              <p class="hint">Write on the page, left. Move a picture row with ↑ ↓ or drag it; ✕ takes it out of the text, to Photographs below, unless it is all the text has. A click on a picture opens it large. <button class="link" id="story-reset" type="button" hidden>Undo my changes to the text</button></p>
             </div>
           </details>
 
@@ -1029,7 +1032,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       // drawn again from the archive's text, also when the page still shows the same words
       shownText.key = null;
       $('page-note').textContent = '';
-      renderReading();
+      renderProjectPage();
     });
 
     function wpRows(containerId, rows) {
@@ -1468,6 +1471,13 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     // typing in keeps his caret: only the others are filled again from the draft.
     function renderReading() {
       const article = openArticleRecord();
+      // another page (another project or article, or from one kind to the other) opens at its top, and the caret and the
+      // ↑ ↓ of the old page stay behind: a field still focused would keep the old page's words and save them to this one
+      if (shownText.key !== (article ? `article:${state.article}` : `project:${current().project.id}`)) {
+        if ($('reading').contains(document.activeElement)) document.activeElement.blur();
+        $('block-tools').hidden = true;
+        $('reading').scrollTop = 0;
+      }
       if (!article) return renderProjectPage();
       $('reading').dataset.kind = 'article';
       $('read-title').contentEditable = 'true';
@@ -1626,17 +1636,22 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     function saveProjectText() {
       const {project} = current();
       const content = projectText();
-      shownText = {key: `project:${project.id}`, content};
-      state.projects[project.id] = {...state.projects[project.id], content};
-      $('story-reset').hidden = false;
+      const record = state.projects[project.id];
+      // Send to site skips an empty text (scripts/import-image-keywords.mjs), so the site keeps the text it has:
+      // the record keeps no change, and the page shows that text again
+      if (content) state.projects[project.id] = {...record, content};
+      else if (record && 'content' in record) { const rest = {...record}; delete rest.content; state.projects[project.id] = rest; }
+      shownText = content ? {key: `project:${project.id}`, content} : {key: null, content: null};
       save();
+      // the lead and Photographs follow a ✕ straight away
+      renderProjectPage();
       // pictures the archive's text places and this text no longer does: the site shows them under Photographs
       const before = placedSrcs(project, project.content);
       const now = placedSrcs(project, content);
       const out = project.images.some((picture) => before.has(picture.src) && !now.has(picture.src));
-      $('page-note').textContent = out ? 'Out of the text: the site shows it under Photographs. “Undo my changes to the text” brings it back.' : '';
-      // the lead and Photographs follow a ✕ straight away
-      renderProjectPage();
+      $('page-note').textContent = project.compCard ? 'On the site this page is a comp card, without its text.'
+        : !content ? 'An empty text is not sent: the site keeps the text it has, shown here again.'
+        : out ? 'Out of the text: the site shows it under Photographs. “Undo my changes to the text” brings it back.' : '';
     }
     // the block of the text a node sits in (a direct child of the text)
     const topBlock = (node) => { let at = node?.nodeType === 1 ? node : node?.parentElement; while (at && at.parentElement !== $('read-text')) at = at.parentElement; return at; };
@@ -1683,7 +1698,14 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       if (at) at.block.classList.add(at.above ? 'drop-above' : 'drop-below');
     });
     $('read-text').addEventListener('drop', (event) => {
-      if (!dragged) return;
+      if (!dragged) {
+        // a picture from elsewhere (Photographs, the lead, a preview, a file) would show in the text but never be saved there
+        if (event.dataTransfer?.types.includes('Files') || /<img\b/i.test(event.dataTransfer?.getData('text/html') ?? '')) {
+          event.preventDefault();
+          $('page-note').textContent = 'A picture can’t be dropped into the text.';
+        }
+        return;
+      }
       event.preventDefault();
       const at = dropAt(event);
       clearDrop();
@@ -1792,7 +1814,13 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
         setArticle(field, value);
         if (field === 'title') { fillPicker(); $('project-picker').value = `article:${state.article}`; }
       });
-      $(id).addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); (field === 'title' ? $('read-sum') : $('read-text')).focus(); } });
+      // Enter goes on to the next part; Ctrl+Enter on a project marks it done (below), and the caret goes nowhere
+      $(id).addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter') return;
+        event.preventDefault();
+        if ((event.ctrlKey || event.metaKey) && !openArticleRecord()) return;
+        (field === 'title' ? $('read-sum') : $('read-text')).focus();
+      });
       $(id).addEventListener('paste', (event) => { event.preventDefault(); document.execCommand('insertText', false, event.clipboardData.getData('text/plain').replace(/\s+/g, ' ')); });
     }
     // the pictures the page will show: the lead and the ones in the text
