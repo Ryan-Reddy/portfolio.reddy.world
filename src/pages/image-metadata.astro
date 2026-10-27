@@ -267,7 +267,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     .reading .pic-tools button { min-height: 2rem; min-width: 2rem; padding: 0 .55rem; border: 0; border-radius: 3px; background: rgba(36,33,28,.85); color: #f8f4e9; font-size: .85rem; cursor: pointer; }
     .reading .pic-tools button:focus-visible { outline: 2px solid #f8f4e9; outline-offset: 1px; }
     /* where ✕ took a row of pictures out: one line, its Put it back at the top right, where the ✕ was */
-    .reading .out-mark { display: flex; align-items: flex-start; justify-content: space-between; gap: .8rem; min-height: 3rem; margin: .4rem 0; padding: .4rem .4rem .4rem .8rem; border: 1px dashed var(--line); color: var(--muted); font-size: .9rem; line-height: 1.4; }
+    .reading .out-mark { display: flex; align-items: flex-start; justify-content: space-between; gap: .8rem; min-height: 3rem; margin: .4rem 0; padding: .4rem .4rem .4rem .8rem; border: 1px dashed var(--line); color: var(--muted); font: 400 .9rem/1.4 var(--body); text-align: left; }
     .reading .out-mark span { padding-top: .3rem; }
     .reading .out-mark button { flex: none; min-height: 2rem; padding: 0 .7rem; font-size: .85rem; }
     .reading .video-block .poster { aspect-ratio: 16 / 9; display: flex; align-items: center; justify-content: center; gap: .5rem; background: #111; color: #f5f5f0; font-size: .95rem; }
@@ -1072,12 +1072,19 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     const looseParagraphs = new WeakSet();
     // the blocks the desk draws as paragraphs (tidy)
     const ARCHIVE_LAYOUT = new RegExp(`<(?:${[...BLOCKS].join('|')})\\b`, 'i');
-    // what nodes of the text read as, cleaned as they are saved: a picture block as <figure data-media>, without the tools;
-    // and spaces the page doesn't show left out (the browser drops a paragraph's last line breaks when Ryan types at its end)
-    function readOf(nodes) {
+    // nodes of the text copied to be read, cleaned as they are saved, without the lines ✕ leaves (the site has none; one
+    // may sit inside a paragraph, where its row was)
+    function copyOf(nodes) {
       const box = document.createElement('div');
       box.append(...nodes.map((node) => node.cloneNode(true)));
+      for (const mark of box.querySelectorAll('.out-mark')) mark.remove();
       tidy(box, null, noNode, noNode);
+      return box;
+    }
+    // what nodes of the text read as: a picture block as <figure data-media>, without the tools; and spaces the page
+    // doesn't show left out (the browser drops a paragraph's last line breaks when Ryan types at its end)
+    function readOf(nodes) {
+      const box = copyOf(nodes);
       return box.innerHTML.replace(/[ \t\n\r\f]+/g, ' ').replace(/ ?(<\/?(?:p|h[1-6]|ul|ol|li|blockquote|hr|br|figure|div)\b[^>]*>) ?/gi, '$1')
         .replace(/<br>(<\/(?:p|h[1-6]|li|blockquote)>)/gi, '$1').trim();
     }
@@ -1103,9 +1110,19 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
         template.innerHTML = loose ? `<p>${source.replace(/\n/g, '<br>')}</p>` : source;
         tidy(template.content, (media) => mediaBlock(project, media), noNode, noNode);
         wrapLoose(template.content);
+        // a paragraph that holds only rows of pictures (WordPress's <p><strong> around five of them) is drawn as those
+        // rows, so ↑ ↓ ✕ act on each one where it is; they stay its piece, written as it stands while none is moved
+        for (const node of [...template.content.children]) {
+          if (node.matches('.pic-block') || !node.querySelector('.media-block')) continue;
+          const rest = node.cloneNode(true);
+          for (const row of rest.querySelectorAll('.media-block')) row.remove();
+          if (!rest.textContent.trim() && !rest.querySelector('img, hr, br')) node.replaceWith(...node.querySelectorAll('.media-block'));
+        }
         const nodes = [...template.content.childNodes].filter(counts);
         if (!nodes.length) { nodes.push(document.createComment('')); template.content.append(nodes[0]); }
-        const piece = {source, opens, nodes, read: readOf(nodes)};
+        // `blocks`: loose text that holds blocks (all after a block the text never closes is loose text on the site),
+        // drawn as more than its one paragraph
+        const piece = {source, opens, nodes, read: readOf(nodes), blocks: loose && nodes.length > 1};
         // a block in the old site's own layout (a <div>, a caption list): the desk draws it as paragraphs, and a change in
         // it is saved so; keeping that layout needs an editor that keeps any markup (#80). Marked, and the page says so.
         const layout = !loose && ARCHIVE_LAYOUT.test(source) && source.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim() !== '';
@@ -1121,21 +1138,27 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     // loose words back as loose text: a line break a new line, as the site reads it (a web address on a line of its own
     // becomes a player there); one with an empty line in it stays one paragraph, as the desk shows it
     function looseText(nodes) {
-      const box = document.createElement('div');
-      box.append(...nodes.map((node) => node.cloneNode(true)));
-      tidy(box, null, noNode, noNode);
-      const text = box.innerHTML.replace(/\n/g, ' ').replace(/<br\s*\/?>/gi, '\n').trim();
+      const text = copyOf(nodes).innerHTML.replace(/\n/g, ' ').replace(/<br\s*\/?>/gi, '\n').trim();
       if (!text.replace(/&nbsp;/g, ' ').trim()) return '';
       return /\n[ \t]*\n/.test(text) ? `<p>${text.replace(/\n/g, '<br>')}</p>` : text;
     }
     // a block of the text that was changed, cleaned: a paragraph of loose text, or one written on the desk, as loose text
     function blockText(node) {
-      const box = document.createElement('div');
-      box.append(node.cloneNode(true));
-      tidy(box, null, noNode, noNode);
+      const box = copyOf([node]);
       const only = box.childNodes.length === 1 && box.firstChild.nodeName === 'P' ? box.firstChild : null;
       if (only && (looseParagraphs.has(node) || !pieceOf.has(node))) return looseText([...only.childNodes]);
       return box.innerHTML.replace(/<figure data-media="([^"]*)"><\/figure>/g, '\n\n<figure data-media="$1"></figure>\n\n').replace(/<\/p>/g, '</p>\n\n').replace(/\n{3,}/g, '\n\n').trim();
+    }
+    // loose text that holds blocks, changed, back as one piece of loose text as it stood: the nodes from `first` to `last`
+    // and what lies between them, a line break a new line (the blank lines between its blocks stay). Drawn, the site's
+    // own <p> around it is its first node (when `starts`, it gives only its words) and leaves an empty one at its end,
+    // which the site makes again
+    function chunkText(first, last, starts) {
+      const run = [];
+      for (let node = first; node; node = node.nextSibling) { run.push(node); if (node === last) break; }
+      const box = copyOf(run);
+      if (starts && box.firstChild?.nodeName === 'P') box.firstChild.replaceWith(...box.firstChild.childNodes);
+      return box.innerHTML.replace(/<p><\/p>$/, '').replace(/\n/g, ' ').replace(/<br\s*\/?>/gi, '\n').replace(/\n(?=[ \t]*\n)/g, '<br>').trim();
     }
     // Back to the text as the archive stores it. A piece Ryan didn't change is written as it stands in the text, letter
     // for letter (its markup, its links, its line breaks), so the site draws it as before; what he changed is cleaned:
@@ -1157,6 +1180,15 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
           if (opens) { out.push(opens); opens = ''; }
           out.push(piece.source);
           i += piece.nodes.length;
+          continue;
+        }
+        // loose text that holds blocks, changed: written back as one, so the site reads it as before
+        if (piece?.blocks && !piece.opens) {
+          let end = i;
+          while (end + 1 < nodes.length && pieceOf.get(nodes[end + 1]) === piece) end++;
+          flush();
+          emit(chunkText(nodes[i], nodes[end], nodes[i] === piece.nodes[0]));
+          i = end + 1;
           continue;
         }
         const node = nodes[i++];
@@ -1181,8 +1213,9 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       }
       return untouchedTexts.get(project.id);
     }
-    // where ✕ took a row of pictures out, until the page is drawn again: what became of it, and the way back. Its
-    // button sits where the ✕ was, so a second click there puts the row back rather than taking out the next one
+    // where ✕ took a row of pictures out (and, when the page is drawn again, where markOut finds one was): what became of
+    // it, and the way back. Its button sits where the ✕ was, so a second click there puts the row back rather than
+    // taking out the next one
     function outMark(figure) {
       const back = el('button', {type: 'button', textContent: 'Put it back'});
       const mark = el('div', {className: 'out-mark', contentEditable: 'false'},
@@ -1193,6 +1226,58 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
         figure.querySelector('[data-move="out"]')?.focus();
       });
       return mark;
+    }
+    // The rows the archive's text places and the page's text doesn't: the page drawn again (another page, a reload) has a
+    // line in each one's place still, with Put it back. Its place: beside the rows of its own piece of the archive's text
+    // that the page shows; else after the nearest piece before it that the page keeps as it was (or a row of that piece),
+    // and after as many paragraphs as the archive's text has changed pieces with words between the two (its own piece
+    // too, when the row stands after words in it).
+    function markOut(project) {
+      const text = $('read-text');
+      const figureOf = new Map();
+      for (const figure of text.querySelectorAll('.media-block')) for (const index of figure.dataset.media.split(',')) figureOf.set(index.trim(), figure);
+      const onPage = (media) => media.split(',').map((index) => figureOf.get(index.trim())).find(Boolean);
+      const archive = textPieces(project.content).map(({source}) => ({source, media: [...source.matchAll(/data-media="([^"]*)"/g)].map((match) => match[1])}));
+      if (archive.every((piece) => piece.media.every(onPage))) return;
+      // the pieces of the archive's text that the page keeps as they were: the last node of each, and all their nodes
+      const sources = new Set(archive.map((piece) => piece.source).filter((source) => !blankText(source)));
+      const kept = new Map();
+      const keptNodes = new Set();
+      for (const node of text.childNodes) {
+        const piece = pieceOf.get(node);
+        if (piece && counts(node) && sources.has(piece.source)) { kept.set(piece.source, node); keptNodes.add(node); }
+      }
+      const words = (html) => html.replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').trim() !== '';
+      const marks = new Map();
+      const near = (media) => marks.get(media) ?? onPage(media);
+      // the line already put right after a node (or at the top of the text), so lines of rows that stood together keep their order
+      const markAfter = (node) => { const next = node ? node.nextSibling : text.firstChild; return next?.nodeType === 1 && next.matches('.out-mark') ? next : null; };
+      archive.forEach((piece, k) => piece.media.forEach((media, n) => {
+        if (onPage(media)) return;
+        const mark = outMark(mediaBlock(project, media));
+        const after = piece.media.slice(0, n).reverse().map(near).find(Boolean);
+        const before = after ? null : piece.media.slice(n + 1).map(onPage).find(Boolean);
+        marks.set(media, mark);
+        if (after) return after.after(mark);
+        if (before) return before.before(mark);
+        let skip = words(piece.source.slice(0, piece.source.lastIndexOf('<', piece.source.indexOf(`data-media="${media}"`)))) ? 1 : 0;
+        let anchor = null;
+        for (let j = k - 1; j >= 0 && !anchor; j--) {
+          const other = archive[j];
+          anchor = kept.get(other.source) ?? other.media.slice().reverse().map(near).find(Boolean) ?? null;
+          if (!anchor && words(other.source)) skip++;
+        }
+        let at = anchor && topBlock(anchor);
+        for (let next = at ? at.nextSibling : text.firstChild; next && skip > 0; next = next.nextSibling) {
+          if (next.nodeType !== 1 || next.matches('.out-mark') || !shows(next)) continue;
+          if (next.matches('.pic-block') || next.querySelector('.pic-block') || keptNodes.has(next)) break;
+          at = next;
+          skip--;
+        }
+        for (let next = markAfter(at); next; next = markAfter(at)) at = next;
+        if (at) at.after(mark);
+        else text.prepend(mark);
+      }));
     }
     // the pictures a text places, by their src: the site shows the others under Photographs
     const placedSrcs = (project, content) => new Set([...String(content ?? '').matchAll(/data-media="([^"]*)"/g)]
@@ -1732,6 +1817,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       const text = $('read-text');
       if (shownText.key !== pageKey || (content !== shownText.content && !text.contains(document.activeElement))) {
         drawText(projectNodes(project, content));
+        markOut(project);
       }
       shownText = {key: pageKey, content};
       markEmpty();
@@ -1832,7 +1918,11 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       const unchanged = content === untouchedText(project);
       if (!blank && !unchanged) state.projects[project.id] = {...record, content};
       else if (record && 'content' in record) { const rest = {...record}; delete rest.content; state.projects[project.id] = rest; }
-      shownText = blank ? {key: null, content: null} : {key: `project:${project.id}`, content: unchanged ? project.content : content};
+      // An empty page with the caret in it (the text cleared from the keyboard, to write it again) stays as it is, so the
+      // next words land there and Ctrl+Z brings back the words before; one emptied otherwise (the last row taken out)
+      // shows the site's text again.
+      const writing = blank && $('read-text').contains(document.activeElement);
+      shownText = blank && !writing ? {key: null, content: null} : {key: `project:${project.id}`, content: unchanged || blank ? project.content : content};
       save();
       // the lead and Photographs follow a ✕ straight away
       renderProjectPage();
@@ -1842,7 +1932,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       const now = placedSrcs(project, content);
       const out = project.images.some((picture) => before.has(picture.src) && !now.has(picture.src));
       $('page-note').textContent = project.compCard ? 'On the site this page is a comp card, without its text.'
-        : blank ? 'An empty text is not sent: the site keeps the text it has, shown here again.'
+        : blank ? `An empty text is not sent: the site keeps the text it has${writing ? '' : ', shown here again'}.`
         : out && !$('read-text').querySelector('.out-mark') ? 'Out of the text: the site shows it under Photographs.' : '';
     }
     // the block of the text a node sits in (a direct child of the text)
@@ -1858,8 +1948,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       if (!button) return;
       event.preventDefault();
       const figure = button.closest('.pic-block');
-      const block = topBlock(figure);
-      if (block !== figure) block.after(figure); // a picture inside a paragraph comes out of it first
+      // a row of a project's text: the line goes where it is, also inside a paragraph, so Put it back puts it there
       if (button.dataset.move === 'out' && figure.matches('.media-block')) {
         const mark = outMark(figure);
         figure.replaceWith(mark);
@@ -1867,6 +1956,8 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
         mark.querySelector('button').focus();
         return;
       }
+      const block = topBlock(figure);
+      if (block !== figure) block.after(figure); // a picture inside a paragraph comes out of it first
       if (button.dataset.move === 'out') figure.remove();
       else {
         const other = shownNeighbour(figure, button.dataset.move === 'up');
@@ -1931,7 +2022,8 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       const node = selection.rangeCount ? selection.anchorNode : null;
       if (!node || !$('read-text').contains(node)) return null;
       const block = topBlock(node);
-      return block && !block.matches('.pic-block, .video-block') ? block : null;
+      // nor the line ✕ leaves: it stays where its row was
+      return block && !block.matches('.pic-block, .video-block, .out-mark') ? block : null;
     }
     // where the cursor is in a block, counted in characters, and back again after the move
     function caretIn(block) {
@@ -1996,6 +2088,29 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       if (!block) return;
       event.preventDefault();
       moveBlock(block, event.key === 'ArrowUp');
+    });
+    // Backspace at the start of a paragraph right below a row of pictures (or the line ✕ left), or Delete at the end of
+    // one right above it, does nothing: the browser would join the paragraph to the one beyond and take every row
+    // between them out of the text. ✕ takes a row out.
+    const nothingShown = (node) => node.nodeType === 8 || (node.nodeType === 3 ? !node.data.replace(/[ \t\n\r]+/g, '')
+      : !node.matches('.pic-block, .out-mark, br, hr') && !node.textContent.replace(/[ \t\n\r]+/g, '') && !node.querySelector('br, hr, img, .pic-block, .out-mark'));
+    $('read-text').addEventListener('keydown', (event) => {
+      if (event.key !== 'Backspace' && event.key !== 'Delete') return;
+      const selection = getSelection();
+      if (!selection.rangeCount || !selection.isCollapsed) return;
+      const block = topBlock(selection.anchorNode);
+      if (!block || block.matches('.pic-block, .out-mark')) return;
+      const back = event.key === 'Backspace';
+      // nothing between the caret and that end of the paragraph (a last line break is none: the page doesn't show it)
+      const part = document.createRange();
+      part.selectNodeContents(block);
+      if (back) part.setEnd(selection.anchorNode, selection.anchorOffset);
+      else part.setStart(selection.anchorNode, selection.anchorOffset);
+      const inside = part.cloneContents();
+      if (part.toString().replace(/[ \t\n\r]+/g, '') || inside.querySelector('img, hr, .pic-block') || inside.querySelectorAll('br').length > (back ? 0 : 1)) return;
+      let at = back ? block.previousSibling : block.nextSibling;
+      while (at && nothingShown(at)) at = back ? at.previousSibling : at.nextSibling;
+      if (at?.nodeType === 1 && (at.matches('.pic-block, .out-mark') || at.querySelector('.pic-block, .out-mark'))) event.preventDefault();
     });
     // a click on ↑ ↓ keeps the cursor in the text, so the block it's in is the one that moves
     $('block-tools').addEventListener('mousedown', (event) => event.preventDefault());

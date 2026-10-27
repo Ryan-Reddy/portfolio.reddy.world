@@ -83,6 +83,8 @@ try {
   check('the desk shows the summary written in place', (await page.locator('#summary').inputValue()) === 'A kaleidoscope made by hand.');
   check('and the desk opens it on its page, with the bar\'s words', await page.locator('#reading[data-kind="project"]').isVisible()
     && (await page.locator('#read-sum').textContent()) === 'A kaleidoscope made by hand.' && (await page.locator('#read-text').innerText()).includes('(edited)'));
+  // the bar kept every picture row, so the desk shows no line of one taken out
+  check('and no line of a row taken out: the bar kept them all', (await page.locator('#read-text .out-mark').count()) === 0, String(await page.locator('#read-text .out-mark').count()));
   check('no page errors', errors.length === 0, errors.join(' / '));
   // a page with a lead picture and pictures below the text: each gets a ✎
   await page.goto(`${base}/rmaekers/giant-swings/?edit`);

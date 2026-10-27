@@ -263,12 +263,17 @@ try {
       desk.render();
       document.querySelector('#read-text').dispatchEvent(new Event('input'));
       if (desk.state.projects[project.id]?.content !== undefined) stored.push(project.id);
+      // drawn from a text that only has a word more, the page shows no line of a row taken out
+      document.activeElement?.blur();
+      desk.state.projects[project.id] = { content: `${project.content}\n\nZqxw` };
+      desk.render();
+      if (!document.querySelector('#read-text').textContent.includes('Zqxw') || document.querySelector('#read-text .out-mark')) stored.push(`${project.id} (a line where no row was taken out)`);
       delete desk.state.projects[project.id];
     });
     desk.render();
     return stored;
   });
-  check('a click that moves nothing, or a page left as it was, stores no text', downOnLast === null && onItself === null && untouched.length === 0,
+  check('a click that moves nothing, or a page left as it was, stores no text; a page with every row in place shows no line of one taken out', downOnLast === null && onItself === null && untouched.length === 0,
     JSON.stringify({ downOnLast, onItself, untouched: untouched.length, some: untouched.slice(0, 3) }));
   // the boxes beside the page share one undo history too: what was typed in a project's summary box doesn't come
   // back into the next project's with Ctrl+Z (review finding)
@@ -307,6 +312,98 @@ try {
   check('✕ twice at one spot: the row comes back, no other goes, and nothing is stored', underPointer.mark && !underPointer.next && twice.rows === kaleidoRows && twice.record?.content === undefined,
     JSON.stringify({ underPointer, rows: kaleidoRows, now: twice.rows, stored: twice.record?.content !== undefined }));
   await page.evaluate(() => { delete window.imageDesk.state.projects['rrproductions/making-of-a-kaleidoscope']; window.imageDesk.render(); });
+  // the page as Ryan reads it, top to bottom: a row by its pictures, the line ✕ leaves, a paragraph by its first words
+  const pageOrder = () => page.evaluate(() => {
+    const items = [];
+    const words = (node) => { const copy = node.cloneNode(true); for (const inner of copy.querySelectorAll('.pic-block, .out-mark')) inner.remove(); return copy.textContent.trim().slice(0, 12); };
+    for (const node of document.querySelector('#read-text').children) {
+      if (node.matches('.out-mark')) items.push('MARK');
+      else if (node.matches('.media-block')) items.push(`[${node.dataset.media}]`);
+      else {
+        if (words(node)) items.push(words(node));
+        for (const inner of node.querySelectorAll('.media-block, .out-mark')) items.push(inner.matches('.out-mark') ? 'MARK' : `[${inner.dataset.media}]`);
+      }
+    }
+    return items.join(' | ');
+  });
+  const stillOpen = async (id) => { await page.evaluate(() => document.activeElement?.blur()); await page.locator('#project-picker').selectOption(String(await indexOf(id))); };
+  // the project's text as the archive has it again: with the caret out of it, as a focused text is not drawn again
+  const forget = (id) => page.evaluate((i) => { document.activeElement?.blur(); delete window.imageDesk.state.projects[i]; window.imageDesk.render(); }, id);
+  const paragraph = (words) => (typeof words === 'number' ? page.locator('#read-text > p').filter({ hasText: /\w/ }).nth(words) : page.locator('#read-text > p', { hasText: words }));
+  // a row the archive's text keeps with others in one paragraph (WordPress's <p><strong> around five rows on the
+  // kaleidoscope, a row inside a heading on Meghan's page): ✕ leaves its line in its own place, Put it back changes
+  // nothing, and ↑ ↓ move it one row (review finding: the line went below the group, Put it back moved the row there and
+  // stored it, and ↑ ↓ jumped the group)
+  const kaleidoId = 'rrproductions/making-of-a-kaleidoscope';
+  await stillOpen(kaleidoId);
+  const swap = (order, a, b) => order.split(' | ').map((item) => (item === a ? b : item === b ? a : item)).join(' | ');
+  const nested0 = await pageOrder();
+  await page.locator('#read-text .media-block[data-media="4"] button[data-move="out"]').click();
+  const nestedOut = await pageOrder();
+  await page.locator('#read-text .out-mark button').click();
+  const nestedBack = { order: await pageOrder(), stored: (await recordFor(kaleidoId))?.content !== undefined };
+  await page.locator('#read-text .media-block[data-media="5"] button[data-move="up"]').click();
+  const nestedUp = await pageOrder();
+  await forget(kaleidoId);
+  await page.locator('#read-text .media-block[data-media="2"] button[data-move="down"]').click();
+  const nestedDown = await pageOrder();
+  await forget(kaleidoId);
+  const meghanId = 'rmaekers/meghan-sile-catherina';
+  await stillOpen(meghanId);
+  const meghan0 = await pageOrder();
+  await page.locator('#read-text .media-block button[data-move="out"]').first().click();
+  const meghanOut = await pageOrder();
+  await page.locator('#read-text .out-mark button').click();
+  const meghanBack = { order: await pageOrder(), stored: (await recordFor(meghanId))?.content !== undefined };
+  check('a row kept with others in one paragraph: ✕ leaves its line in its place, Put it back changes nothing, ↑ ↓ move it one row',
+    nestedOut === nested0.replace('[4]', 'MARK') && nestedBack.order === nested0 && !nestedBack.stored && nestedUp === swap(nested0, '[4]', '[5]') && nestedDown === swap(nested0, '[2]', '[3]')
+    && meghanOut === meghan0.replace('[0]', 'MARK') && meghanBack.order === meghan0 && !meghanBack.stored,
+    JSON.stringify({ nested0: nested0.slice(0, 160), nestedOut: nestedOut.slice(0, 160), nestedBack, nestedUp: nestedUp.slice(0, 160), nestedDown: nestedDown.slice(0, 160), meghan0: meghan0.slice(0, 80), meghanOut: meghanOut.slice(0, 80), meghanBack }));
+  await forget(meghanId);
+  // a click on the words of that line gives it no ↑ ↓ (nor Alt+↑): it is not a paragraph, and Put it back puts the row
+  // where it was (review finding: ↑ moved the line, and Put it back stored the row in a new place)
+  const giantId = 'rmaekers/giant-swings';
+  await stillOpen(giantId);
+  const giant0 = await pageOrder();
+  await page.locator('#read-text .media-block[data-media="6"] button[data-move="out"]').click();
+  await page.locator('#read-text .out-mark span').click();
+  await page.waitForTimeout(150);
+  const markTools = await page.locator('#block-tools').isVisible();
+  await page.keyboard.press('Alt+ArrowUp');
+  const markMoved = await pageOrder();
+  await page.locator('#read-text .out-mark button').click();
+  const markBack = { order: await pageOrder(), stored: (await recordFor(giantId))?.content !== undefined };
+  check('a click on the line ✕ leaves gives it no ↑ ↓, and Put it back leaves the text as it was', !markTools && markMoved === giant0.replace('[6]', 'MARK') && markBack.order === giant0 && !markBack.stored,
+    JSON.stringify({ markTools, markMoved: markMoved === giant0.replace('[6]', 'MARK'), markBack }));
+  await forget(giantId);
+  // the line stays where the row was when the page is drawn again: after another project and back, after a reload, and
+  // Put it back then keeps the words written (review finding: it went, and the only way back cost the words written)
+  const drawnAgain = [];
+  for (const [id, row, words] of [[kaleidoId, 2, 1], [giantId, '6', 'A great addition']]) {
+    await stillOpen(id);
+    const before = await pageOrder();
+    await paragraph(words).click();
+    await page.keyboard.press('End');
+    await page.keyboard.type(' WORDX');
+    const out = typeof row === 'number' ? page.locator('#read-text .media-block').nth(row) : page.locator(`#read-text .media-block[data-media="${row}"]`);
+    const media = await out.getAttribute('data-media');
+    await out.locator('button[data-move="out"]').click();
+    const marked = await pageOrder();
+    await page.keyboard.press('Alt+ArrowRight');
+    await page.keyboard.press('Alt+ArrowLeft');
+    const back = { on: await page.evaluate(() => window.imageDesk.flat[window.imageDesk.state.cursor].project.id), order: await pageOrder() };
+    await page.reload();
+    await page.waitForFunction(() => window.imageDesk);
+    await stillOpen(id);
+    const reloaded = await pageOrder();
+    if (await page.locator('#read-text .out-mark button').count()) await page.locator('#read-text .out-mark button').first().click();
+    const content = (await recordFor(id))?.content ?? '';
+    const restored = await pageOrder();
+    drawnAgain.push({ id, ok: marked.includes('MARK') && back.on === id && back.order === marked && reloaded === marked && restored === before && /WORDX/.test(content) && content.includes(`data-media="${media}"`),
+      marked: marked.slice(0, 120), back: back.order === marked, reloaded: reloaded === marked, restored: restored === before, words: /WORDX/.test(content) });
+    await forget(id);
+  }
+  check('the line ✕ leaves is still in the row\'s place after another project and after a reload, and Put it back keeps the words written', drawnAgain.every((one) => one.ok), JSON.stringify(drawnAgain));
   // a text of pictures only, every row taken out: Send to site skips an empty text, so nothing is stored and the page
   // shows the site's text again, and says so (review finding)
   const picturesOnly = await page.evaluate(() => window.imageDesk.DATA.projects.findIndex((project) => !project.compCard && /data-media/.test(project.content)
@@ -319,16 +416,32 @@ try {
   check('every picture row taken out: the empty text is not stored, the page shows the site\'s text again and says why', picturesOnly >= 0 && rowsIn > 0
     && emptied.record?.content === undefined && emptied.blocks === rowsIn && emptied.note.trim() !== '' && !/Photographs/.test(emptied.note), JSON.stringify(emptied));
   await page.evaluate((id) => { delete window.imageDesk.state.projects[id]; window.imageDesk.render(); }, picturesOnlyId);
-  // the text cleared from the keyboard (Ctrl+A, Backspace) leaves <p><br></p>: no words and no pictures, as empty as
-  // nothing, so it is not stored either and the page says the same (review finding: Send to site would publish it)
+  // the text cleared from the keyboard (Ctrl+A, Backspace) to write it again leaves <p><br></p>: no words and no pictures,
+  // so it is not stored (Send to site would publish it). The page stays empty under the caret for the new words, and
+  // Ctrl+Z brings back the words written before (review finding: the page drew the site's text again, the caret and the
+  // undo steps went, the next words went nowhere, and the words written before were lost)
   await page.locator('#project-picker').selectOption(String(await indexOf('rmaekers/giant-swings')));
-  await page.locator('#read-text p').first().click();
+  await page.locator('#read-text > p').filter({ hasText: /\w/ }).first().click();
+  await page.keyboard.press('End');
+  await page.keyboard.type(' MY REWRITE');
+  const rewritten = (await recordFor('rmaekers/giant-swings'))?.content ?? '';
   await page.keyboard.press('Control+a');
   await page.keyboard.press('Backspace');
-  const keyCleared = { record: await recordFor('rmaekers/giant-swings'), note: await page.locator('#page-note').textContent(), blocks: await page.locator('#read-text .media-block').count() };
-  check('the text cleared from the keyboard is not stored either: the page shows the site\'s text again and says why', keyCleared.record?.content === undefined
-    && keyCleared.note === emptied.note && keyCleared.blocks > 0, JSON.stringify({ ...keyCleared, record: keyCleared.record?.content?.slice(0, 60) }));
-  await page.evaluate(() => { delete window.imageDesk.state.projects['rmaekers/giant-swings']; window.imageDesk.render(); });
+  const keyCleared = await page.evaluate(() => ({ record: window.imageDesk.state.projects['rmaekers/giant-swings']?.content, note: document.querySelector('#page-note').textContent,
+    words: document.querySelector('#read-text').textContent.trim(), rows: document.querySelectorAll('#read-text .media-block').length, caret: document.activeElement?.id }));
+  await page.keyboard.type('New start');
+  const restarted = (await recordFor('rmaekers/giant-swings'))?.content ?? '';
+  let undoneTo = restarted;
+  for (let i = 0; i < 40 && !/MY REWRITE/.test(undoneTo); i++) {
+    await page.keyboard.press('Control+z');
+    undoneTo = (await recordFor('rmaekers/giant-swings'))?.content ?? '';
+  }
+  const figures = (html) => (html.match(/<figure data-media=/g) ?? []).length;
+  check('the text cleared from the keyboard: nothing stored, the page stays empty under the caret and says why, the new words are stored, and Ctrl+Z brings back the words written before',
+    /MY REWRITE/.test(rewritten) && keyCleared.record === undefined && keyCleared.words === '' && keyCleared.rows === 0 && keyCleared.caret === 'read-text'
+    && /not sent/.test(keyCleared.note) && /New start/.test(restarted) && /MY REWRITE/.test(undoneTo) && !/New start/.test(undoneTo) && figures(undoneTo) === figures(rewritten),
+    JSON.stringify({ ...keyCleared, restarted: restarted.slice(0, 40), undone: undoneTo.slice(0, 60) }));
+  await page.evaluate(() => { document.activeElement?.blur(); delete window.imageDesk.state.projects['rmaekers/giant-swings']; window.imageDesk.render(); });
   // Ryan's site never changes because he edited a few words on the desk (review finding). The desk reads a text in the
   // pieces the site draws, and on every project a word added at the end of each paragraph, stored, written as Send to
   // site writes it (deskText) and drawn as the site draws it (renderContent), gives the archive's text drawn the same
@@ -424,7 +537,9 @@ try {
       const href = (value) => { try { return /^https?:/i.test(value) ? new URL(value).href : value; } catch { return value; } };
       // the words in order; a line break is no space in textContent, so spaces are left out
       const words = (div) => { const copy = div.cloneNode(true); for (const player of copy.querySelectorAll('figure.video-embed')) player.remove(); return copy.textContent.replace(/\s+/g, ''); };
+      // a line break between two blocks is a blank line on the page (review finding: an edit on chestahedron took one away)
       const holds = (div) => ({
+        breaks: [...div.children].filter((node) => node.nodeName === 'BR').length,
         words: words(div),
         pictures: [...div.querySelectorAll('.FIG')].map((f) => f.dataset.ids),
         players: [...div.querySelectorAll('iframe')].map((f) => f.getAttribute('src')),
@@ -450,6 +565,59 @@ try {
     wrongEdits.length === 0 && round.edits > everyProject.length,
     `${round.edits} edits on ${everyProject.length} projects (${round.typed} typed): ${round.exact} the same but for the word, ${round.ownParagraph} with only the markup of their own paragraph changed (${round.layout} of them a block marked as the old site's layout)${wrongEdits.length ? `; ${wrongEdits.length} wrong, as ${JSON.stringify(wrongEdits.slice(0, Number(process.env.SHOW_WRONG ?? 3)))}` : ''}`);
   check('the word typed at the end of a paragraph and taken out again with Backspace stores nothing, on every project', round.typed > 0 && typedLeft.length === 0, typedLeft.slice(0, 5).join(' '));
+  // Backspace at the start of a paragraph right below rows of pictures, or Delete at the end of one right above them,
+  // takes no row out of the text (review finding: the browser joined the paragraph to the one beyond and took every row
+  // between them; on Damsko four rows at once). On Damsko both ways, and Backspace on every project that has such a paragraph
+  const damskoId = 'rmaekers/damsko-halloween-thriller';
+  await stillOpen(damskoId);
+  const rowsNow = () => page.locator('#read-text .media-block').count();
+  const damskoRows = await rowsNow();
+  await paragraph('And the two side stages').click();
+  await page.keyboard.press('Home');
+  await page.keyboard.press('Backspace');
+  const byBackspace = { rows: await rowsNow(), stored: (await recordFor(damskoId))?.content !== undefined };
+  await forget(damskoId);
+  await paragraph('Last Halloween').click();
+  await page.keyboard.press('End');
+  await page.keyboard.press('Delete');
+  const byDelete = { rows: await rowsNow(), stored: (await recordFor(damskoId))?.content !== undefined };
+  await forget(damskoId);
+  const rowsTaken = [];
+  let belowRows = 0;
+  for (const [index, project] of everyProject.entries()) {
+    const rows = await page.evaluate((i) => {
+      const desk = window.imageDesk;
+      const cursor = desk.flat.findIndex((item) => item.projectIndex === i);
+      if (cursor < 0) return null;
+      document.activeElement?.blur();
+      desk.state.cursor = cursor;
+      desk.render();
+      const text = document.querySelector('#read-text');
+      const nothing = (node) => (node.nodeType !== 1 ? !(node.nodeType === 3 && node.data.trim()) : !node.matches('.pic-block, br, hr') && !node.textContent.trim() && !node.querySelector('img, br, hr, .pic-block'));
+      const block = [...text.children].find((node) => {
+        if (node.matches('.pic-block') || !node.textContent.trim()) return false;
+        let at = node.previousSibling;
+        while (at && nothing(at)) at = at.previousSibling;
+        return at?.nodeType === 1 && at.matches('.pic-block');
+      });
+      if (!block) return null;
+      text.focus();
+      const range = document.createRange();
+      range.setStart(block, 0);
+      getSelection().removeAllRanges();
+      getSelection().addRange(range);
+      return text.querySelectorAll('.media-block').length;
+    }, index);
+    if (rows === null) continue;
+    belowRows++;
+    await page.keyboard.press('Backspace');
+    const now = { rows: await rowsNow(), stored: (await recordFor(project.id))?.content !== undefined };
+    if (now.rows !== rows || now.stored) rowsTaken.push(`${project.id} ${rows}->${now.rows}`);
+    await forget(project.id);
+  }
+  check('Backspace at the start of a paragraph below rows of pictures, or Delete at the end of one above them, takes no row out',
+    byBackspace.rows === damskoRows && !byBackspace.stored && byDelete.rows === damskoRows && !byDelete.stored && belowRows > 5 && rowsTaken.length === 0,
+    JSON.stringify({ damskoRows, byBackspace, byDelete, belowRows, rowsTaken: rowsTaken.slice(0, 10) }));
   // a block in the old site's own layout is marked on the page, which says what a change there does, before any is made;
   // a page without one says nothing of it
   await page.locator('#project-picker').selectOption(String(await indexOf('rrproductions/sander-kleinenberg-felix-leiter-the-one-official-music-video')));
