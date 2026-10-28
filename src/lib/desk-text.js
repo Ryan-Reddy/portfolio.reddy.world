@@ -2,7 +2,7 @@
 // (src/lib/edit-bar.js). The same rules as the desk's own inline tidy() (src/pages/image-metadata.astro)
 // and as storyHtml on the server (src/lib/safe-output.js), which cleans the text again before it is stored:
 // paragraphs, headings (an h1 becomes an h2 and an h5 or h6 an h4, as the page shows them), bold, italic,
-// links to the web or to this site, lists, quotes, rules and line breaks; a block of text (a div, a table
+// links to the web, to this site or to an e-mail address, lists, quotes, rules and line breaks; a block of text (a div, a table
 // cell) becomes a paragraph; pictures, scripts and pasted styles go; any other tag goes, its words stay.
 // <figure data-media="3,4"></figure> marks pictures in the text; in the editor they are fixed blocks.
 
@@ -11,12 +11,15 @@ const RENAME = { H1: 'H2', H5: 'H4', H6: 'H4' };
 const BLOCKS = new Set(['DIV', 'SECTION', 'ARTICLE', 'HEADER', 'FOOTER', 'ADDRESS', 'PRE', 'TABLE', 'THEAD', 'TBODY', 'TFOOT', 'TR', 'TD', 'TH', 'FIGCAPTION', 'DL', 'DT', 'DD']);
 const DROP = new Set(['SCRIPT', 'STYLE', 'IFRAME', 'OBJECT', 'EMBED', 'TEMPLATE', 'SVG', 'MATH', 'IMG', 'PICTURE', 'VIDEO', 'AUDIO', 'CANVAS', 'NOSCRIPT', 'FORM', 'INPUT', 'BUTTON', 'SELECT', 'TEXTAREA']);
 
-/** A link goes to a web address or to a page of this site; nothing a browser could read as another host. */
+/** A link goes to a web address, to a page of this site or to an e-mail address; nothing a browser could read as another host. */
 export const safeHref = (href) => {
   const value = String(href ?? '').trim();
   if (/[\u0000-\u001f\u007f\\]/.test(value)) return false;
-  return /^https?:\/\/[^/]/i.test(value) || /^\/(?!\/)/.test(value);
+  return /^https?:\/\/[^/]/i.test(value) || /^\/(?!\/)/.test(value) || /^mailto:[^\s"<>]+$/i.test(value);
 };
+// what a link keeps: its address, and whether it opens in a new tab (target="_blank", rel="noopener"), as the archive's do
+const linkAttr = (attr) => (attr.name === 'href' && safeHref(attr.value)) || (attr.name === 'target' && attr.value === '_blank')
+  || (attr.name === 'rel' && /^(?:noopener|noreferrer|nofollow)(?:\s+(?:noopener|noreferrer|nofollow))*$/i.test(attr.value.trim()));
 const holdsBlocks = (node) => [...node.children].some((c) => /^(P|H[1-6]|UL|OL|BLOCKQUOTE|HR|FIGURE|TABLE|DIV)$/.test(c.tagName) || c.classList.contains('desk-pics'));
 
 /** Cleans a tree in place. `pictures(media)` makes the editor's picture block; without it a figure stays, empty. */
@@ -41,7 +44,7 @@ export function tidy(root, pictures = null) {
       if (holdsBlocks(child) || child.parentNode?.closest?.('p, li, h2, h3, h4, blockquote')) child.replaceWith(...child.childNodes, ...(holdsBlocks(child) ? [] : [document.createElement('br')]));
       else { const p = document.createElement('p'); p.append(...child.childNodes); child.replaceWith(p); }
     } else if (!ALLOWED.has(tag)) child.replaceWith(...child.childNodes);
-    else for (const attr of [...child.attributes]) if (!(tag === 'A' && attr.name === 'href' && safeHref(attr.value))) child.removeAttribute(attr.name);
+    else for (const attr of [...child.attributes]) if (!(tag === 'A' && linkAttr(attr))) child.removeAttribute(attr.name);
   }
 }
 

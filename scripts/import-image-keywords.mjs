@@ -37,6 +37,7 @@ import { readFileSync, writeFileSync, readdirSync, existsSync, unlinkSync } from
 import { fileURLToPath } from 'node:url';
 import { isFileNameCaption, isMachineAlt, fallbackAlt } from '../src/lib/alt-text.js';
 import { httpUrl, storyHtml } from '../src/lib/safe-output.js';
+import { segments, blankText } from '../src/lib/content.js';
 import { curatedPost, isPublicArchivePost } from '../src/lib/archive-curation.js';
 import { articleFiles, deskIdOf } from './desk-articles.mjs';
 
@@ -145,13 +146,26 @@ const filled = (value) => (typeof value === 'string' ? value.trim() !== '' : val
 const sameText = (a, b) => String(a ?? '').replace(/\s+/g, ' ').replace(/>\s+</g, '><').trim() === String(b ?? '').replace(/\s+/g, ' ').replace(/>\s+</g, '><').trim();
 
 /**
+ * The text Send to site writes for a post from the desk's text, or null when the site keeps the one it has.
+ * The desk keeps every piece of the text Ryan didn't change as it stands in the site's text (src/lib/content.js
+ * segments), so such a piece stays as it is: its classes, its link targets, its own markup. Every other piece is
+ * cleaned to the tags the pages allow (storyHtml). A text with no words and no pictures (a cleared editor) or one
+ * that only differs in spacing from the site's is not written.
+ */
+export function deskText(content, siteText) {
+  const site = new Set(segments(siteText));
+  const text = segments(content).map((piece) => (site.has(piece) ? piece : storyHtml(piece).trim())).filter(Boolean).join('\n\n');
+  return blankText(text) || sameText(text, siteText) ? null : text;
+}
+
+/**
  * Applies the desk itself to the archive data, in place: the state the desk keeps in Ryan's account
  * ({ projects: {id: {tags, hero, credit, summary, content, reviewed}}, images: {key: {description, tags, credit}} }).
  * The desk opens on the archive's own values and writes a record only once Ryan changes one, so every
  * project is read, done or not, and a value he gave replaces the archive's (a keyword he removed goes).
  * A blank value means "not changed" (the desk writes blanks by merely showing a project) and changes nothing.
- * The post's text is cleaned to the tags the pages allow (storyHtml) and kept as `edited_content`, which
- * src/lib/archive-curation.js shows as it stands. Running it twice changes nothing.
+ * The post's text (deskText: what Ryan changed cleaned to the tags the pages allow, the rest as the site has it) is
+ * kept as `edited_content`, which src/lib/archive-curation.js shows as it stands. Running it twice changes nothing.
  * @returns {{ pictures: number, projects: number, heroes: number, credits: number, summaries: number, texts: number, unmatched: string[], dropped: string[], alts: {key: string, before: string, after: string}[] }}
  */
 export function applyDesk(state, data) {
@@ -193,8 +207,8 @@ export function applyDesk(state, data) {
       if (summary !== post.summary) { post.summary = summary; report.summaries++; }
     }
     if (filled(record.content)) {
-      const text = storyHtml(record.content).trim();
-      if (text && !sameText(text, curatedPost(portfolio, post).content)) { post.edited_content = text; report.texts++; }
+      const text = deskText(record.content, curatedPost(portfolio, post).content);
+      if (text) { post.edited_content = text; report.texts++; }
     }
     if (filled(record.hero)) setLead(post, record.hero, projectId, report);
     if (JSON.stringify({ keywords: post.keywords, summary: post.summary, edited_content: post.edited_content }) !== before) report.projects++;
