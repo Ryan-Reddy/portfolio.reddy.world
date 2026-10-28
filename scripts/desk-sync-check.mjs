@@ -885,6 +885,41 @@ try {
   await pen.page.locator('#block-tools button[data-move="up"]').click();
   await pen.page.locator('#block-tools button[data-move="up"]').click();
   check('↑ moves a paragraph past a picture too', (await order()) === 'Two.! pq1 One.', await order());
+  // the text bar (#80): an article's text is written in Tiptap, with bold, italic, link, headings, lists, quote, undo, redo
+  check('an article\'s text is in the editor, with the bar above it and the MIT notice in its code', await pen.page.evaluate(() => window.deskEditor?.on === true
+    && document.querySelector('#read-text').classList.contains('ProseMirror') && /Tiptap GmbH/.test(window.deskEditor.licence)) && await pen.page.locator('#text-bar').isVisible());
+  const draftText = () => pen.page.evaluate(() => window.imageDesk.state.articles[window.imageDesk.state.article].content);
+  await pen.page.locator('#read-text p').last().click();
+  await pen.page.keyboard.press('End');
+  await pen.page.keyboard.press('Enter');
+  await pen.page.locator('#text-bar [data-cmd="bold"]').click();
+  await pen.page.keyboard.type('Loud');
+  check('B makes the words bold, stored as <strong>', /<p><strong>Loud<\/strong><\/p>/.test(await draftText()), (await draftText()).slice(-120));
+  check('the bar shows what the caret is in', (await pen.page.locator('#text-bar [data-cmd="bold"]').getAttribute('aria-pressed')) === 'true');
+  await pen.page.locator('#text-bar [data-cmd="bold"]').click();
+  await pen.page.keyboard.press('Enter');
+  await pen.page.locator('#text-bar [data-cmd="bullet"]').click();
+  await pen.page.keyboard.type('a point');
+  check('• List makes a list, stored as the page writes one (no <p> inside the <li>)', /<ul><li>a point<\/li><\/ul>/.test(await draftText()), (await draftText()).slice(-120));
+  await pen.page.keyboard.press('Enter');
+  await pen.page.keyboard.press('Enter');
+  await pen.page.locator('#text-bar [data-cmd="h2"]').click();
+  await pen.page.keyboard.type('Part two');
+  check('H2 makes a heading', /<h2>Part two<\/h2>/.test(await draftText()) && (await pen.page.locator('#text-bar [data-cmd="h2"]').getAttribute('aria-pressed')) === 'true', (await draftText()).slice(-120));
+  await pen.page.keyboard.press('Enter');
+  await pen.page.keyboard.type('See ');
+  await pen.page.locator('#text-bar [data-cmd="link"]').click();
+  await pen.page.locator('#link-url').fill('javascript:alert(1)');
+  await pen.page.keyboard.press('Enter');
+  check('a link to anything but a web, site or mail address is refused, and the page says so', /A link goes to/.test(await pen.page.locator('#page-note').textContent()) && !/javascript:/.test(await draftText()));
+  await pen.page.locator('#link-url').fill('https://reddy.world/');
+  await pen.page.keyboard.press('Enter');
+  const linked = await draftText();
+  check('a link goes in with its address', /<p>See <a href="https:\/\/reddy\.world\/">https:\/\/reddy\.world\/<\/a><\/p>/.test(linked) && await pen.page.locator('#link-form').isHidden(), linked.slice(-120));
+  await pen.page.locator('#text-bar [data-cmd="undo"]').click();
+  check('↶ undoes the last step', !/reddy\.world\//.test(await draftText()), (await draftText()).slice(-120));
+  await pen.page.locator('#text-bar [data-cmd="redo"]').click();
+  check('↷ does it again', (await draftText()) === linked, (await draftText()).slice(-120));
   // leaving the article with the caret on its page (review findings): its ↑ ↓ and the caret stay behind, and nothing
   // of the draft is saved to the project
   const draftId = await pen.page.evaluate(() => window.imageDesk.state.article);
@@ -894,6 +929,8 @@ try {
   await pen.page.keyboard.press('Alt+ArrowLeft');
   const leftText = await left();
   check('leaving the article from its text: its ↑ ↓ and the caret stay behind', toolsBefore && leftText.kind === 'project' && !leftText.tools && !leftText.inPage, JSON.stringify(leftText));
+  check('a project\'s page takes its text back from the editor, and shows no bar', await pen.page.evaluate(() => !window.deskEditor.on
+    && !document.querySelector('#read-text').classList.contains('ProseMirror') && document.querySelector('#read-text').isContentEditable && document.querySelector('#text-bar').hidden));
   await pen.page.evaluate((id) => window.imageDesk.openArticle(id), draftId);
   await pen.page.locator('#read-sum').click();
   await pen.page.keyboard.press('End');

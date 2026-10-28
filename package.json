@@ -30,6 +30,9 @@
     "esbuild@0.28.2": true
   },
   "dependencies": {
+    "@tiptap/core": "3.32.0",
+    "@tiptap/pm": "3.32.0",
+    "@tiptap/starter-kit": "3.32.0",
     "firebase": "^13.1.0"
   },
   "overrides": {

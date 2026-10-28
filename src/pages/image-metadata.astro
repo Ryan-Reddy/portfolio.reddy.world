@@ -272,6 +272,16 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     .reading .out-mark button { flex: none; min-height: 2rem; padding: 0 .7rem; font-size: .85rem; }
     .reading .video-block .poster { aspect-ratio: 16 / 9; display: flex; align-items: center; justify-content: center; gap: .5rem; background: #111; color: #f5f5f0; font-size: .95rem; }
     .reading .video-block .poster span { font-size: 2.2rem; line-height: 1; }
+    /* an article's text bar (#80): bold, italic, link, headings, lists, quote, undo, redo; it stays at the top while the text scrolls */
+    .reading .text-bar { position: sticky; top: 0; z-index: 2; display: flex; flex-wrap: wrap; gap: .25rem; padding: .35rem 0; background: #f8f4e9; border-bottom: 1px solid #d8cfbb; }
+    .reading .text-bar[hidden], .reading .link-form[hidden] { display: none; }
+    .reading .text-bar button { min-height: 2rem; min-width: 2rem; padding: 0 .55rem; border: 1px solid #d8cfbb; color: #24211c; background: transparent; font-size: .85rem; }
+    .reading .text-bar button[aria-pressed="true"] { border-color: #24211c; color: #f8f4e9; background: #24211c; }
+    .reading .text-bar button:disabled { opacity: .4; cursor: default; }
+    .reading .text-bar button:focus-visible { outline: 2px solid #24211c; outline-offset: 1px; }
+    .reading .link-form { flex: 1 1 100%; display: flex; flex-wrap: wrap; gap: .25rem; }
+    .reading .link-form input { flex: 1 1 14rem; min-width: 0; min-height: 2rem; }
+    .reading .ProseMirror-selectednode { outline: 2px solid #c9b98f; outline-offset: 2px; }
     .video-form { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
     .video-form[hidden] { display: none; }
     .video-form input { flex: 1 1 14rem; min-width: 0; }
@@ -422,6 +432,19 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
         <div class="lead" id="read-lead" hidden></div>
         <p class="sum" id="read-sum" contenteditable="true" data-placeholder="A short summary: one or two lines, shown on the wall and under the title" aria-label="Short summary"></p>
         <p class="hint" id="layout-note" hidden>Marked at the left: the old site's own layout. Words changed there make it plain paragraphs on the site.</p>
+        <div class="text-bar" id="text-bar" role="toolbar" aria-label="Text" hidden>
+          <button type="button" data-cmd="bold" aria-label="Bold" aria-pressed="false"><b>B</b></button>
+          <button type="button" data-cmd="italic" aria-label="Italic" aria-pressed="false"><i>I</i></button>
+          <button type="button" data-cmd="link" aria-label="Link" aria-pressed="false">Link</button>
+          <button type="button" data-cmd="h2" aria-label="Heading" aria-pressed="false">H2</button>
+          <button type="button" data-cmd="h3" aria-label="Small heading" aria-pressed="false">H3</button>
+          <button type="button" data-cmd="bullet" aria-label="List" aria-pressed="false">• List</button>
+          <button type="button" data-cmd="ordered" aria-label="Numbered list" aria-pressed="false">1. List</button>
+          <button type="button" data-cmd="quote" aria-label="Quote" aria-pressed="false">❝ Quote</button>
+          <button type="button" data-cmd="undo" aria-label="Undo">↶</button>
+          <button type="button" data-cmd="redo" aria-label="Redo">↷</button>
+          <form class="link-form" id="link-form" hidden><input id="link-url" type="text" inputmode="url" autocomplete="off" placeholder="https://… or /portfolio/…" aria-label="The link's address"><button type="submit">Set link</button><button id="link-remove" class="quiet" type="button">Remove link</button></form>
+        </div>
         <div class="reading-text" id="read-text" contenteditable="true" role="textbox" aria-multiline="true" aria-label="The article's text"></div>
         <section class="read-rest" id="read-rest" hidden><h3 class="rest-title"></h3><div class="rest-rows"></div></section>
         <div class="block-tools" id="block-tools" hidden><button type="button" data-move="up" aria-label="Move this paragraph up (Alt+↑)">↑</button><button type="button" data-move="down" aria-label="Move this paragraph down (Alt+↓)">↓</button></div>
@@ -1777,7 +1800,15 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       // the text is drawn again only for another article, or when the draft changed elsewhere (another device)
       const text = $('read-text');
       const content = String(article.content ?? '');
-      if (shownText.key !== `article:${state.article}` || (content !== shownText.content && !text.contains(document.activeElement))) {
+      // in the editor with the bar (src/lib/desk-editor.js) once it has loaded; a fresh one, and a fresh undo, per article
+      const editor = window.deskEditor;
+      $('text-bar').hidden = !editor;
+      if (editor && (shownText.key !== `article:${state.article}` || !editor.on)) {
+        text.replaceChildren();
+        editor.mount(text, {content: editorHtml(article, content), block: articleBlock, change: saveText, selection: renderTextBar, refused: refuseDrop, safeHref});
+        renderTextBar();
+      } else if (editor && content !== shownText.content && !editor.focused()) editor.set(editorHtml(article, content));
+      else if (!editor && (shownText.key !== `article:${state.article}` || (content !== shownText.content && !text.contains(document.activeElement)))) {
         drawText(photoNodes(article, cleanHtml(content), pictureBlock));
       }
       shownText = {key: `article:${state.article}`, content};
@@ -1795,6 +1826,10 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       const record = projectRecord(project);
       const pageKey = `project:${project.id}`;
       const content = record.content !== undefined ? record.content : project.content;
+      // a project's text is written in the page's own editor (until it moves into the bar's too)
+      if (window.deskEditor?.on) window.deskEditor.destroy();
+      $('text-bar').hidden = true;
+      $('link-form').hidden = true;
       $('reading').dataset.kind = 'project';
       $('video-form').hidden = true;
       $('read-when').textContent = [project.dateLabel, project.kinds.join(', ')].filter(Boolean).join(' • ');
@@ -1898,11 +1933,64 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       return figure;
     }
     const markEmpty = () => { const text = $('read-text'); text.dataset.empty = String(!text.textContent.trim() && !text.querySelector('.pic-block')); };
+    // ---------- an article's text in the editor, with the bar (#80; src/lib/desk-editor.js) ----------
+    // its stored text for the editor: the markers of its pictures (one taken off the article goes) and of its videos
+    function editorHtml(article, content) {
+      const template = document.createElement('template');
+      template.innerHTML = cleanHtml(content);
+      tidy(template.content, null, (id) => {
+        if (!article.pictures?.[id] || article.pictures[id].removed) return document.createTextNode('');
+        const figure = document.createElement('figure');
+        figure.dataset.picture = id;
+        return figure;
+      });
+      return template.innerHTML;
+    }
+    // what the editor shows for a marker: the page's own picture or video block, with ↑ ↓ ✕
+    function articleBlock(kind, value) {
+      if (kind === 'video') return videoBlock(value);
+      const picture = openArticleRecord()?.pictures?.[value];
+      return picture ? pictureBlock(value, picture) : el('figure', {className: 'pic-block', contentEditable: 'false'});
+    }
+    const refuseDrop = () => { $('page-note').textContent = 'A picture can’t be dropped into the text: add it with ＋ Picture.'; };
+    // the bar shows what the caret is in (bold, a heading, a list…), and undo and redo only when there is something to undo
+    function renderTextBar() {
+      const editor = window.deskEditor;
+      if (!editor?.on) return;
+      for (const button of $('text-bar').querySelectorAll('button[data-cmd]')) {
+        const command = button.dataset.cmd;
+        if (command === 'undo' || command === 'redo') button.disabled = !editor.can(command);
+        else button.setAttribute('aria-pressed', String(editor.active(command)));
+      }
+    }
+    // a press on the bar leaves the caret in the text
+    $('text-bar').addEventListener('mousedown', (event) => { if (event.target.closest('button[data-cmd]')) event.preventDefault(); });
+    $('text-bar').addEventListener('click', (event) => {
+      const button = event.target.closest('button[data-cmd]');
+      if (!button || !editorOn()) return;
+      if (button.dataset.cmd !== 'link') { window.deskEditor.run(button.dataset.cmd); return; }
+      $('link-form').hidden = false;
+      $('link-url').value = window.deskEditor.link();
+      $('link-remove').hidden = !window.deskEditor.active('link');
+      $('link-url').focus();
+    });
+    const closeLinkForm = () => { $('link-form').hidden = true; $('link-url').value = ''; };
+    $('link-form').addEventListener('submit', (event) => {
+      event.preventDefault();
+      const href = $('link-url').value.trim();
+      if (href && !safeHref(href)) { $('page-note').textContent = 'A link goes to a web address (https://…), a page of this site (/…) or an e-mail address (mailto:…).'; return; }
+      window.deskEditor.run('link', href);
+      closeLinkForm();
+    });
+    $('link-remove').addEventListener('click', () => { window.deskEditor.run('link', ''); closeLinkForm(); });
+    $('link-url').addEventListener('keydown', (event) => { if (event.key === 'Escape') { closeLinkForm(); $('read-text').focus(); } });
+    // the editor is a module and loads after this script: an article open by then moves into it
+    document.addEventListener('desk-editor-ready', () => { if (openArticleRecord()) { shownText = {key: null, content: null}; renderReading(); } });
     // the page's text back into the draft, cleaned, so a pasted page or picture never fills the account copy
     function saveText() {
       markEmpty();
       if (!openArticleRecord()) return saveProjectText();
-      const content = cleanHtml($('read-text').innerHTML);
+      const content = cleanHtml(editorOn() ? window.deskEditor.html() : $('read-text').innerHTML);
       shownText = {key: `article:${state.article}`, content};
       setArticle('content', content);
     }
@@ -1942,10 +2030,12 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     const shows = (node) => !node.matches('br, .out-mark') && (node.textContent.trim() !== '' || node.matches('hr, .pic-block') || node.querySelector('img, hr, .pic-block') !== null);
     // the block above or below that the page shows, so every move is one the page shows
     const shownNeighbour = (block, up) => { let at = block; do at = up ? at.previousElementSibling : at.nextElementSibling; while (at && !shows(at)); return at; };
-    $('read-text').addEventListener('input', saveText);
+    // an article's text in the editor saves, moves, drags and drops itself: these handlers are for a project's text
+    const editorOn = () => Boolean(window.deskEditor?.on);
+    $('read-text').addEventListener('input', () => { if (!editorOn()) saveText(); });
     $('read-text').addEventListener('click', (event) => {
       const button = event.target.closest?.('.pic-tools button');
-      if (!button) return;
+      if (!button || editorOn()) return;
       event.preventDefault();
       const figure = button.closest('.pic-block');
       // a row of a project's text: the line goes where it is, also inside a paragraph, so Put it back puts it there
@@ -1984,7 +2074,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     const dropAt = (event) => { const block = topBlock(event.target); if (!block || block === dragged) return null; const box = block.getBoundingClientRect(); return {block, above: event.clientY < box.top + box.height / 2}; };
     $('read-text').addEventListener('dragstart', (event) => {
       const figure = event.target.closest?.('.pic-block');
-      if (!figure) return;
+      if (!figure || editorOn()) return;
       dragged = figure;
       event.dataTransfer.effectAllowed = 'move';
       event.dataTransfer.setData('text/plain', '');
@@ -1997,6 +2087,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       if (at) at.block.classList.add(at.above ? 'drop-above' : 'drop-below');
     });
     $('read-text').addEventListener('drop', (event) => {
+      if (editorOn()) return;
       if (!dragged) {
         // a picture from elsewhere (Photographs, the lead, a preview, a file) would show in the text but never be saved there
         if (event.dataTransfer?.types.includes('Files') || /<img\b/i.test(event.dataTransfer?.getData('text/html') ?? '')) {
@@ -2047,6 +2138,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       getSelection().addRange(range);
     }
     function moveBlock(block, up) {
+      if (editorOn()) { window.deskEditor.moveBlock(block, up); return; }
       const other = shownNeighbour(block, up);
       if (!other) return;
       const offset = caretIn(block);
@@ -2083,7 +2175,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     }
     document.addEventListener('selectionchange', placeBlockTools);
     $('read-text').addEventListener('keydown', (event) => {
-      if (!event.altKey || (event.key !== 'ArrowUp' && event.key !== 'ArrowDown')) return;
+      if (!event.altKey || (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') || editorOn()) return;
       const block = textBlock();
       if (!block) return;
       event.preventDefault();
@@ -2095,7 +2187,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     const nothingShown = (node) => node.nodeType === 8 || (node.nodeType === 3 ? !node.data.replace(/[ \t\n\r]+/g, '')
       : !node.matches('.pic-block, .out-mark, br, hr') && !node.textContent.replace(/[ \t\n\r]+/g, '') && !node.querySelector('br, hr, img, .pic-block, .out-mark'));
     $('read-text').addEventListener('keydown', (event) => {
-      if (event.key !== 'Backspace' && event.key !== 'Delete') return;
+      if ((event.key !== 'Backspace' && event.key !== 'Delete') || editorOn()) return;
       const selection = getSelection();
       if (!selection.rangeCount || !selection.isCollapsed) return;
       const block = topBlock(selection.anchorNode);
@@ -2258,6 +2350,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       if (selection?.rangeCount && $('read-text').contains(selection.anchorNode)) lastRange = selection.getRangeAt(0).cloneRange();
     });
     function placePicture(id) {
+      if (editorOn()) { window.deskEditor.insert('picture', id); return; }
       const article = openArticleRecord();
       const figure = pictureBlock(id, article.pictures[id]);
       const block = lastRange && $('read-text').contains(lastRange.startContainer) ? topBlock(lastRange.startContainer) : null;
@@ -2279,10 +2372,13 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       if (!openArticleRecord()) return;
       const key = videoKey($('video-url').value);
       if (!key) { $('page-note').textContent = 'That is not a YouTube or Vimeo link.'; return; }
-      const block = lastRange && $('read-text').contains(lastRange.startContainer) ? topBlock(lastRange.startContainer) : null;
-      if (block) block.after(videoBlock(key));
-      else $('read-text').append(videoBlock(key));
-      saveText();
+      if (editorOn()) window.deskEditor.insert('video', key);
+      else {
+        const block = lastRange && $('read-text').contains(lastRange.startContainer) ? topBlock(lastRange.startContainer) : null;
+        if (block) block.after(videoBlock(key));
+        else $('read-text').append(videoBlock(key));
+        saveText();
+      }
       closeVideoForm();
       $('page-note').textContent = 'Video added. On the site it loads only when someone presses play.';
     });
@@ -2579,5 +2675,6 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     </div>
   </section>
   <script>import '../lib/desk-sync.js';</script>
+  <script>import '../lib/desk-editor.js';</script>
 </body>
 </html>
