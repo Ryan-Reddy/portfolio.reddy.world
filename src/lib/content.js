@@ -128,6 +128,25 @@ function tokenise(html) {
 }
 
 /**
+ * The text's pieces as renderContent draws them, each as it stands in the text: a block with all it holds (a <p>,
+ * a <figure>, a <div>) or a paragraph of loose text. Pieces that only hold spaces are left out; joined again by blank
+ * lines they draw as before. The desk keeps a piece Ryan didn't change letter for letter (a copy in
+ * src/pages/image-metadata.astro), and Send to site keeps such a piece as the site has it (scripts/import-image-keywords.mjs
+ * deskText), so a few words edited change only their own paragraph on the site.
+ */
+export function segments(raw) {
+  const out = [];
+  for (const t of tokenise(String(raw ?? '').replace(/\r\n?/g, '\n'))) {
+    if (t.block !== undefined) out.push(t.block);
+    else for (const chunk of t.inline.split(/\n[ \t]*\n/)) if (chunk.replace(/&nbsp;/g, ' ').trim()) out.push(chunk.trim());
+  }
+  return out;
+}
+
+/** A text with no words and no pictures: the page would show nothing of it (a cleared editor leaves <p><br></p>). */
+export const blankText = (html) => !/<figure\b/i.test(String(html ?? '')) && !String(html ?? '').replace(/<[^>]*>/g, ' ').replace(/&nbsp;|&#160;/gi, ' ').trim();
+
+/**
  * The importer swaps each picture the post placed for <figure data-media="i,j">,
  * indexes into the post's media; `figure(indices)` renders them where they stood.
  */

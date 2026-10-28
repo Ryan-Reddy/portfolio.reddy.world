@@ -46,7 +46,8 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600&display=swap">
   <style is:global>
-    /* The desk: the picture on the left, one tab at a time on the right (Project · Picture · Preview).
+    /* The desk: every kind opens on its page on the left, one tab at a time on the right (Project · Picture · Preview);
+       a project's Picture tab shows one picture at a time on the left instead.
        Colours and type follow reddy.world (public/css/mainCSS.css there), so the previews look like the wall. */
     :root {
       color-scheme: dark;
@@ -91,7 +92,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     /* workbench */
     .workbench { height: calc(100dvh - 4rem); display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(24rem, 1fr); grid-template-rows: minmax(0, 1fr); }
     .stage { min-width: 0; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; background: #090909; }
-    .stage-bar { display: flex; align-items: center; gap: .6rem; padding: .55rem .8rem; border-bottom: 1px solid var(--line); font-size: .85rem; }
+    .stage-bar { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; padding: .55rem .8rem; border-bottom: 1px solid var(--line); font-size: .85rem; }
     .stage-bar .count { color: var(--muted); font-variant-numeric: tabular-nums; }
     .stage-bar .spacer { flex: 1; }
     .stage-bar a { white-space: nowrap; }
@@ -107,6 +108,8 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
 
     /* panel and tabs */
     .panel { min-width: 0; min-height: 0; display: grid; grid-template-rows: auto auto minmax(0, 1fr); border-left: 1px solid var(--line); }
+    /* these set their own display, which would beat [hidden] */
+    .panel[hidden], .filmstrip[hidden], .picture[hidden], .read-rest[hidden] { display: none; }
     .head { padding: .8rem 1rem .4rem; display: grid; gap: .2rem; }
     .head small { color: var(--muted); }
     .head h1 { margin: 0; font-family: var(--display); font-size: clamp(1.5rem, 2.6vw, 2.1rem); font-weight: 600; line-height: 1.05; text-wrap: balance; }
@@ -163,13 +166,6 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     .box-list > details.box, .pic-list > details.box { min-width: 0; }
     @media (prefers-reduced-motion: reduce) { details.box { transition: none; } }
 
-    /* the post's own text */
-    .story { min-height: 10rem; max-height: 26rem; overflow-y: auto; padding: .7rem .85rem; background: var(--surface); border: 1px solid #5a5a56; line-height: 1.55; font-size: .92rem; }
-    .story p { margin: 0 0 .7em; }
-    .story h2, .story h3, .story h4 { font-family: var(--display); margin: .6em 0 .3em; }
-    .pics { display: inline-flex; gap: .2rem; align-items: center; margin: .15rem 0; padding: .2rem; border: 1px solid var(--line); background: #111; user-select: none; vertical-align: middle; }
-    .pics img { width: 2.4rem; height: 1.8rem; object-fit: cover; display: block; }
-
     /* what WordPress had */
     dl.wp { margin: 0; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: .35rem .6rem; font-size: .82rem; align-items: baseline; }
     dl.wp dt { color: var(--muted); }
@@ -208,7 +204,6 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     .page figcaption { font-size: .75rem; color: rgba(245,245,240,.7); margin-top: .3rem; }
     /* an article on the wall, as a shared link and in search (the draft's second view) */
     .reading[hidden], .elsewhere[hidden] { display: none; }
-    #article-bench .stage-bar { flex-wrap: wrap; }
     .elsewhere { overflow-y: auto; padding: 1rem clamp(1rem, 3vw, 2rem) 2rem; display: grid; align-content: start; gap: 1.4rem; }
     .tile.text { aspect-ratio: 4 / 3; }
     .tile.text .cap { background: none; }
@@ -229,8 +224,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     .serp .d { font-size: .85rem; color: #4d5156; line-height: 1.4; }
     .empty-note { color: #888; font-style: italic; }
 
-    /* an article: how it reads on the left, the editor on the right */
-    .workbench[hidden] { display: none; }
+    /* the page: how it reads on the left, written in place */
     /* the reading view looks like the article's page (src/components/Article.astro, the paper colours of software.css) */
     .reading { overflow-y: auto; padding: 1.5rem clamp(1rem, 4vw, 3rem) 3rem; display: grid; align-content: start; gap: .7rem; background: #f8f4e9; color: #24211c; }
     .reading > * { max-width: 46rem; }
@@ -260,20 +254,61 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     .reading [contenteditable="true"]:focus { box-shadow: 0 0 0 2px #c9b98f; }
     .reading [contenteditable="true"]:empty::before { content: attr(data-placeholder); color: #8a8376; }
     .reading .reading-text { position: relative; min-height: 8rem; }
+    /* each part's row as tall as the part: with that min-height the text's row would stop at the room left on screen,
+       and what follows the text (a project's Photographs) would be drawn over its pictures */
+    .reading { grid-auto-rows: max-content; }
     .reading #page-note { color: #6d675c; }
     .reading #page-note:empty { display: none; }
+    .reading #layout-note { color: var(--muted); }
+    .reading [data-layout] { border-left: 2px dashed var(--line); padding-left: .6rem; }
     .reading .reading-text[data-empty="true"]::before { content: "Write the text here."; position: absolute; color: #8a8376; pointer-events: none; }
     .reading .pic-block { position: relative; cursor: grab; }
     .reading .pic-tools { position: absolute; top: .4rem; right: .4rem; display: flex; gap: .25rem; }
     .reading .pic-tools button { min-height: 2rem; min-width: 2rem; padding: 0 .55rem; border: 0; border-radius: 3px; background: rgba(36,33,28,.85); color: #f8f4e9; font-size: .85rem; cursor: pointer; }
     .reading .pic-tools button:focus-visible { outline: 2px solid #f8f4e9; outline-offset: 1px; }
+    /* where ✕ took a row of pictures out: one line, its Put it back at the top right, where the ✕ was */
+    .reading .out-mark { display: flex; align-items: flex-start; justify-content: space-between; gap: .8rem; min-height: 3rem; margin: .4rem 0; padding: .4rem .4rem .4rem .8rem; border: 1px dashed var(--line); color: var(--muted); font: 400 .9rem/1.4 var(--body); text-align: left; }
+    .reading .out-mark span { padding-top: .3rem; }
+    .reading .out-mark button { flex: none; min-height: 2rem; padding: 0 .7rem; font-size: .85rem; }
     .reading .video-block .poster { aspect-ratio: 16 / 9; display: flex; align-items: center; justify-content: center; gap: .5rem; background: #111; color: #f5f5f0; font-size: .95rem; }
     .reading .video-block .poster span { font-size: 2.2rem; line-height: 1; }
     .video-form { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
     .video-form[hidden] { display: none; }
     .video-form input { flex: 1 1 14rem; min-width: 0; }
+    /* ↑ ↓ beside the paragraph the cursor is in */
+    .reading { position: relative; }
+    .reading .block-tools { position: absolute; z-index: 1; display: flex; gap: .25rem; }
+    .reading .block-tools[hidden] { display: none; }
+    .reading .block-tools.beside { flex-direction: column; }
+    .reading .block-tools button { min-height: 1.8rem; min-width: 1.8rem; padding: 0 .45rem; border: 0; border-radius: 3px; background: rgba(36,33,28,.85); color: #f8f4e9; font-size: .8rem; cursor: pointer; }
+    .reading .block-tools button:disabled { opacity: .35; cursor: default; }
+    .reading .block-tools button:focus-visible { outline: 2px solid #24211c; outline-offset: 1px; }
     .reading .drop-above { box-shadow: 0 -3px 0 #8b3a1a; }
     .reading .drop-below { box-shadow: 0 3px 0 #8b3a1a; }
+    .reading-text { overflow-wrap: anywhere; }
+    /* a project's page: the site's dark look (global.css .modal-title, .post-summary, .modal-body-text) and its order,
+       the summary, then the lead, the text and the Photographs ([slug].astro). One column, no wider than the page:
+       a row of pictures counts their full size as its narrowest, which would widen an auto column. */
+    .reading[data-kind="project"] { grid-template-columns: minmax(0, 1fr); background: var(--bg); color: var(--fg); }
+    .reading[data-kind="project"] .reading-title { color: var(--gold); }
+    .reading[data-kind="project"] .when, .reading[data-kind="project"] #page-note { color: var(--muted); }
+    .reading[data-kind="project"] .reading-text a { color: var(--gold); }
+    .reading[data-kind="project"] [contenteditable="true"]:hover { box-shadow: 0 0 0 1px var(--line); }
+    .reading[data-kind="project"] [contenteditable="true"]:focus { box-shadow: 0 0 0 2px var(--gold); }
+    .reading[data-kind="project"] [contenteditable="true"]:empty::before, .reading[data-kind="project"] .reading-text[data-empty="true"]::before { color: var(--muted); }
+    .reading[data-kind="project"] .drop-above { box-shadow: 0 -3px 0 var(--gold); }
+    .reading[data-kind="project"] .drop-below { box-shadow: 0 3px 0 var(--gold); }
+    .reading[data-kind="project"] .block-tools button { background: var(--raised); color: var(--fg); }
+    .reading[data-kind="project"] .block-tools button:focus-visible { outline-color: var(--gold); }
+    .reading[data-kind="project"] #read-lead { order: 1; }
+    .reading[data-kind="project"] #read-text { order: 2; }
+    .reading[data-kind="project"] #read-rest { order: 3; }
+    /* a project's pictures in the site's rows of up to three, each as wide as its shape (global.css .post-row) */
+    .reading .media-row { display: flex; gap: .4rem; margin-bottom: .4rem; }
+    .reading .media-row img { flex: var(--r) 1 0; min-width: 0; width: auto; max-height: none; aspect-ratio: var(--r); object-fit: cover; cursor: zoom-in; }
+    .reading .media-row img:only-child { flex: 1 1 auto; width: 100%; max-height: 28rem; object-fit: contain; }
+    .reading img[data-current="true"] { outline: 2px solid var(--gold); outline-offset: 2px; }
+    .read-rest .rest-title { margin: .8rem 0; font-family: var(--display); font-size: 1.6rem; font-weight: 600; color: var(--gold); }
     .state[data-ready="true"] { border-color: var(--gold); color: var(--gold); }
     .panel.article-panel { grid-template-rows: auto minmax(0, 1fr); }
     .ov-articles ul { list-style: none; margin: .4rem 0; padding: 0; display: grid; gap: .3rem; }
@@ -317,12 +352,14 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       .nav { flex: 1 1 100%; }
       .progress { flex: 1 1 10rem; min-width: 0; }
       .workbench { height: auto; grid-template-columns: 1fr; grid-template-rows: auto; }
-      .stage { height: 52dvh; }
+      /* the window scrolls here: nothing in the stage anchors it, or swapping the page and a picture (another bar)
+         would move the tabs under the finger */
+      .stage { height: 52dvh; overflow-anchor: none; }
       .stage-bar { padding: .4rem .6rem; gap: .5rem; }
       .stage-bar .count { white-space: nowrap; }
-      /* the article's bar label is longer ("On the wall, as a link, in search"): it wraps rather than run off */
-      #article-bench .stage-bar .count { white-space: normal; flex: 1 1 100%; }
-      #article-bench .stage-bar .spacer { display: none; }
+      /* the page's bar label can be long ("On the wall, as a link, in search"): it wraps rather than run off */
+      .stage-bar #article-view { white-space: normal; flex: 1 1 100%; }
+      .stage-bar .spacer { display: none; }
       .stage-bar button.lead { min-height: 2.2rem; padding: .3rem .6rem; font-size: .82rem; }
       .panel { border-left: 0; border-top: 1px solid var(--line); }
       .tab { overflow: visible; }
@@ -360,19 +397,41 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     </div>
   </header>
 
-  <main class="workbench" id="project-bench">
-    <section class="stage" aria-label="Pictures of this project">
+  <main class="workbench" id="bench">
+    <!-- every kind opens on its page, where it is written: the summary and the text edit in place, an article's title too.
+         A project's Picture tab shows one picture large here instead. data-for: the views a control of the bar is in. -->
+    <section class="stage" aria-label="The page">
       <div class="stage-bar">
-        <span class="count" id="image-counter"></span>
+        <span class="count" id="article-view" data-for="article page">Write on the page</span>
+        <span class="count" id="image-counter" data-for="picture"></span>
         <span class="spacer"></span>
-        <button id="make-hero" class="lead" type="button" aria-pressed="false">☆ Make this the lead picture</button>
-        <a id="project-link" target="_blank" rel="noreferrer">Open the page ↗</a>
+        <button id="back-to-page" class="quiet" type="button" data-for="picture">← Its page</button>
+        <button id="make-hero" class="lead" type="button" aria-pressed="false" data-for="picture">☆ Make this the lead picture</button>
+        <a id="project-link" target="_blank" rel="noreferrer" data-for="page picture">Open the page ↗</a>
+        <button id="add-picture-here" class="quiet" type="button" data-for="article">＋ Picture</button>
+        <button id="add-video-here" class="quiet" type="button" data-for="article">＋ Video</button>
+        <button id="show-elsewhere" class="quiet" type="button" data-for="article">On the wall and as a link</button>
+        <button id="back-to-projects" class="quiet" type="button" data-for="article">← Back to the projects</button>
       </div>
-      <div class="picture"><img id="picture" alt=""></div>
-      <nav class="filmstrip" id="filmstrip" aria-label="All pictures in this project"></nav>
+      <article class="reading" id="reading">
+        <span class="when" id="read-when"></span>
+        <p class="hint" id="page-note" aria-live="polite"></p>
+        <form class="video-form" id="video-form" hidden><input id="video-url" type="url" inputmode="url" autocomplete="off" placeholder="Paste a YouTube or Vimeo link" aria-label="A YouTube or Vimeo link"><button type="submit">Add</button><button id="video-cancel" class="quiet" type="button">Cancel</button></form>
+        <h2 class="reading-title" id="read-title" contenteditable="true" data-placeholder="The article's title" aria-label="The article's title"></h2>
+        <p class="dek" id="read-dek" hidden></p>
+        <div class="lead" id="read-lead" hidden></div>
+        <p class="sum" id="read-sum" contenteditable="true" data-placeholder="A short summary: one or two lines, shown on the wall and under the title" aria-label="Short summary"></p>
+        <p class="hint" id="layout-note" hidden>Marked at the left: the old site's own layout. Words changed there make it plain paragraphs on the site.</p>
+        <div class="reading-text" id="read-text" contenteditable="true" role="textbox" aria-multiline="true" aria-label="The article's text"></div>
+        <section class="read-rest" id="read-rest" hidden><h3 class="rest-title"></h3><div class="rest-rows"></div></section>
+        <div class="block-tools" id="block-tools" hidden><button type="button" data-move="up" aria-label="Move this paragraph up (Alt+↑)">↑</button><button type="button" data-move="down" aria-label="Move this paragraph down (Alt+↓)">↓</button></div>
+      </article>
+      <div class="elsewhere" id="elsewhere" hidden></div>
+      <div class="picture" id="picture-view" hidden><img id="picture" alt=""></div>
+      <nav class="filmstrip" id="filmstrip" hidden aria-label="All pictures in this project"></nav>
     </section>
 
-    <section class="panel" aria-label="This project">
+    <section class="panel" id="project-bench" aria-label="This project">
       <div class="head">
         <small id="portfolio"></small>
         <h1 id="project-title"></h1>
@@ -413,8 +472,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
           <details class="box" data-box="text">
             <summary><span class="box-name">The text</span><span class="box-line"></span><span class="box-tick" aria-hidden="true">✓</span></summary>
             <div class="box-body">
-              <div class="story" id="story" contenteditable="true" role="textbox" aria-multiline="true" aria-label="The post's text"></div>
-              <p class="hint">Picture blocks keep the pictures in place. <button class="link" id="story-reset" type="button">Undo my changes</button></p>
+              <p class="hint">Write on the page, left. Move a picture row with ↑ ↓ or drag it; ✕ takes it out of the text, to Photographs below, unless it is all the text has. A click on a picture opens it large. <button class="link" id="story-reset" type="button" hidden>Undo my changes to the text</button></p>
             </div>
           </details>
 
@@ -477,25 +535,8 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
         </div>
       </div>
     </section>
-  </main>
 
-  <main class="workbench" id="article-bench" hidden>
-    <section class="stage" aria-label="How the article reads">
-      <div class="stage-bar"><span class="count" id="article-view">Write on the page</span><span class="spacer"></span><button id="add-picture-here" class="quiet" type="button">＋ Picture</button><button id="add-video-here" class="quiet" type="button">＋ Video</button><button id="show-elsewhere" class="quiet" type="button">On the wall and as a link</button><button id="back-to-projects" class="quiet" type="button">← Back to the projects</button></div>
-      <!-- the article as its page shows it, and where it is written: title, summary and text edit in place -->
-      <article class="reading" id="reading">
-        <span class="when" id="read-when"></span>
-        <p class="hint" id="page-note" aria-live="polite"></p>
-        <form class="video-form" id="video-form" hidden><input id="video-url" type="url" inputmode="url" autocomplete="off" placeholder="Paste a YouTube or Vimeo link" aria-label="A YouTube or Vimeo link"><button type="submit">Add</button><button id="video-cancel" class="quiet" type="button">Cancel</button></form>
-        <h2 class="reading-title" id="read-title" contenteditable="true" data-placeholder="The article's title" aria-label="The article's title"></h2>
-        <p class="dek" id="read-dek" hidden></p>
-        <div class="lead" id="read-lead" hidden></div>
-        <p class="sum" id="read-sum" contenteditable="true" data-placeholder="A short summary: one or two lines, shown on the wall and under the title" aria-label="Short summary"></p>
-        <div class="reading-text" id="read-text" contenteditable="true" role="textbox" aria-multiline="true" aria-label="The article's text"></div>
-      </article>
-      <div class="elsewhere" id="elsewhere" hidden></div>
-    </section>
-    <section class="panel article-panel" aria-label="This article">
+    <section class="panel article-panel" id="article-bench" aria-label="This article" hidden>
       <div class="head">
         <small>Article</small>
         <h1 id="article-heading"></h1>
@@ -580,8 +621,8 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     <h2>How this desk works</h2>
     <p>Each project opens on what the site has today. Change anything; it saves by itself, to your account when you are signed in.</p>
     <p>Only the next thing to do is open. A box you finished folds to one dim line with a ✓; click it to open it again.</p>
-    <p><strong>Project</strong>: the short summary, the keywords every picture gets, and the post's text. <strong>Picture</strong>: what the picture shows, its own keywords and its photographer. <strong>Preview</strong>: how it looks on the wall and on its page.</p>
-    <p>The ★ is the lead picture: it heads the page, the card and the wall. Keys: Alt+← and Alt+→ change project, Ctrl+Enter marks it done.</p>
+    <p><strong>Project</strong>: its page on the left, where you write the summary and the text; on the right the keywords every picture gets. <strong>Picture</strong>: one picture large with all of the project's pictures below it, and what it shows, its own keywords and its photographer; a click on a picture on the page opens it here. <strong>Preview</strong>: how it looks on the wall and on its page.</p>
+    <p>The ★ is the lead picture: the card and the wall show it. Keys: Alt+← and Alt+→ change project, Ctrl+Enter marks it done.</p>
     <p><strong>＋ Article</strong> starts a new piece for the wall. It stays a draft, only for you and saved to your account, until you publish it.</p>
     <button id="close-keys" class="primary" type="button">Got it</button>
   </dialog>
@@ -667,7 +708,9 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       state.article = null;
       history.replaceState(null, '', location.pathname + location.search);
     }
-    window.imageDesk = {DATA, STORE, state, flat, pinned: linkedIndex >= 0, render: (options) => render(options)};
+    window.imageDesk = {DATA, STORE, state, flat, pinned: linkedIndex >= 0, render: (options) => render(options),
+      // for scripts/desk-sync-check.mjs: the pieces a text is read in, and the piece a node of the page was drawn from
+      pieces: (html) => textPieces(html).map((piece) => piece.source), pieceSource: (node) => pieceOf.get(node)?.source};
 
     // ---------- boxes: only the next thing open ----------
     // Ryan, 2026-10-27: "progressive dicsclosure and also boxes that autocompact once they have been handled, also
@@ -739,12 +782,26 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     // ---------- tabs ----------
     let tab = 'project';
     function showTab(name) {
+      // from the picture back to the page: the page shows where that picture sits (render() calls this on every render)
+      const leaving = tab === 'picture' && name !== 'picture';
       tab = name;
       for (const t of ['project', 'picture', 'preview']) {
         $(`tab-${t}`).setAttribute('aria-selected', String(t === name));
         $(`pane-${t}`).hidden = t !== name;
       }
       if (name === 'preview') renderPreview();
+      showStage();
+      if (leaving) {
+        renderReading();
+        // only the page scrolls: scrollIntoView scrolls the window too, and on a phone the tab tapped would move away
+        const reading = $('reading');
+        const img = reading.querySelector(`img[data-key="${CSS.escape(current().image.key)}"]`);
+        if (img) {
+          const box = img.getBoundingClientRect();
+          const view = reading.getBoundingClientRect();
+          reading.scrollTop += box.top - view.top - (view.height - box.height) / 2;
+        }
+      }
     }
     for (const t of ['project', 'picture', 'preview']) $(`tab-${t}`).addEventListener('click', () => showTab(t));
 
@@ -886,12 +943,15 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     const RENAME = {H1: 'H2', H5: 'H4', H6: 'H4'};
     const BLOCKS = new Set(['DIV', 'SECTION', 'ARTICLE', 'HEADER', 'FOOTER', 'ADDRESS', 'PRE', 'TABLE', 'THEAD', 'TBODY', 'TFOOT', 'TR', 'TD', 'TH', 'FIGCAPTION', 'DL', 'DT', 'DD']);
     const DROP = new Set(['SCRIPT', 'STYLE', 'IFRAME', 'OBJECT', 'EMBED', 'TEMPLATE', 'SVG', 'MATH', 'IMG', 'PICTURE', 'VIDEO', 'AUDIO', 'CANVAS', 'NOSCRIPT', 'FORM', 'INPUT', 'BUTTON', 'SELECT', 'TEXTAREA']);
-    // a link goes to a web address or to a page of this site; nothing that a browser could read as another host
+    // a link goes to a web address, to a page of this site or to an e-mail address; nothing that a browser could read as another host
     const safeHref = (href) => {
       const value = String(href ?? '').trim();
       if (/[\u0000-\u001f\u007f\\]/.test(value)) return false;
-      return /^https?:\/\/[^/]/i.test(value) || /^\/(?!\/)/.test(value);
+      return /^https?:\/\/[^/]/i.test(value) || /^\/(?!\/)/.test(value) || /^mailto:[^\s"<>]+$/i.test(value);
     };
+    // what a link keeps: its address, and whether it opens in a new tab (target="_blank", rel="noopener"), as the archive's do
+    const linkAttr = (attr) => (attr.name === 'href' && safeHref(attr.value)) || (attr.name === 'target' && attr.value === '_blank')
+      || (attr.name === 'rel' && /^(?:noopener|noreferrer|nofollow)(?:\s+(?:noopener|noreferrer|nofollow))*$/i.test(attr.value.trim()));
     const holdsBlocks = (node) => [...node.children].some((c) => /^(P|H[1-6]|UL|OL|BLOCKQUOTE|HR|FIGURE|TABLE|DIV)$/.test(c.tagName) || c.classList.contains('pics'));
     // `pictures(media)`: what a <figure data-media> becomes (the desk's picture block); without it the figure stays, empty.
     // An article's own picture is <figure data-picture="id">; `photos(id)` makes its block, else it stays a figure.
@@ -929,58 +989,310 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
           if (holdsBlocks(child) || child.parentNode?.closest?.('p, li, h2, h3, h4, blockquote')) child.replaceWith(...child.childNodes, ...(holdsBlocks(child) ? [] : [document.createElement('br')]));
           else { const p = document.createElement('p'); p.append(...child.childNodes); child.replaceWith(p); }
         } else if (!ALLOWED.has(tag)) child.replaceWith(...child.childNodes);
-        else for (const attr of [...child.attributes]) if (!(tag === 'A' && attr.name === 'href' && safeHref(attr.value))) child.removeAttribute(attr.name);
+        else for (const attr of [...child.attributes]) if (!(tag === 'A' && linkAttr(attr))) child.removeAttribute(attr.name);
       }
     }
-    // the post's own text: WordPress HTML shown as paragraphs; <figure data-media> become fixed picture blocks
-    function storyHtml(project, html) {
-      const blocks = String(html).replace(/\r\n/g, '\n').split(/\n{2,}/).map((chunk) => chunk.trim()).filter((chunk) => chunk && chunk !== '&nbsp;');
-      const wrapped = blocks.map((chunk) => (/^<(p|h[1-6]|ul|ol|blockquote|figure|div|hr|table)\b/i.test(chunk) ? chunk : `<p>${chunk.replace(/\n/g, '<br>')}</p>`)).join('');
-      const template = document.createElement('template');
-      template.innerHTML = wrapped;
-      tidy(template.content, (media) => {
-        const block = el('span', {className: 'pics', contentEditable: 'false'});
-        block.dataset.media = media;
-        for (const index of media.split(',')) {
-          const src = project.thumbs[index.trim()];
-          block.append(src ? el('img', {src, alt: '', loading: 'lazy'}) : el('span', {textContent: `picture ${Number(index) + 1}`}));
+    // ---------- a project's text, on its page ----------
+    // Stored as the archive stores it: paragraphs as HTML, pictures as <figure data-media="i,j"></figure> by their index
+    // in the post's media (src/lib/desk-text.js fromEditor writes the same). On the page a figure is a block of the
+    // site's rows of pictures ([slug].astro rows()): ↑ ↓ or a drag move it, ✕ takes it out of the text. A picture is
+    // found by its src, as the edit bar finds it (src/lib/edit-bar.js); a duplicate has none, and the site leaves it out.
+    const imageAt = (project, index) => project.images.find((image) => image.src === project.thumbs[index]);
+    function shot(image) {
+      const img = el('img', {alt: '', loading: 'lazy', sizes: '(max-width: 900px) 100vw, 46rem', srcset: image.srcset ?? '', src: image.src});
+      img.dataset.key = image.key;
+      img.style.setProperty('--r', String(image.width && image.height ? image.width / image.height : 4 / 3));
+      return img;
+    }
+    // rows of up to three, balanced (5 pictures: 3 + 2), as the site draws them
+    function shotRows(images) {
+      const count = Math.ceil(images.length / 3);
+      const rows = [];
+      for (let r = 0, start = 0; r < count; r++) {
+        const size = Math.ceil((images.length - start) / (count - r));
+        rows.push(el('div', {className: 'media-row'}, ...images.slice(start, start + size).map(shot)));
+        start += size;
+      }
+      return rows;
+    }
+    function mediaBlock(project, media) {
+      const images = media.split(',').map((index) => imageAt(project, index.trim())).filter(Boolean);
+      const figure = el('figure', {className: 'pic-block media-block', contentEditable: 'false', draggable: true},
+        ...(images.length ? shotRows(images) : [el('span', {className: 'hint', textContent: 'The site leaves this picture out (a duplicate).'})]),
+        el('span', {className: 'pic-tools'}, blockTool('up', 'Move the pictures up', '↑'), blockTool('down', 'Move the pictures down', '↓'), blockTool('out', 'Take the pictures out of the text', '✕')));
+      figure.dataset.media = media;
+      return figure;
+    }
+    // The text in pieces, as the site draws it: a block with all it holds (a <p>, a <figure>, a <div>) or a paragraph of
+    // loose text, each as it stands in the text ({source, loose}). A copy of src/lib/content.js segments(), the same
+    // rules: Send to site keeps a piece of the site's text as it is (scripts/import-image-keywords.mjs deskText).
+    const SITE_BLOCKS = new Set(['address', 'article', 'aside', 'blockquote', 'dd', 'details', 'div', 'dl', 'dt', 'fieldset',
+      'figcaption', 'figure', 'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'header', 'hr',
+      'iframe', 'li', 'main', 'nav', 'ol', 'p', 'pre', 'section', 'table', 'tbody', 'td', 'tfoot',
+      'th', 'thead', 'tr', 'ul']);
+    function textPieces(raw) {
+      const html = String(raw ?? '').replace(/\r\n?/g, '\n');
+      const out = [];
+      const loose = (text) => { for (const chunk of text.split(/\n[ \t]*\n/)) if (chunk.replace(/&nbsp;/g, ' ').trim()) out.push({source: chunk.trim(), loose: true}); };
+      const tagRe = /<(\/?)([a-z][a-z0-9]*)\b[^>]*?(\/?)>|<!--[\s\S]*?-->/gi;
+      let depth = 0, blockStart = 0, inlineStart = 0, openTag = '', m;
+      while ((m = tagRe.exec(html))) {
+        if (!m[2]) continue;
+        const name = m[2].toLowerCase();
+        if (!SITE_BLOCKS.has(name)) continue;
+        const closing = m[1] === '/';
+        const selfClosed = m[3] === '/' || name === 'hr';
+        if (!closing && depth === 0) {
+          loose(html.slice(inlineStart, m.index));
+          blockStart = m.index;
+          if (selfClosed) { out.push({source: html.slice(m.index, tagRe.lastIndex), loose: false}); inlineStart = tagRe.lastIndex; }
+          else { depth = 1; openTag = m[0]; }
+        } else if (!closing && !selfClosed) depth += 1;
+        else if (closing && depth > 0) {
+          depth -= 1;
+          if (depth === 0) { out.push({source: html.slice(blockStart, tagRe.lastIndex), loose: false}); inlineStart = tagRe.lastIndex; }
         }
-        return block;
+      }
+      const tail = out.length;
+      loose(html.slice(inlineStart));
+      // a block the text never closes: the site reads all after it as loose text. The piece it starts in keeps that tag
+      // when it is changed (`opens`), so the rest of the text reads as before.
+      if (depth > 0) { const piece = out.slice(tail).find((p) => p.source.includes(openTag)); if (piece) piece.opens = openTag; }
+      return out;
+    }
+    // a text with no words and no pictures (src/lib/content.js blankText): a cleared editor leaves <p><br></p>
+    const blankText = (html) => !/<figure\b/i.test(html) && !html.replace(/<[^>]*>/g, ' ').replace(/&nbsp;|&#160;/gi, ' ').trim();
+    const noNode = () => document.createTextNode('');
+    // a node of the text's top level that is part of it: not the spaces between blocks, nor the line ✕ leaves
+    const counts = (node) => (node.nodeType === 1 ? !node.matches('.out-mark') : node.nodeType === 8 || (node.nodeType === 3 && node.data.trim() !== ''));
+    const blockish = (node) => node.nodeType === 1 && (BLOCKS.has(node.nodeName) || /^(P|H[1-6]|UL|OL|LI|BLOCKQUOTE|HR|FIGURE)$/.test(node.nodeName));
+    // what the piece of the text each top-level node was drawn from: {source, nodes, read}
+    const pieceOf = new WeakMap();
+    // the paragraphs of loose text (no <p> in the text): saved as loose text again
+    const looseParagraphs = new WeakSet();
+    // the blocks the desk draws as paragraphs (tidy)
+    const ARCHIVE_LAYOUT = new RegExp(`<(?:${[...BLOCKS].join('|')})\\b`, 'i');
+    // nodes of the text copied to be read, cleaned as they are saved, without the lines ✕ leaves (the site has none; one
+    // may sit inside a paragraph, where its row was)
+    function copyOf(nodes) {
+      const box = document.createElement('div');
+      box.append(...nodes.map((node) => node.cloneNode(true)));
+      for (const mark of box.querySelectorAll('.out-mark')) mark.remove();
+      tidy(box, null, noNode, noNode);
+      return box;
+    }
+    // what nodes of the text read as: a picture block as <figure data-media>, without the tools; and spaces the page
+    // doesn't show left out (the browser drops a paragraph's last line breaks when Ryan types at its end)
+    function readOf(nodes) {
+      const box = copyOf(nodes);
+      return box.innerHTML.replace(/[ \t\n\r\f]+/g, ' ').replace(/ ?(<\/?(?:p|h[1-6]|ul|ol|li|blockquote|hr|br|figure|div)\b[^>]*>) ?/gi, '$1')
+        .replace(/<br>(<\/(?:p|h[1-6]|li|blockquote)>)/gi, '$1').trim();
+    }
+    // loose words at the top of a piece (a <div> that held paragraphs and words) become a paragraph of their own
+    function wrapLoose(root) {
+      let run = [];
+      const close = () => {
+        if (run.some((node) => (node.nodeType === 1 ? node.nodeName !== 'BR' : node.data.trim()))) { const p = document.createElement('p'); run[0].before(p); p.append(...run); }
+        run = [];
+      };
+      for (const node of [...root.childNodes]) {
+        if (node.nodeType === 3 || (node.nodeType === 1 && !blockish(node))) run.push(node);
+        else close();
+      }
+      close();
+    }
+    // the text as live nodes, piece by piece, each node knowing its piece; an article's own picture or video has no
+    // place in a project's text. A piece the desk shows nothing of keeps its place as an empty comment.
+    function projectNodes(project, html) {
+      const fragment = document.createDocumentFragment();
+      for (const {source, loose, opens} of textPieces(html)) {
+        const template = document.createElement('template');
+        template.innerHTML = loose ? `<p>${source.replace(/\n/g, '<br>')}</p>` : source;
+        tidy(template.content, (media) => mediaBlock(project, media), noNode, noNode);
+        wrapLoose(template.content);
+        // a paragraph that holds only rows of pictures (WordPress's <p><strong> around five of them) is drawn as those
+        // rows, so ↑ ↓ ✕ act on each one where it is; they stay its piece, written as it stands while none is moved
+        for (const node of [...template.content.children]) {
+          if (node.matches('.pic-block') || !node.querySelector('.media-block')) continue;
+          const rest = node.cloneNode(true);
+          for (const row of rest.querySelectorAll('.media-block')) row.remove();
+          if (!rest.textContent.trim() && !rest.querySelector('img, hr, br')) node.replaceWith(...node.querySelectorAll('.media-block'));
+        }
+        const nodes = [...template.content.childNodes].filter(counts);
+        if (!nodes.length) { nodes.push(document.createComment('')); template.content.append(nodes[0]); }
+        // `blocks`: loose text that holds blocks (all after a block the text never closes is loose text on the site),
+        // drawn as more than its one paragraph
+        const piece = {source, opens, nodes, read: readOf(nodes), blocks: loose && nodes.length > 1};
+        // a block in the old site's own layout (a <div>, a caption list): the desk draws it as paragraphs, and a change in
+        // it is saved so; keeping that layout needs an editor that keeps any markup (#80). Marked, and the page says so.
+        const layout = !loose && ARCHIVE_LAYOUT.test(source) && source.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim() !== '';
+        for (const node of nodes) {
+          pieceOf.set(node, piece);
+          if (loose && node.nodeName === 'P') looseParagraphs.add(node);
+          if (layout && node.nodeType === 1 && !node.matches('.pic-block')) node.dataset.layout = '';
+        }
+        fragment.append(template.content);
+      }
+      return fragment;
+    }
+    // loose words back as loose text: a line break a new line, as the site reads it (a web address on a line of its own
+    // becomes a player there); one with an empty line in it stays one paragraph, as the desk shows it
+    function looseText(nodes) {
+      const text = copyOf(nodes).innerHTML.replace(/\n/g, ' ').replace(/<br\s*\/?>/gi, '\n').trim();
+      if (!text.replace(/&nbsp;/g, ' ').trim()) return '';
+      return /\n[ \t]*\n/.test(text) ? `<p>${text.replace(/\n/g, '<br>')}</p>` : text;
+    }
+    // a block of the text that was changed, cleaned: a paragraph of loose text, or one written on the desk, as loose text
+    function blockText(node) {
+      const box = copyOf([node]);
+      const only = box.childNodes.length === 1 && box.firstChild.nodeName === 'P' ? box.firstChild : null;
+      if (only && (looseParagraphs.has(node) || !pieceOf.has(node))) return looseText([...only.childNodes]);
+      return box.innerHTML.replace(/<figure data-media="([^"]*)"><\/figure>/g, '\n\n<figure data-media="$1"></figure>\n\n').replace(/<\/p>/g, '</p>\n\n').replace(/\n{3,}/g, '\n\n').trim();
+    }
+    // loose text that holds blocks, changed, back as one piece of loose text as it stood: the nodes from `first` to `last`
+    // and what lies between them, a line break a new line (the blank lines between its blocks stay). Drawn, the site's
+    // own <p> around it is its first node (when `starts`, it gives only its words) and leaves an empty one at its end,
+    // which the site makes again
+    function chunkText(first, last, starts) {
+      const run = [];
+      for (let node = first; node; node = node.nextSibling) { run.push(node); if (node === last) break; }
+      const box = copyOf(run);
+      if (starts && box.firstChild?.nodeName === 'P') box.firstChild.replaceWith(...box.firstChild.childNodes);
+      return box.innerHTML.replace(/<p><\/p>$/, '').replace(/\n/g, ' ').replace(/<br\s*\/?>/gi, '\n').replace(/\n(?=[ \t]*\n)/g, '<br>').trim();
+    }
+    // Back to the text as the archive stores it. A piece Ryan didn't change is written as it stands in the text, letter
+    // for letter (its markup, its links, its line breaks), so the site draws it as before; what he changed is cleaned:
+    // loose text as loose text, other blocks as HTML, picture blocks as <figure data-media="i,j"></figure>; the pieces
+    // joined by blank lines; nothing pasted along.
+    function projectText(root = $('read-text')) {
+      const nodes = [...root.childNodes].filter(counts);
+      const out = [];
+      const opened = new Set();
+      // the tag a changed piece keeps open goes before the first of its words
+      let opens = '';
+      const emit = (text) => { if (text) { out.push(opens + text); opens = ''; } };
+      let loose = [];
+      const flush = () => { if (loose.length) emit(looseText(loose)); loose = []; };
+      for (let i = 0; i < nodes.length;) {
+        const piece = pieceOf.get(nodes[i]);
+        if (piece && piece.nodes.every((node, k) => nodes[i + k] === node) && readOf(piece.nodes) === piece.read) {
+          flush();
+          if (opens) { out.push(opens); opens = ''; }
+          out.push(piece.source);
+          i += piece.nodes.length;
+          continue;
+        }
+        // loose text that holds blocks, changed: written back as one, so the site reads it as before
+        if (piece?.blocks && !piece.opens) {
+          let end = i;
+          while (end + 1 < nodes.length && pieceOf.get(nodes[end + 1]) === piece) end++;
+          flush();
+          emit(chunkText(nodes[i], nodes[end], nodes[i] === piece.nodes[0]));
+          i = end + 1;
+          continue;
+        }
+        const node = nodes[i++];
+        if (piece?.opens && !opened.has(piece)) { flush(); opened.add(piece); opens = piece.opens; }
+        if (node.nodeType === 8) continue;
+        if (!blockish(node)) { loose.push(node); continue; }
+        flush();
+        emit(blockText(node));
+      }
+      flush();
+      if (opens) out.push(opens);
+      return out.filter(Boolean).join('\n\n');
+    }
+    // what a save of the page as it opens writes: the archive's pieces joined again by blank lines, which the site draws
+    // as the archive but which is not the same letter for letter, so it is never stored
+    const untouchedTexts = new Map();
+    function untouchedText(project) {
+      if (!untouchedTexts.has(project.id)) {
+        const page = el('div', {}, projectNodes(project, project.content));
+        if (!page.childNodes.length) page.innerHTML = '<p><br></p>';
+        untouchedTexts.set(project.id, projectText(page));
+      }
+      return untouchedTexts.get(project.id);
+    }
+    // where ✕ took a row of pictures out (and, when the page is drawn again, where markOut finds one was): what became of
+    // it, and the way back. Its button sits where the ✕ was, so a second click there puts the row back rather than
+    // taking out the next one
+    function outMark(figure) {
+      const back = el('button', {type: 'button', textContent: 'Put it back'});
+      const mark = el('div', {className: 'out-mark', contentEditable: 'false'},
+        el('span', {textContent: current().project.compCard ? 'Out of the text.' : 'Out of the text: the site shows it under Photographs.'}), back);
+      back.addEventListener('click', () => {
+        mark.replaceWith(figure);
+        saveText();
+        figure.querySelector('[data-move="out"]')?.focus();
       });
-      return template.innerHTML;
+      return mark;
     }
-    // back to what the archive stores: paragraphs as HTML, picture blocks as <figure data-media>, nothing pasted along
-    function storyToContent() {
-      const copy = $('story').cloneNode(true);
-      for (const block of copy.querySelectorAll('.pics')) { const figure = document.createElement('figure'); figure.dataset.media = block.dataset.media; block.replaceWith(figure); }
-      tidy(copy);
-      return copy.innerHTML.replace(/<figure data-media="([^"]*)"><\/figure>/g, '\n\n<figure data-media="$1"></figure>\n\n').replace(/<\/p>/g, '</p>\n\n').replace(/\n{3,}/g, '\n\n').trim();
+    // The rows the archive's text places and the page's text doesn't: the page drawn again (another page, a reload) has a
+    // line in each one's place still, with Put it back. Its place: beside the rows of its own piece of the archive's text
+    // that the page shows; else after the nearest piece before it that the page keeps as it was (or a row of that piece),
+    // and after as many paragraphs as the archive's text has changed pieces with words between the two (its own piece
+    // too, when the row stands after words in it).
+    function markOut(project) {
+      const text = $('read-text');
+      const figureOf = new Map();
+      for (const figure of text.querySelectorAll('.media-block')) for (const index of figure.dataset.media.split(',')) figureOf.set(index.trim(), figure);
+      const onPage = (media) => media.split(',').map((index) => figureOf.get(index.trim())).find(Boolean);
+      const archive = textPieces(project.content).map(({source}) => ({source, media: [...source.matchAll(/data-media="([^"]*)"/g)].map((match) => match[1])}));
+      if (archive.every((piece) => piece.media.every(onPage))) return;
+      // the pieces of the archive's text that the page keeps as they were: the last node of each, and all their nodes
+      const sources = new Set(archive.map((piece) => piece.source).filter((source) => !blankText(source)));
+      const kept = new Map();
+      const keptNodes = new Set();
+      for (const node of text.childNodes) {
+        const piece = pieceOf.get(node);
+        if (piece && counts(node) && sources.has(piece.source)) { kept.set(piece.source, node); keptNodes.add(node); }
+      }
+      const words = (html) => html.replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').trim() !== '';
+      const marks = new Map();
+      const near = (media) => marks.get(media) ?? onPage(media);
+      // the line already put right after a node (or at the top of the text), so lines of rows that stood together keep their order
+      const markAfter = (node) => { const next = node ? node.nextSibling : text.firstChild; return next?.nodeType === 1 && next.matches('.out-mark') ? next : null; };
+      archive.forEach((piece, k) => piece.media.forEach((media, n) => {
+        if (onPage(media)) return;
+        const mark = outMark(mediaBlock(project, media));
+        const after = piece.media.slice(0, n).reverse().map(near).find(Boolean);
+        const before = after ? null : piece.media.slice(n + 1).map(onPage).find(Boolean);
+        marks.set(media, mark);
+        if (after) return after.after(mark);
+        if (before) return before.before(mark);
+        let skip = words(piece.source.slice(0, piece.source.lastIndexOf('<', piece.source.indexOf(`data-media="${media}"`)))) ? 1 : 0;
+        let anchor = null;
+        for (let j = k - 1; j >= 0 && !anchor; j--) {
+          const other = archive[j];
+          anchor = kept.get(other.source) ?? other.media.slice().reverse().map(near).find(Boolean) ?? null;
+          if (!anchor && words(other.source)) skip++;
+        }
+        let at = anchor && topBlock(anchor);
+        for (let next = at ? at.nextSibling : text.firstChild; next && skip > 0; next = next.nextSibling) {
+          if (next.nodeType !== 1 || next.matches('.out-mark') || !shows(next)) continue;
+          if (next.matches('.pic-block') || next.querySelector('.pic-block') || keptNodes.has(next)) break;
+          at = next;
+          skip--;
+        }
+        for (let next = markAfter(at); next; next = markAfter(at)) at = next;
+        if (at) at.after(mark);
+        else text.prepend(mark);
+      }));
     }
-    let storyPictures = 0;
-    function renderStory() {
-      const {project} = current();
-      const record = projectRecord(project);
-      // a field Ryan is typing in keeps his caret, also when a copy from his account arrives meanwhile
-      if (document.activeElement !== $('story')) $('story').innerHTML = storyHtml(project, record.content !== undefined ? record.content : project.content);
-      storyPictures = (String(project.content).match(/<figure data-media=/g) ?? []).length;
-      $('story-reset').hidden = record.content === undefined;
-    }
+    // the pictures a text places, by their src: the site shows the others under Photographs
+    const placedSrcs = (project, content) => new Set([...String(content ?? '').matchAll(/data-media="([^"]*)"/g)]
+      .flatMap((match) => match[1].split(',').map((index) => project.thumbs[index.trim()])).filter(Boolean));
     try { document.execCommand('defaultParagraphSeparator', false, 'p'); } catch {}
-    $('story').addEventListener('input', () => {
-      const {project} = current();
-      state.projects[project.id] = {...state.projects[project.id], content: storyToContent()};
-      $('story-reset').hidden = false;
-      save();
-      const left = $('story').querySelectorAll('.pics').length;
-      $('note').textContent = left < storyPictures ? 'A picture block left the text. “Undo my changes to the text” brings it back.' : '';
-    });
     $('story-reset').addEventListener('click', () => {
       const {project} = current();
       const record = {...state.projects[project.id]};
       delete record.content;
       state.projects[project.id] = record;
       save();
-      renderStory();
+      // drawn again from the archive's text, also when the page still shows the same words
+      shownText.key = null;
+      $('page-note').textContent = '';
+      renderProjectPage();
     });
 
     function wpRows(containerId, rows) {
@@ -999,7 +1311,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
         ? 'On the wall and under the title.'
         : `Empty, the wall shows WordPress's: “${project.excerpt.slice(0, 90)}${project.excerpt.length > 90 ? '…' : ''}”`;
       renderProjectWords();
-      renderStory();
+      renderReading();
       wpRows('wp-project', [
         {label: 'Categories', value: project.wordpress.categories, use: () => setProjectTags([...projectTags(project), ...project.wordpress.categories.filter((w) => !projectTags(project).some((x) => same(x, w)))])},
         {label: 'Tags', value: project.wordpress.tags, use: () => setProjectTags([...projectTags(project), ...project.wordpress.tags.filter((w) => !projectTags(project).some((x) => same(x, w)))])},
@@ -1013,6 +1325,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       const {project} = current();
       setProject(project, 'summary', $('summary').value.trim(), project.summary);
       $('summary-hint').textContent = 'On the wall and under the title.';
+      if (document.activeElement !== $('read-sum')) $('read-sum').textContent = summaryOf(project);
     });
 
     // ---------- the Picture tab ----------
@@ -1218,6 +1531,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       if (article) {
         updateProgress();
         renderArticleMode();
+        showStage();
         return;
       }
       const {project, projectIndex} = current();
@@ -1271,7 +1585,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       state.projects[project.id] = {...state.projects[project.id], hero: image.url};
       save();
       render();
-      $('note').textContent = 'Lead picture chosen: it heads the page, the card and the wall.';
+      $('note').textContent = 'Lead picture chosen: the card and the wall show it.';
     });
     addEventListener('keydown', (event) => {
       // not while a dialog or the overview is open: the desk behind it is out of sight
@@ -1396,14 +1710,57 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       return template.innerHTML;
     }
     const started = (article) => new Date(article.created ?? Date.now()).toLocaleDateString('en-GB', {day: 'numeric', month: 'short', year: 'numeric'});
-    // the stage shows the article's page, or how it shows elsewhere: on the wall, as a shared link, in search
+    // The stage shows the page (of a project or an article), how an article shows elsewhere (on the wall, as a
+    // shared link, in search), or on a project's Picture tab one picture large with the filmstrip.
     let elsewhere = false;
-    let shownText = {article: null, content: null};
+    // what #read-text shows: 'project:<id>' or 'article:<id>', and the text it was drawn from
+    let shownText = {key: null, content: null};
+    // The browser keeps one undo history for the whole desk: Ctrl+Z would put the words of the page shown before
+    // (another article or project) back into this one, and save them here. Taking a part of the page out and back in
+    // drops its undo steps (checked in Edge).
+    const forgetUndo = (node) => { const [parent, next] = [node.parentNode, node.nextSibling]; node.remove(); parent.insertBefore(node, next); };
+    // the text drawn again; an empty text starts with one paragraph, so the first line typed is a paragraph too
+    function drawText(nodes) {
+      const text = $('read-text');
+      if (nodes.childNodes.length) text.replaceChildren(nodes);
+      else text.innerHTML = '<p><br></p>';
+      forgetUndo(text);
+    }
+    function showStage() {
+      const article = Boolean(openArticleRecord());
+      const picture = !article && tab === 'picture';
+      const view = article ? 'article' : picture ? 'picture' : 'page';
+      $('reading').hidden = article ? elsewhere : picture;
+      $('elsewhere').hidden = !(article && elsewhere);
+      $('picture-view').hidden = !picture;
+      $('filmstrip').hidden = !picture;
+      for (const node of document.querySelectorAll('.stage-bar [data-for]')) node.hidden = !node.dataset.for.split(' ').includes(view);
+      $('article-view').textContent = article && elsewhere ? 'On the wall, as a link, in search' : 'Write on the page';
+      if ($('reading').hidden) $('block-tools').hidden = true;
+    }
     // The page is where the article is written: title, summary and text are edited in place. A part Ryan is
     // typing in keeps his caret: only the others are filled again from the draft.
     function renderReading() {
       const article = openArticleRecord();
-      if (!article) return;
+      // another page (another project or article, or from one kind to the other) opens at its top, and the caret and the
+      // ↑ ↓ of the old page stay behind: a field still focused would keep the old page's words and save them to this one
+      if (shownText.key !== (article ? `article:${state.article}` : `project:${current().project.id}`)) {
+        if ($('reading').contains(document.activeElement)) document.activeElement.blur();
+        $('block-tools').hidden = true;
+        $('reading').scrollTop = 0;
+        // and the undo steps of its title and summary and of the boxes beside it, but the one typed in (the text's go
+        // when it is drawn again)
+        for (const field of [$('read-title'), $('read-sum'), ...$('bench').querySelectorAll('textarea, input:not([type="file"])')]) {
+          if (field !== document.activeElement) forgetUndo(field);
+        }
+      }
+      if (!article) return renderProjectPage();
+      $('reading').dataset.kind = 'article';
+      $('read-title').contentEditable = 'true';
+      $('read-title').setAttribute('aria-label', 'The article\'s title');
+      $('read-text').setAttribute('aria-label', 'The article\'s text');
+      $('read-rest').hidden = true;
+      $('layout-note').hidden = true;
       $('read-when').textContent = `${DATA.kinds?.[article.kind ?? 'story']?.label ?? 'Story'} · ${article.status === 'ready' ? 'ready for the site' : 'draft'} · started ${started(article)}`;
       if (document.activeElement !== $('read-title')) $('read-title').textContent = String(article.title ?? '');
       if (document.activeElement !== $('read-sum')) $('read-sum').textContent = String(article.summary ?? '');
@@ -1420,27 +1777,73 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       // the text is drawn again only for another article, or when the draft changed elsewhere (another device)
       const text = $('read-text');
       const content = String(article.content ?? '');
-      if (shownText.article !== state.article || (content !== shownText.content && !text.contains(document.activeElement))) {
-        // an empty text starts with one paragraph, so the first line typed is a paragraph too
-        const nodes = photoNodes(article, cleanHtml(content), pictureBlock);
-        if (nodes.childNodes.length) text.replaceChildren(nodes);
-        else text.innerHTML = '<p><br></p>';
+      if (shownText.key !== `article:${state.article}` || (content !== shownText.content && !text.contains(document.activeElement))) {
+        drawText(photoNodes(article, cleanHtml(content), pictureBlock));
       }
-      shownText = {article: state.article, content};
+      shownText = {key: `article:${state.article}`, content};
       markEmpty();
       $('article-heading').textContent = articleTitle(article);
       $('article-when').textContent = `Started ${started(article)}`;
       document.title = `${articleTitle(article)} (draft) — Portfolio desk`;
       if (elsewhere) renderElsewhere(article);
     }
+    // A project's page as the site shows it ([slug].astro): date • kinds, the title (the site's, not a desk field), the
+    // summary and the text written in place, the lead above the text only where the site puts one, and under
+    // Photographs the pictures the text doesn't place. The picture the desk is on is outlined.
+    function renderProjectPage() {
+      const {project, image} = current();
+      const record = projectRecord(project);
+      const pageKey = `project:${project.id}`;
+      const content = record.content !== undefined ? record.content : project.content;
+      $('reading').dataset.kind = 'project';
+      $('video-form').hidden = true;
+      $('read-when').textContent = [project.dateLabel, project.kinds.join(', ')].filter(Boolean).join(' • ');
+      $('read-title').contentEditable = 'false';
+      $('read-title').textContent = project.title;
+      $('read-title').setAttribute('aria-label', 'The project\'s title');
+      if (document.activeElement !== $('read-sum')) $('read-sum').textContent = summaryOf(project);
+      $('read-dek').hidden = true;
+      $('read-text').setAttribute('aria-label', 'The project\'s text');
+      if (shownText.key !== pageKey) $('page-note').textContent = '';
+      // a ★ chosen on the desk is one of the photos, which the site never puts above the text
+      const lead = project.leadSrc && !record.hero ? project.leadSrc : '';
+      const leadKey = lead ? `p:${lead}` : '';
+      if ($('read-lead').dataset.key !== leadKey) {
+        $('read-lead').dataset.key = leadKey;
+        $('read-lead').replaceChildren(...(lead ? [el('img', {src: lead, alt: ''})] : []));
+      }
+      $('read-lead').hidden = !lead;
+      // the text is drawn again only for another project, or when it changed elsewhere (the edit bar, another device)
+      const text = $('read-text');
+      if (shownText.key !== pageKey || (content !== shownText.content && !text.contains(document.activeElement))) {
+        drawText(projectNodes(project, content));
+        markOut(project);
+      }
+      shownText = {key: pageKey, content};
+      markEmpty();
+      $('story-reset').hidden = record.content === undefined;
+      $('layout-note').hidden = !text.querySelector('[data-layout]');
+      const placed = placedSrcs(project, content);
+      const rest = project.images.filter((picture) => !placed.has(picture.src));
+      const restKey = rest.map((picture) => picture.key).join('\n');
+      if ($('read-rest').dataset.key !== restKey) {
+        $('read-rest').dataset.key = restKey;
+        $('read-rest').querySelector('.rest-title').textContent = `Photographs (${rest.length})`;
+        $('read-rest').querySelector('.rest-rows').replaceChildren(...shotRows(rest));
+      }
+      $('read-rest').hidden = !rest.length;
+      for (const img of $('reading').querySelectorAll('img[data-key]')) {
+        if (img.dataset.key === image.key) img.dataset.current = 'true';
+        else delete img.dataset.current;
+      }
+    }
     $('show-elsewhere').addEventListener('click', () => {
       elsewhere = !elsewhere;
-      $('reading').hidden = elsewhere;
-      $('elsewhere').hidden = !elsewhere;
-      $('article-view').textContent = elsewhere ? 'On the wall, as a link, in search' : 'Write on the page';
       $('show-elsewhere').textContent = elsewhere ? 'Its page' : 'On the wall and as a link';
+      showStage();
       renderReading();
     });
+    $('back-to-page').addEventListener('click', () => showTab('project'));
     // ---------- an article's pictures: uploaded to the account (reddy.world's /api/desk-upload), private until published ----------
     // In the text a picture is <figure data-picture="id">; the article keeps {pictures: {id: {path, name, alt}}, hero: id}.
     const photoUrls = new Map();
@@ -1498,25 +1901,83 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     // the page's text back into the draft, cleaned, so a pasted page or picture never fills the account copy
     function saveText() {
       markEmpty();
+      if (!openArticleRecord()) return saveProjectText();
       const content = cleanHtml($('read-text').innerHTML);
-      shownText = {article: state.article, content};
+      shownText = {key: `article:${state.article}`, content};
       setArticle('content', content);
+    }
+    // a project's text back into its record, as the archive stores it (never through the article's savers)
+    function saveProjectText() {
+      const {project} = current();
+      const content = projectText();
+      const record = state.projects[project.id];
+      // Send to site skips an empty text, one with no words and no pictures (scripts/import-image-keywords.mjs deskText),
+      // so the site keeps the text it has: the record keeps no change, and the page shows that text again. Nor does a
+      // page that reads as it opened (a click that moved nothing, a row put back, words typed and taken out again).
+      const blank = blankText(content);
+      const unchanged = content === untouchedText(project);
+      if (!blank && !unchanged) state.projects[project.id] = {...record, content};
+      else if (record && 'content' in record) { const rest = {...record}; delete rest.content; state.projects[project.id] = rest; }
+      // An empty page with the caret in it (the text cleared from the keyboard, to write it again) stays as it is, so the
+      // next words land there and Ctrl+Z brings back the words before; one emptied otherwise (the last row taken out)
+      // shows the site's text again.
+      const writing = blank && $('read-text').contains(document.activeElement);
+      shownText = blank && !writing ? {key: null, content: null} : {key: `project:${project.id}`, content: unchanged || blank ? project.content : content};
+      save();
+      // the lead and Photographs follow a ✕ straight away
+      renderProjectPage();
+      // pictures the archive's text places and this text no longer does: the site shows them under Photographs (a row
+      // taken out with ✕ says so in its place)
+      const before = placedSrcs(project, project.content);
+      const now = placedSrcs(project, content);
+      const out = project.images.some((picture) => before.has(picture.src) && !now.has(picture.src));
+      $('page-note').textContent = project.compCard ? 'On the site this page is a comp card, without its text.'
+        : blank ? `An empty text is not sent: the site keeps the text it has${writing ? '' : ', shown here again'}.`
+        : out && !$('read-text').querySelector('.out-mark') ? 'Out of the text: the site shows it under Photographs.' : '';
     }
     // the block of the text a node sits in (a direct child of the text)
     const topBlock = (node) => { let at = node?.nodeType === 1 ? node : node?.parentElement; while (at && at.parentElement !== $('read-text')) at = at.parentElement; return at; };
+    // a block the page shows: not a lone line break, an empty paragraph (the archive's texts keep many between their
+    // blocks) or the line where a row was taken out
+    const shows = (node) => !node.matches('br, .out-mark') && (node.textContent.trim() !== '' || node.matches('hr, .pic-block') || node.querySelector('img, hr, .pic-block') !== null);
+    // the block above or below that the page shows, so every move is one the page shows
+    const shownNeighbour = (block, up) => { let at = block; do at = up ? at.previousElementSibling : at.nextElementSibling; while (at && !shows(at)); return at; };
     $('read-text').addEventListener('input', saveText);
     $('read-text').addEventListener('click', (event) => {
       const button = event.target.closest?.('.pic-tools button');
       if (!button) return;
       event.preventDefault();
       const figure = button.closest('.pic-block');
+      // a row of a project's text: the line goes where it is, also inside a paragraph, so Put it back puts it there
+      if (button.dataset.move === 'out' && figure.matches('.media-block')) {
+        const mark = outMark(figure);
+        figure.replaceWith(mark);
+        saveText();
+        mark.querySelector('button').focus();
+        return;
+      }
       const block = topBlock(figure);
       if (block !== figure) block.after(figure); // a picture inside a paragraph comes out of it first
-      if (button.dataset.move === 'up') figure.previousElementSibling?.before(figure);
-      else if (button.dataset.move === 'down') figure.nextElementSibling?.after(figure);
-      else figure.remove();
+      if (button.dataset.move === 'out') figure.remove();
+      else {
+        const other = shownNeighbour(figure, button.dataset.move === 'up');
+        // already first or last: nothing moves, and nothing is saved
+        if (!other && block === figure) return;
+        other?.[button.dataset.move === 'up' ? 'before' : 'after'](figure);
+      }
       saveText();
       if (figure.isConnected) button.focus();
+    });
+    // a click on a project's picture on its page opens it large, on the Picture tab (the cursor moves as the filmstrip moves it)
+    $('reading').addEventListener('click', (event) => {
+      if (openArticleRecord() || event.target.closest?.('.pic-tools')) return;
+      const img = event.target.closest?.('img[data-key]');
+      if (!img) return;
+      const index = flat.findIndex((item) => item.image.key === img.dataset.key);
+      if (index < 0) return;
+      state.cursor = index;
+      tab = 'picture';
+      render();
     });
     let dragged = null;
     const clearDrop = () => { for (const node of $('read-text').querySelectorAll('.drop-above, .drop-below')) node.classList.remove('drop-above', 'drop-below'); };
@@ -1536,25 +1997,160 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       if (at) at.block.classList.add(at.above ? 'drop-above' : 'drop-below');
     });
     $('read-text').addEventListener('drop', (event) => {
-      if (!dragged) return;
+      if (!dragged) {
+        // a picture from elsewhere (Photographs, the lead, a preview, a file) would show in the text but never be saved there
+        if (event.dataTransfer?.types.includes('Files') || /<img\b/i.test(event.dataTransfer?.getData('text/html') ?? '')) {
+          event.preventDefault();
+          $('page-note').textContent = 'A picture can’t be dropped into the text.';
+        }
+        return;
+      }
       event.preventDefault();
       const at = dropAt(event);
       clearDrop();
+      // dropped on itself (a click that slipped): nothing moves, and nothing is saved
       if (at) at.block[at.above ? 'before' : 'after'](dragged);
       dragged = null;
-      saveText();
+      if (at) saveText();
     });
     $('read-text').addEventListener('dragend', () => { dragged = null; clearDrop(); });
+    // A paragraph (or a heading, list or quote) moves up or down past its neighbours, pictures included:
+    // with ↑ ↓ beside the block the cursor is in, or Alt+↑ / Alt+↓. The cursor stays where it was
+    // (Ryan, 2026-10-27: "i also want to move the text alineas around").
+    function textBlock() {
+      const selection = getSelection();
+      const node = selection.rangeCount ? selection.anchorNode : null;
+      if (!node || !$('read-text').contains(node)) return null;
+      const block = topBlock(node);
+      // nor the line ✕ leaves: it stays where its row was
+      return block && !block.matches('.pic-block, .video-block, .out-mark') ? block : null;
+    }
+    // where the cursor is in a block, counted in characters, and back again after the move
+    function caretIn(block) {
+      const selection = getSelection();
+      if (!selection.rangeCount || !block.contains(selection.anchorNode)) return 0;
+      const range = document.createRange();
+      range.selectNodeContents(block);
+      range.setEnd(selection.anchorNode, selection.anchorOffset);
+      return range.toString().length;
+    }
+    function putCaret(block, offset) {
+      const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
+      let node = walker.nextNode();
+      let left = offset;
+      while (node && left > node.length) { left -= node.length; node = walker.nextNode(); }
+      const range = document.createRange();
+      if (node) range.setStart(node, Math.min(left, node.length));
+      else range.setStart(block, 0);
+      range.collapse(true);
+      getSelection().removeAllRanges();
+      getSelection().addRange(range);
+    }
+    function moveBlock(block, up) {
+      const other = shownNeighbour(block, up);
+      if (!other) return;
+      const offset = caretIn(block);
+      if (up) other.before(block);
+      else other.after(block);
+      $('read-text').focus({preventScroll: true});
+      putCaret(block, offset);
+      saveText();
+      placeBlockTools();
+    }
+    function placeBlockTools() {
+      const tools = $('block-tools');
+      const block = textBlock();
+      // with the page hidden (a project's Picture tab) there is nothing to place them beside: they would stay at its top
+      if (!block || $('reading').hidden) { tools.hidden = true; return; }
+      tools.hidden = false;
+      const reading = $('reading').getBoundingClientRect();
+      const box = block.getBoundingClientRect();
+      const top = box.top - reading.top + $('reading').scrollTop;
+      // in the margin beside the block when it fits, so no words are covered; else just above its right end
+      tools.classList.add('beside');
+      if (reading.right - box.right >= tools.offsetWidth + 6) {
+        tools.style.top = `${top}px`;
+        tools.style.left = `${box.right - reading.left + 4}px`;
+        tools.style.right = '';
+      } else {
+        tools.classList.remove('beside');
+        tools.style.top = `${Math.max(0, top - tools.offsetHeight - 2)}px`;
+        tools.style.left = '';
+        tools.style.right = `${Math.max(0, reading.right - box.right)}px`;
+      }
+      tools.querySelector('[data-move="up"]').disabled = !shownNeighbour(block, true);
+      tools.querySelector('[data-move="down"]').disabled = !shownNeighbour(block, false);
+    }
+    document.addEventListener('selectionchange', placeBlockTools);
+    $('read-text').addEventListener('keydown', (event) => {
+      if (!event.altKey || (event.key !== 'ArrowUp' && event.key !== 'ArrowDown')) return;
+      const block = textBlock();
+      if (!block) return;
+      event.preventDefault();
+      moveBlock(block, event.key === 'ArrowUp');
+    });
+    // Backspace at the start of a paragraph right below a row of pictures (or the line ✕ left), or Delete at the end of
+    // one right above it, does nothing: the browser would join the paragraph to the one beyond and take every row
+    // between them out of the text. ✕ takes a row out.
+    const nothingShown = (node) => node.nodeType === 8 || (node.nodeType === 3 ? !node.data.replace(/[ \t\n\r]+/g, '')
+      : !node.matches('.pic-block, .out-mark, br, hr') && !node.textContent.replace(/[ \t\n\r]+/g, '') && !node.querySelector('br, hr, img, .pic-block, .out-mark'));
+    $('read-text').addEventListener('keydown', (event) => {
+      if (event.key !== 'Backspace' && event.key !== 'Delete') return;
+      const selection = getSelection();
+      if (!selection.rangeCount || !selection.isCollapsed) return;
+      const block = topBlock(selection.anchorNode);
+      if (!block || block.matches('.pic-block, .out-mark')) return;
+      const back = event.key === 'Backspace';
+      // nothing between the caret and that end of the paragraph (a last line break is none: the page doesn't show it)
+      const part = document.createRange();
+      part.selectNodeContents(block);
+      if (back) part.setEnd(selection.anchorNode, selection.anchorOffset);
+      else part.setStart(selection.anchorNode, selection.anchorOffset);
+      const inside = part.cloneContents();
+      if (part.toString().replace(/[ \t\n\r]+/g, '') || inside.querySelector('img, hr, .pic-block') || inside.querySelectorAll('br').length > (back ? 0 : 1)) return;
+      let at = back ? block.previousSibling : block.nextSibling;
+      while (at && nothingShown(at)) at = back ? at.previousSibling : at.nextSibling;
+      if (at?.nodeType === 1 && (at.matches('.pic-block, .out-mark') || at.querySelector('.pic-block, .out-mark'))) event.preventDefault();
+    });
+    // a click on ↑ ↓ keeps the cursor in the text, so the block it's in is the one that moves
+    $('block-tools').addEventListener('mousedown', (event) => event.preventDefault());
+    $('block-tools').addEventListener('click', (event) => {
+      const button = event.target.closest('button');
+      const block = textBlock();
+      if (button && block) moveBlock(block, button.dataset.move === 'up');
+    });
     // the title and the summary on the page: plain words, one line for the title
     for (const [id, field, input] of [['read-title', 'title', 'article-title'], ['read-sum', 'summary', 'article-summary']]) {
       $(id).addEventListener('input', () => {
+        // on a project's page: the summary is the project's, set as its box sets it; the title is the site's
+        if (!openArticleRecord()) {
+          if (field === 'summary') {
+            const {project} = current();
+            const value = $(id).textContent.replace(/\s+/g, ' ').trim();
+            $('summary').value = value;
+            setProject(project, 'summary', value, project.summary);
+            $('summary-hint').textContent = 'On the wall and under the title.';
+            renderPreview();
+          }
+          return;
+        }
         const value = $(id).textContent.replace(/\s+/g, ' ');
         $(input).value = value;
         setArticle(field, value);
         if (field === 'title') { fillPicker(); $('project-picker').value = `article:${state.article}`; }
       });
-      $(id).addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); (field === 'title' ? $('read-sum') : $('read-text')).focus(); } });
+      // Enter goes on to the next part; Ctrl+Enter on a project marks it done (below), and the caret goes nowhere
+      $(id).addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter') return;
+        event.preventDefault();
+        if ((event.ctrlKey || event.metaKey) && !openArticleRecord()) return;
+        (field === 'title' ? $('read-sum') : $('read-text')).focus();
+      });
       $(id).addEventListener('paste', (event) => { event.preventDefault(); document.execCommand('insertText', false, event.clipboardData.getData('text/plain').replace(/\s+/g, ' ')); });
+      // a picture dropped here would show and never be saved: these are words only
+      $(id).addEventListener('drop', (event) => {
+        if (dragged || event.dataTransfer?.types.includes('Files') || /<img\b/i.test(event.dataTransfer?.getData('text/html') ?? '')) event.preventDefault();
+      });
     }
     // the pictures the page will show: the lead and the ones in the text
     function shownPictures(article) {
@@ -1679,6 +2275,8 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     $('video-cancel').addEventListener('click', closeVideoForm);
     $('video-form').addEventListener('submit', (event) => {
       event.preventDefault();
+      // a video or a picture of its own goes only into an article's text
+      if (!openArticleRecord()) return;
       const key = videoKey($('video-url').value);
       if (!key) { $('page-note').textContent = 'That is not a YouTube or Vimeo link.'; return; }
       const block = lastRange && $('read-text').contains(lastRange.startContainer) ? topBlock(lastRange.startContainer) : null;
@@ -1696,6 +2294,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       event.target.value = '';
       const place = placeAdded;
       placeAdded = false;
+      if (!openArticleRecord()) return;
       for (const file of files) {
         const id = `p${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
         $('pic-hint').textContent = `Adding ${file.name}…`;
@@ -1846,6 +2445,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       }
     };
     function setPerson(field, value) {
+      if (!openArticleRecord()) return;
       const article = state.articles[state.article];
       state.articles[state.article] = {...article, person: {...article.person, [field]: value}};
       save();
@@ -1904,7 +2504,9 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       renderReading();
       refreshBoxes('article', state.article);
     }
+    // with no article open (a box of the article's panel changed from a project's page) nothing is written
     function setArticle(field, value) {
+      if (!openArticleRecord()) return;
       state.articles[state.article] = {...state.articles[state.article], [field]: value};
       save();
       renderReading();

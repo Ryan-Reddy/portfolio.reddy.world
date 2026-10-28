@@ -2,9 +2,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { applyKeywords, applyDesk, isFileNameCaption, creditOf } from './import-image-keywords.mjs';
+import { applyKeywords, applyDesk, isFileNameCaption, creditOf, deskText } from './import-image-keywords.mjs';
 import { fallbackAlt, isMachineAlt } from '../src/lib/alt-text.js';
-import { curatedPost } from '../src/lib/archive-curation.js';
+import { curatedPost, isPublicArchivePost } from '../src/lib/archive-curation.js';
+import { renderContent, segments } from '../src/lib/content.js';
 
 const read = (p) => JSON.parse(readFileSync(new URL(p, import.meta.url), 'utf-8'));
 const sample = () => read('./fixtures/image-desk-export.sample.json');
@@ -297,6 +298,50 @@ test('the desk: text that only differs in spacing from the page is not written; 
   const again = applyDesk(state, data);
   assert.equal(JSON.stringify(data), once);
   assert.equal(again.projects + again.pictures + again.heroes + again.credits + again.summaries + again.texts, 0);
+});
+
+test('the desk: a piece of the site\'s text Ryan didn\'t change stays as the site has it; only a changed one is cleaned', () => {
+  const site = '<h3 class="pre-header">VR 16 FEB</h3>\n<p style="text-align:center;">Watch <a href="https://example.com/x" target="_blank" rel="noopener">this</a></p>\n\nLoose words\nhttps://vimeo.com/123\n\n<p>Mail <a href="mailto:a@example.com">us</a></p>';
+  const edited = site.replace('Loose words', 'Loose words, more').replace('</h3>\n', '</h3>\n\n');
+  const text = deskText(edited, site);
+  assert.equal(text, edited);
+  const page = renderContent(text);
+  // the address on its own line is still a player, the mail link and the heading's class stay
+  assert.match(page, /player\.vimeo\.com\/video\/123/);
+  assert.match(page, /<a href="mailto:a@example\.com">us<\/a>/);
+  assert.match(page, /<h3 class="pre-header">/);
+  // sent again, nothing changes
+  assert.equal(deskText(edited, text), null);
+  // a changed piece is cleaned: the pasted span goes, its words stay; the other pieces stay as they are. Cleaned to
+  // the site's own words it is no change at all.
+  const pasted = deskText(site.replace('Loose words', '<span style="color:red" onclick="x()">Loose</span> words, more'), site);
+  assert.match(pasted, /^<h3 class="pre-header">VR 16 FEB<\/h3>\n\n<p style="text-align:center;">/);
+  assert.match(pasted, /\n\nLoose words, more\nhttps:\/\/vimeo\.com\/123\n\n/);
+  assert.equal(deskText(site.replace('Loose words', '<span style="color:red">Loose</span> words'), site), null);
+});
+
+test('the desk: a text cleared in the editor (<p><br></p>), no words and no pictures, is not written', () => {
+  const data = archive();
+  const p = post(data, 'rmaekers', 'lightsurface-mk1-set');
+  const report = applyDesk(desk({ 'rmaekers/lightsurface-mk1-set': { content: '<p><br></p>' } }), data);
+  assert.equal(p.edited_content, undefined);
+  assert.equal(report.texts, 0);
+  assert.equal(deskText('<p>&nbsp;</p>\n\n<h3><br></h3>', 'Words'), null);
+  assert.equal(deskText('<figure data-media="0"></figure>', 'Words'), '<figure data-media="0"></figure>');
+});
+
+test('every post\'s text, in the pieces the desk keeps and joined again by blank lines, draws as it is', () => {
+  const data = archive();
+  const figure = (ids) => `<div data-ids="${ids.join(',')}"></div>`;
+  let posts = 0;
+  for (const key of Object.keys(data)) {
+    for (const p of data[key].posts.filter((x) => isPublicArchivePost(key, x))) {
+      const text = curatedPost(key, p).content;
+      posts++;
+      assert.equal(renderContent(segments(text).join('\n\n'), { figure }), renderContent(text, { figure }), `${key}/${p.slug}`);
+    }
+  }
+  assert.ok(posts > 50, String(posts));
 });
 
 test('the desk: a description becomes the alt text; a project credit reaches every picture', () => {
