@@ -8,13 +8,14 @@ import { curatedPost } from '../src/lib/archive-curation.js';
 
 const read = (p) => JSON.parse(readFileSync(new URL(p, import.meta.url), 'utf-8'));
 const sample = () => read('./fixtures/image-desk-export.sample.json');
-// the modelling pictures as WordPress left them (no alt text, description or keywords), so
+// the modelling pictures as WordPress left them (no alt text, description, keywords or credit), so
 // these tests show what the importer does with a blank picture, whatever the data now carries
 const blank = (data) => {
   const post = data.vaguelyvulgar.posts.find((p) => p.slug === 'photo-cv');
   for (const m of [...post.media, post.featured]) {
     Object.assign(m, { alt: '', description: '' });
     delete m.keywords;
+    delete m.credit;
   }
   // and the posts' own words, so the tests don't depend on what the desk has sent since
   for (const p of [post, data.rrproductions.posts.find((x) => x.slug === 'making-of-a-kaleidoscope')]) {
