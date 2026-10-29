@@ -8,7 +8,8 @@
 // - Everything is written to the desk itself: the same browser copy and the same account copy, merged the
 //   same way (desk-store.js). The desk shows it, and "Send to site" sends it; the page changes after that.
 import { stamp, snapshotOf, mergeStates } from './desk-store.js';
-import { toEditor, fromEditor } from './desk-text.js';
+import { mountEditor, fromEditor } from './desk-text.js';
+import {blankText} from './content.js';
 
 const STORE = 'reddy-world-image-metadata-v4';
 const OWNER_FLAG = 'reddy-desk-owner';
@@ -240,7 +241,7 @@ async function start(id) {
     // the lead picture and the pictures below the text get a ✎; the ones in the text become small blocks
     // in the editor, and a click on one opens it too
     addPictureButtons();
-    body.innerHTML = toEditor(contentOf(), project.thumbs) || '<p><br></p>';
+    mountEditor(body,contentOf(),project.thumbs);
     body.contentEditable = 'true';
     try { document.execCommand('defaultParagraphSeparator', false, 'p'); } catch {}
     summaryEl.focus();
@@ -267,7 +268,11 @@ async function start(id) {
     if (event.target === summaryEl) setProject('summary', summaryEl.textContent.trim(), project.summary);
     else if (body && body.contains(event.target)) {
       const current = state.projects[project.id] ?? {};
-      state.projects[project.id] = { ...current, content: fromEditor(body) };
+      const content = fromEditor(body);
+      const next = {...current};
+      if (blankText(content) || content === project.content) delete next.content;
+      else next.content = content;
+      state.projects[project.id] = next;
       persist();
     }
   });

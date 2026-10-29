@@ -21,3 +21,9 @@ The same field controls now move between projects and articles: title, summary, 
 The video controls add an embed or a plain link, edit an existing embed, and move/remove it. Project video markers now survive serialization and reload, and public players load on click. Project pictures use the existing image library, alt text, tags, credits and lead controls, with an action to insert the selected picture in the text. Articles retain their upload flow. Moving project text onto Tiptap remains the separately queued editor migration; the existing project source-preservation path remains in use.
 
 Checked with a disposable signed-out local draft: metadata survives reload, embed-to-link conversion works, and a project video survives reload and can be removed. A temporary generated article confirmed its publication date/tags in public structured data and no iframe before play. Temporary content was removed. The current browser session could not capture fresh screenshots; responsive DOM-width checks are separate from Ryan's final visual approval.
+
+## Project text preservation
+
+Project text now uses the same Tiptap toolbar as articles. The editor remembers the original source per block: unchanged blocks retain their original markup, changed/new blocks use the cleaned editor format, and undo to the opening state restores the complete original string. The public project edit bar uses the same preservation rule. Original layout markup remains in the stored source while its text is edited in the simpler editor view.
+
+Regression checks cover every public archive post in both editor paths, adding video, undo, and retaining untouched link attributes. No account writes or production content edits are part of these checks.
