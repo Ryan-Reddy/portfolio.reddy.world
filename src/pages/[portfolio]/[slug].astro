@@ -6,6 +6,7 @@ import { imageRights } from '../../lib/image-rights.js';
 import { subjectImageObject } from '../../lib/model-page.js';
 import { httpUrl } from '../../lib/safe-output.js';
 import { fitTitle, fitDescription, DESCRIPTION_MIN } from '../../lib/snippet.js';
+import '../../styles/video-player.css';
 import { portfolios, formatDate, photos, altFor, contextOf, picture, contactUrl, titleCase, PERSON_ID, ORIGIN, SITE, BASE, themeByTag, KIND_LABEL, portfolioLabel } from '../../lib/portfolios.js';
 
 export function getStaticPaths() {
@@ -259,6 +260,7 @@ const article = isPost ? { published: post.published, modified: post.modified, s
 </Base>
 
 <script>
+  import '../../lib/video-player.js';
   const box = document.getElementById('lightbox')!;
   const img = document.getElementById('lightbox-img') as HTMLImageElement;
   const count = document.getElementById('lightbox-count')!;

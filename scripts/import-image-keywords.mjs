@@ -40,6 +40,8 @@ import { httpUrl, storyHtml } from '../src/lib/safe-output.js';
 import { segments, blankText } from '../src/lib/content.js';
 import { curatedPost, isPublicArchivePost } from '../src/lib/archive-curation.js';
 import { articleFiles, deskIdOf } from './desk-articles.mjs';
+import { wallSettings } from '../src/lib/desk-wall.js';
+import {craftOf, publicationDay} from '../src/lib/piece-fields.js';
 
 export { isFileNameCaption };
 
@@ -196,7 +198,14 @@ export function applyDesk(state, data) {
     const post = postFor(projectId);
     if (!post) { if (!Object.values(record).every((v) => !filled(v) || v === false)) report.unmatched.push(projectId); continue; }
     const portfolio = projectId.split('/')[0];
-    const before = JSON.stringify({ keywords: post.keywords, summary: post.summary, edited_content: post.edited_content });
+    const before = JSON.stringify(post);
+    if (filled(record.title)) post.edited_title = clean(record.title);
+    if (Object.hasOwn(record, 'craft')) {
+      if (craftOf(record.craft)) post.craft = record.craft;
+      else if (record.craft === '') delete post.craft;
+    }
+    const published = publicationDay(record.published);
+    if (published) {post.published = `${published}T00:00:00Z`; post.date = `${published} 00:00:00`;}
     const archiveWords = post.keywords ?? [];
     const projectWords = isCleared(record, 'tags') ? [] : filled(record.tags) ? tagsOf(record.tags, report.dropped) : null;
     if (projectWords) post.keywords = projectWords;
@@ -211,7 +220,7 @@ export function applyDesk(state, data) {
       if (text) { post.edited_content = text; report.texts++; }
     }
     if (filled(record.hero)) setLead(post, record.hero, projectId, report);
-    if (JSON.stringify({ keywords: post.keywords, summary: post.summary, edited_content: post.edited_content }) !== before) report.projects++;
+    if (JSON.stringify(post) !== before) report.projects++;
 
     const sharedWords = post.keywords ?? [];
     const shown = shownOf(post);
@@ -283,6 +292,14 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   const data = Object.fromEntries(KEYS.map((key) => [key, JSON.parse(readFileSync(path(key), 'utf-8'))]));
   const input = JSON.parse(readFileSync(file, 'utf-8'));
   const fromDesk = input.version === undefined;
+  if (input.wall) {
+    const wallFile = new URL('../src/data/wall.json', import.meta.url);
+    const previous = existsSync(wallFile) ? JSON.parse(readFileSync(wallFile, 'utf8')) : {};
+    const next = wallSettings({...previous, ...input.wall});
+    const changed = Object.keys(next).filter(key => JSON.stringify(next[key]) !== JSON.stringify(previous[key])).length;
+    if (flag !== '--dry-run') writeFileSync(wallFile, `${JSON.stringify(next, null, 2)}\n`);
+    console.log(`wall: ${changed} tile placements updated${flag === '--dry-run' ? ' (dry run, nothing written)' : ''}`);
+  }
   const report = fromDesk ? applyDesk(input, data) : applyKeywords(input, data);
   if (flag !== '--dry-run') for (const key of KEYS) writeFileSync(path(key), `${JSON.stringify(data[key], null, 2)}\n`);
   // the desk's published articles as files of the articles collection (scripts/desk-articles.mjs)

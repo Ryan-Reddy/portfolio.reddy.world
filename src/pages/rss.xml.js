@@ -3,6 +3,8 @@ import { allPosts, portfolioById, SITE } from '../lib/portfolios.js';
 import { allArticles } from '../lib/articles.js';
 import { KINDS, articlePath, articleImages } from '../lib/article-kinds.js';
 import { pictureAt } from '../lib/software.js';
+import {getCollection} from 'astro:content';
+import {articleCraft, craftOf} from '../lib/piece-fields.js';
 
 // RSS 2.0 feed of every project post (not the about or contact pages) and every article, newest first,
 // with its picture. reddy.world's wall reads it: the first category names the portfolio, or for an
@@ -27,11 +29,14 @@ export async function GET() {
       `<description>${esc(post.summary || post.excerpt)}</description>`,
       `<category>${esc(portfolioById[post.portfolio].name)}</category>`,
       ...post.categories.map((c) => `<category>${esc(c)}</category>`),
+      ...(post.keywords ?? []).map(tag => `<category>${esc(tag)}</category>`),
+      craftOf(post.craft) ? `<reddy:craft>${post.craft}</reddy:craft>` : '',
       image,
       '</item>',
     ].join('') };
   });
   const articles = await allArticles();
+  const software = (await getCollection('software')).map(({id, data}) => ({id, branch: data.branch}));
   for (const { id, data } of articles) {
     const url = `${SITE}/${articlePath(data.kind, id)}`;
     const hero = data.hero && (await pictureAt(articleImages(id), data.hero.file));
@@ -44,6 +49,9 @@ export async function GET() {
       `<description>${esc(data.summary ?? data.description)}</description>`,
       `<category>${esc(KINDS[data.kind].label)}</category>`,
       '<category>Article</category>',
+      ...(data.tags ?? []).map(tag => `<category>${esc(tag)}</category>`),
+      `<reddy:craft>${articleCraft({...data, related: data.related?.id}, software)}</reddy:craft>`,
+      data.desk ? `<reddy:desk>${esc(data.desk)}</reddy:desk>` : '',
       hero ? `<media:content url="${esc(absUrl(hero.url))}" medium="image" width="${hero.width}" height="${hero.height}"/>` : '',
       '</item>',
     ].join('') });
@@ -51,7 +59,7 @@ export async function GET() {
   items.sort((a, b) => b.when - a.when);
   const xml = [
     '<?xml version="1.0" encoding="UTF-8"?>',
-    '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/">',
+    '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/" xmlns:reddy="https://reddy.world/ns/desk">',
     '<channel>',
     '<title>Ryan Reddy: projects</title>',
     `<link>${SITE}/</link>`,

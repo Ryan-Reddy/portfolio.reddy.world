@@ -16,6 +16,7 @@ import { storyHtml, httpUrl } from '../src/lib/safe-output.js';
 import { cutAt, DESCRIPTION_MIN, DESCRIPTION_MAX } from '../src/lib/snippet.js';
 import { KINDS } from '../src/lib/article-kinds.js';
 import { videoFigure } from '../src/lib/article-video.js';
+import {craftOf, publicationDay, pieceTags} from '../src/lib/piece-fields.js';
 
 const clean = (value) => String(value ?? '').replace(/\s+/g, ' ').trim();
 const plain = (html) => clean(String(html ?? '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'"));
@@ -83,6 +84,9 @@ export function missing(article, photos = null) {
 export function articleFile(id, article, { software = [], photos = {} } = {}) {
   const kind = article.kind ?? 'story';
   const lines = ['---', `kind: ${kind}`, `title: ${str(clean(article.title))}`];
+  if (craftOf(article.craft)) lines.push(`craft: ${article.craft}`);
+  const tags = pieceTags(article.tags);
+  if (tags.length) lines.push(`tags: ${JSON.stringify(tags)}`);
   // fields the desk doesn't edit but keeps, when a draft came with them (src/data/article-seeds/)
   if (clean(article.titleLang)) lines.push(`titleLang: ${str(clean(article.titleLang))}`);
   if (clean(article.seoTitle)) lines.push(`seoTitle: ${str(clean(article.seoTitle))}`);
@@ -108,7 +112,7 @@ export function articleFile(id, article, { software = [], photos = {} } = {}) {
     if (profile) lines.push(`  profile: ${str(profile)}`);
   }
   const year = Number(article.year) || new Date(article.created ?? article.readyAt ?? Date.now()).getFullYear();
-  lines.push(`year: ${year}`, `published: ${day(article.readyAt ?? article.at ?? article.created)}`);
+  lines.push(`year: ${year}`, `published: ${publicationDay(article.published) ?? day(article.readyAt ?? article.at ?? article.created)}`);
   const lead = article.hero && photos[article.hero] && article.pictures?.[article.hero];
   if (lead) {
     lines.push('hero:', `  file: ${str(photos[article.hero].file)}`, `  alt: ${str(clean(lead.alt))}`);

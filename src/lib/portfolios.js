@@ -53,7 +53,7 @@ export const portfolios = [rmaekers, rrproductions, vaguelyvulgar].map((p) => ({
   ...EXTRA[p.id],
   brand: BRAND[p.id],
   posts: publicArchivePosts(p.id, p.posts).map((post) => {
-    const full = { ...curatedPost(p.id, post), portfolio: p.id, path: `/${p.id}/${post.slug}/` };
+    const full = { ...curatedPost(p.id, post), ...(post.edited_title ? {title: post.edited_title} : {}), portfolio: p.id, path: `/${p.id}/${post.slug}/` };
     // videos another (hidden) post of the same site recorded, shown on this one: public YouTube videos only
     const films = full.films ? (p.posts.find((x) => String(x.id) === String(full.films))?.videos ?? []).filter((v) => v.kind === 'youtube' && v.status === 'public') : [];
     return { ...full, films, kinds: kindsOf(full) };

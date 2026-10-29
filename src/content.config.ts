@@ -79,6 +79,8 @@ const articles = defineCollection({
   schema: z.object({
     kind: z.enum(['interview', 'story', 'case-study', 'project', 'recipe', 'writing', 'poem']),
     title: z.string(),
+    craft: z.enum(['software', 'decor', 'signs', 'furniture', 'art', 'performance', 'work']).optional(),
+    tags: z.array(z.string()).default([]),
     // the title's language when it differs from the article's
     titleLang: z.string().optional(),
     // the <title>, when the title is too long for a search result
