@@ -6,6 +6,9 @@
 // cell) becomes a paragraph; pictures, scripts and pasted styles go; any other tag goes, its words stay.
 // <figure data-media="3,4"></figure> marks pictures in the text; in the editor they are fixed blocks.
 
+import {segments} from './content.js';
+import {VIDEO_KEY, videoFor} from './article-video.js';
+import {preserveBlocks} from './preserved-blocks.js';
 const ALLOWED = new Set(['P', 'H2', 'H3', 'H4', 'STRONG', 'B', 'EM', 'I', 'A', 'UL', 'OL', 'LI', 'BR', 'BLOCKQUOTE', 'HR']);
 const RENAME = { H1: 'H2', H5: 'H4', H6: 'H4' };
 const BLOCKS = new Set(['DIV', 'SECTION', 'ARTICLE', 'HEADER', 'FOOTER', 'ADDRESS', 'PRE', 'TABLE', 'THEAD', 'TBODY', 'TFOOT', 'TR', 'TD', 'TH', 'FIGCAPTION', 'DL', 'DT', 'DD']);
@@ -28,6 +31,10 @@ export function tidy(root, pictures = null) {
     if (child.nodeType === 8) { child.remove(); continue; }
     if (child.nodeType !== 1) continue;
     const tag = child.tagName.toUpperCase();
+    const video = child.dataset?.video;
+    if (video && VIDEO_KEY.test(video) && (tag === 'FIGURE' || child.classList.contains('desk-video'))) {
+      const figure = document.createElement('figure'); figure.dataset.video = video; child.replaceWith(figure); continue;
+    }
     const media = child.dataset?.media;
     if ((tag === 'FIGURE' || child.classList.contains('desk-pics')) && media !== undefined && /^[\d,\s]+$/.test(media)) {
       if (pictures) child.replaceWith(pictures(media));
@@ -50,7 +57,7 @@ export function tidy(root, pictures = null) {
 
 /** The stored text (WordPress HTML, paragraphs split by blank lines) as editor HTML, pictures as fixed blocks. */
 export function toEditor(html, thumbs = {}) {
-  const blocks = String(html ?? '').replace(/\r\n/g, '\n').split(/\n{2,}/).map((chunk) => chunk.trim()).filter((chunk) => chunk && chunk !== '&nbsp;');
+  const blocks = segments(html).filter(chunk => chunk !== '&nbsp;');
   const template = document.createElement('template');
   template.innerHTML = blocks.map((chunk) => (/^<(p|h[1-6]|ul|ol|blockquote|figure|div|hr|table)\b/i.test(chunk) ? chunk : `<p>${chunk.replace(/\n/g, '<br>')}</p>`)).join('');
   tidy(template.content, (media) => {
@@ -65,11 +72,17 @@ export function toEditor(html, thumbs = {}) {
     }
     return block;
   });
+  for (const figure of template.content.querySelectorAll('figure[data-video]')) {
+    const video = videoFor(figure.dataset.video);
+    const block = document.createElement('span'); block.className = 'desk-video'; block.contentEditable = 'false';
+    block.dataset.video = figure.dataset.video; block.textContent = `Video (${video.host})`;
+    figure.replaceWith(block);
+  }
   return template.innerHTML;
 }
 
 /** The editor's content back as the archive stores it: paragraphs, picture blocks as <figure data-media>. */
-export function fromEditor(root) {
+function cleanedEditor(root) {
   const copy = root.cloneNode(true);
   for (const block of copy.querySelectorAll('.desk-pics')) {
     const figure = document.createElement('figure');
@@ -82,4 +95,45 @@ export function fromEditor(root) {
     .replace(/<\/p>/g, '</p>\n\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
+}
+
+const sources = new WeakMap();
+const sessions = new WeakMap();
+const significant = node => node.nodeType === 1 || node.nodeType === 8 || node.textContent.trim();
+const readNodes = nodes => {const box = document.createElement('div'); box.append(...nodes.map(node => node.cloneNode(true))); return cleanedEditor(box);};
+export function editorPieces(original) {
+  return segments(original).map((source,index) => {
+    const box = document.createElement('div'); box.innerHTML = toEditor(source);
+    return {id:`source-${index}`,source,html:cleanedEditor(box)};
+  });
+}
+/** Mount source pieces individually so editing one does not rewrite the others. */
+export function mountEditor(root, original, thumbs = {}) {
+  const fragment = document.createDocumentFragment();
+  const baseline = segments(original).map((source,index) => {
+    const template = document.createElement('template'); template.innerHTML = toEditor(source,thumbs);
+    const nodes = [...template.content.childNodes].filter(significant);
+    if (!nodes.length) {const kept = document.createComment('kept'); template.content.append(kept); nodes.push(kept);}
+    const id = `source-${index}`;
+    for (const node of nodes) sources.set(node,id);
+    const signature = readNodes(nodes);
+    fragment.append(template.content);
+    return {id,source,signature};
+  });
+  root.replaceChildren(fragment);
+  if (!root.childNodes.length) root.innerHTML = '<p><br></p>';
+  sessions.set(root,{original,baseline});
+}
+export function fromEditor(root) {
+  const session = sessions.get(root);
+  if (!session) return cleanedEditor(root);
+  const groups = [];
+  for (const node of [...root.childNodes].filter(significant)) {
+    const id = sources.get(node);
+    const last = groups.at(-1);
+    if (id && last?.id === id) last.nodes.push(node);
+    else groups.push({id,nodes:[node]});
+  }
+  const blocks = groups.map(group => {const html = readNodes(group.nodes); return {id:group.id,html,signature:html};});
+  return preserveBlocks(session.original,session.baseline,blocks);
 }

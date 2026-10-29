@@ -1835,10 +1835,9 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       const record = projectRecord(project);
       const pageKey = `project:${project.id}`;
       const content = record.content !== undefined ? record.content : project.content;
-      // a project's text is written in the page's own editor (until it moves into the bar's too)
-      if (window.deskEditor?.on) window.deskEditor.destroy();
-      $('text-bar').hidden = true;
-      $('link-form').hidden = true;
+      const editor = window.deskEditor;
+      $('text-bar').hidden = !editor;
+      if (shownText.key !== pageKey) $('link-form').hidden = true;
       $('reading').dataset.kind = 'project';
       $('video-form').hidden = true;
       $('read-when').textContent = [dateLabelOf(project), project.kinds.join(', ')].filter(Boolean).join(' • ');
@@ -1859,14 +1858,18 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       $('read-lead').hidden = !lead;
       // the text is drawn again only for another project, or when it changed elsewhere (the edit bar, another device)
       const text = $('read-text');
-      if (shownText.key !== pageKey || (content !== shownText.content && !text.contains(document.activeElement))) {
+      if (editor && (!editor.on || shownText.key !== pageKey)) {
+        editor.mount(text,{content,preserveSource:true,block:(kind,value)=>kind==='media'?mediaBlock(project,value):videoBlock(value),change:saveText,selection:renderTextBar,refused:refuseDrop,safeHref});
+        renderTextBar();
+      } else if (editor && content !== shownText.content && !editor.focused()) editor.set(content);
+      else if (!editor && (shownText.key !== pageKey || (content !== shownText.content && !text.contains(document.activeElement)))) {
         drawText(projectNodes(project, content));
         markOut(project);
       }
       shownText = {key: pageKey, content};
       markEmpty();
       $('story-reset').hidden = record.content === undefined;
-      $('layout-note').hidden = !text.querySelector('[data-layout]');
+      $('layout-note').hidden = !ARCHIVE_LAYOUT.test(content);
       const placed = placedSrcs(project, content);
       const rest = project.images.filter((picture) => !placed.has(picture.src));
       const restKey = rest.map((picture) => picture.key).join('\n');
@@ -1994,7 +1997,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     $('link-remove').addEventListener('click', () => { window.deskEditor.run('link', ''); closeLinkForm(); });
     $('link-url').addEventListener('keydown', (event) => { if (event.key === 'Escape') { closeLinkForm(); $('read-text').focus(); } });
     // the editor is a module and loads after this script: an article open by then moves into it
-    document.addEventListener('desk-editor-ready', () => { if (openArticleRecord()) { shownText = {key: null, content: null}; renderReading(); } });
+    document.addEventListener('desk-editor-ready', () => { shownText = {key: null, content: null}; renderReading(); });
     // the page's text back into the draft, cleaned, so a pasted page or picture never fills the account copy
     function saveText() {
       markEmpty();
@@ -2006,13 +2009,13 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     // a project's text back into its record, as the archive stores it (never through the article's savers)
     function saveProjectText() {
       const {project} = current();
-      const content = projectText();
+      const content = editorOn() ? window.deskEditor.html() : projectText();
       const record = state.projects[project.id];
       // Send to site skips an empty text, one with no words and no pictures (scripts/import-image-keywords.mjs deskText),
       // so the site keeps the text it has: the record keeps no change, and the page shows that text again. Nor does a
       // page that reads as it opened (a click that moved nothing, a row put back, words typed and taken out again).
       const blank = blankText(content);
-      const unchanged = content === untouchedText(project);
+      const unchanged = content === project.content || content === untouchedText(project);
       if (!blank && !unchanged) state.projects[project.id] = {...record, content};
       else if (record && 'content' in record) { const rest = {...record}; delete rest.content; state.projects[project.id] = rest; }
       // An empty page with the caret in it (the text cleared from the keyboard, to write it again) stays as it is, so the
@@ -2712,7 +2715,8 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
         showTab('project'); renderReading();
         const media = Object.keys(project.thumbs).find(index => project.thumbs[index] === image.src);
         if (media === undefined) return;
-        $('read-text').append(mediaBlock(project, media)); saveProjectText();
+        if (editorOn()) window.deskEditor.insert('media',media);
+        else {$('read-text').append(mediaBlock(project, media)); saveProjectText();}
       },
     });
 
