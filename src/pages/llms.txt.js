@@ -10,7 +10,7 @@ export async function GET() {
     '',
     '> Selected work by Ryan Reddy (Amsterdam): festival decors, stage builds and props (ReddyMaekers), objects and inventions (RRproductions), and modelling photographs.',
     '',
-    `Contact and free 30-minute intro talks: ${CONTACT}`,
+    `Contact and book a free discovery call: ${CONTACT}`,
     'Main site: https://reddy.world',
     '',
   ];
