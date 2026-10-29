@@ -41,7 +41,7 @@ html.paper {
   }
 }
 
-/* The archive header and footer in paper; gold stays on the brand and "Plan a free talk" */
+/* The archive header and footer in paper; gold stays on the brand and the discovery-call action. */
 html.paper .site-header { background: color-mix(in srgb, var(--paper) 90%, transparent); }
 html.paper .portfolio-nav { background: var(--paper-2); border-color: var(--line); }
 html.paper .tab-btn:hover { background: color-mix(in srgb, var(--ink) 8%, transparent); }
