@@ -9,6 +9,7 @@ import { pictureAt } from '../lib/software.js';
 import { imageRights } from '../lib/image-rights.js';
 import { httpUrl } from '../lib/safe-output.js';
 import { KINDS, articlePath, articleImages } from '../lib/article-kinds.js';
+import {CRAFTS} from '../lib/piece-fields.js';
 import '../styles/software.css';
 
 const { entry } = Astro.props;
@@ -76,6 +77,8 @@ const jsonLd = [
     headline: d.title,
     name: d.title,
     genre: kind.label,
+    keywords: d.tags.length ? d.tags.join(', ') : undefined,
+    about: CRAFTS[d.craft],
     description: d.description,
     inLanguage: d.lang,
     dateCreated: String(d.year),
@@ -129,8 +132,10 @@ const jsonLd = [
     </nav>
 
     <header class="case-head">
+      <p class="eyebrow">{kind.label}{d.published && <Fragment> · <time datetime={day(d.published)}>{d.published.toLocaleDateString(d.lang === 'nl' ? 'nl-NL' : 'en-GB', {day:'numeric',month:'long',year:'numeric',timeZone:'UTC'})}</time></Fragment>}</p>
       <h1 lang={d.titleLang}>{d.title}</h1>
       {who && <p class="dek">{d.byline} {who.profile ? <a href={who.profile} rel="noopener">{who.name}</a> : who.name},{' '}<span lang={who.roleLang}>{roleParts.map((part) => (part.href ? <a href={part.href} rel="noopener">{part.text}</a> : part.text))}</span></p>}
+      {d.summary && <p class="dek">{d.summary}</p>}
     </header>
 
     {hero && (

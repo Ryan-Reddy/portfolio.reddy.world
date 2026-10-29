@@ -4,6 +4,8 @@
  * when it showed a post; this does the same at build time.
  */
 
+import {videoFigure} from './article-video.js';
+
 const BLOCK_TAGS = new Set([
   'address', 'article', 'aside', 'blockquote', 'dd', 'details', 'div', 'dl', 'dt', 'fieldset',
   'figcaption', 'figure', 'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'header', 'hr',
@@ -172,5 +174,6 @@ export function renderContent(raw, { title = '', figure = () => '' } = {}) {
   }
   return parts
     .join('\n')
-    .replace(/<figure data-media="([\d,]+)"><\/figure>/g, (_, ids) => figure(ids.split(',').map(Number)));
+    .replace(/<figure data-media="([\d,]+)"><\/figure>/g, (_, ids) => figure(ids.split(',').map(Number)))
+    .replace(/<figure data-video="([^"]+)"><\/figure>/g, (_, key) => videoFigure(key));
 }

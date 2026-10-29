@@ -167,6 +167,15 @@ window.deskEditor = {
     editor.view.dispatch(state.tr.insert(at, state.schema.nodes[name].create({ [name]: value })));
   },
   // the bar
+  insertLink(href) { editor.chain().focus().insertContent({type:'paragraph',content:[{type:'text',text:href,marks:[{type:'link',attrs:{href}}]}]}).run(); },
+  replaceVideo(dom, key, linkOnly = false) {
+    const index = indexOfDom(dom);
+    const at = offsetOf(editor.state.doc, index);
+    const before = editor.state.doc.child(index);
+    const replacement = linkOnly ? editor.state.schema.nodes.paragraph.create(null,
+      editor.state.schema.text(key, [editor.state.schema.marks.link.create({href:key})])) : editor.state.schema.nodes.video.create({video:key});
+    editor.view.dispatch(editor.state.tr.replaceWith(at, at + before.nodeSize, replacement));
+  },
   run(command, value) {
     const chain = editor.chain().focus();
     ({
