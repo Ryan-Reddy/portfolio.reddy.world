@@ -16,7 +16,7 @@
 
 const STAMPS = new Set(['at', 'doneAt']);
 // the kinds of entry Ryan works on; each merges entry by entry
-const KINDS = ['projects', 'images', 'articles'];
+const KINDS = ['projects', 'images', 'articles', 'wall'];
 
 /** The fields Ryan typed, in a stable order, without the stamps: equal strings mean nothing changed. */
 export function contentOf(entry) {
@@ -41,7 +41,7 @@ export function isPristine(entry, existingDescription = '') {
 
 /** What `stamp` compares against: the content of every entry as last seen. */
 export function snapshotOf(state) {
-  const snap = {projects: {}, images: {}, articles: {}};
+  const snap = {projects: {}, images: {}, articles: {}, wall: {}};
   for (const kind of KINDS) {
     for (const [key, entry] of Object.entries(state?.[kind] ?? {})) snap[kind][key] = contentOf(entry);
   }
@@ -72,7 +72,7 @@ export function stamp(state, snap, now, existing = {}) {
       const prev = before ? Object.fromEntries(JSON.parse(before)) : undefined;
       const had = kind === 'images' ? existing[key] : '';
       // shown, not worked on: no stamp (clearing real work does get one, since `prev` was not pristine)
-      if (isPristine(entry, had) && isPristine(prev, had)) continue;
+      if (kind === 'wall' ? content === '[]' : isPristine(entry, had) && isPristine(prev, had)) continue;
       entry.at = now;
       if (kind === 'projects' && entry.reviewed && !prev?.reviewed) finished.push(entry);
       changed = true;
@@ -124,7 +124,7 @@ export function mergeEntry(a, b, existingDescription) {
     const vb = b[key];
     // "not done" set on purpose (Reopen) on the stamped side stays, over the other side's nothing
     const stampedDone = ta > tb ? va : tb > ta ? vb : undefined;
-    if (key === 'reviewed' && stampedDone === false) out[key] = false;
+    if ((key === 'reviewed' || key === 'hidden') && stampedDone === false) out[key] = false;
     else if (blank(va)) out[key] = vb;
     else if (blank(vb)) out[key] = va;
     else if (key === 'tags') out[key] = unionTags(va, vb);
@@ -159,6 +159,7 @@ export function mergeStates(local, remote, existing = {}) {
     images: mergeMap(a.images, b.images, existing),
     // a deleted article stays as a stamped {deleted: true}, so the newer delete wins over an older copy
     articles: mergeMap(a.articles, b.articles),
+    wall: mergeMap(a.wall, b.wall),
     days: {...b.days, ...a.days},
     cursor: Number.isInteger(newer.cursor) ? newer.cursor : (a.cursor ?? b.cursor ?? 0),
     session: Math.max(Number(a.session) || 0, Number(b.session) || 0),
@@ -182,6 +183,8 @@ export function applyExport(state, loaded, now) {
   const isOpened = new Set(opened);
   state.projects ??= {};
   state.images ??= {};
+  state.wall ??= {};
+  for (const [key, entry] of Object.entries(loaded.wall ?? {})) state.wall[key] = {...withoutStamps(entry), at: now};
   for (const id of opened) state.projects[id] = { ...withoutStamps(loaded.projects[id]), at: now };
   // pictures of a loaded project that the export does not list are cleared too
   for (const key of Object.keys(state.images)) if (isOpened.has(key.split('::')[0])) state.images[key] = { at: now };

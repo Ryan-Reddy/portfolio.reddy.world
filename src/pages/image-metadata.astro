@@ -5,6 +5,8 @@ import ratings from '../data/keyword-ratings.json';
 import { archiveCredits } from '../lib/desk-credits.js';
 import { getCollection } from 'astro:content';
 import { KINDS } from '../lib/article-kinds.js';
+import wall from '../data/wall.json';
+import {allPosts} from '../lib/portfolios.js';
 
 // Every word idea in one list, each rated (scripts/keyword-ratings.mjs fetches the numbers at build time):
 // per project the words and where they came from; each word's rating once, in `ratings`.
@@ -30,11 +32,13 @@ for (const { sources, ...rating } of articleIdeas) ideaRatings[normalize(rating.
 const ratingsInfo = {updatedAt: ratings.updatedAt, bing: Object.keys(ratings.bing ?? {}).length > 0, rising: RISING};
 const count = projects.reduce((sum, project) => sum + project.images.length, 0);
 // what an article can be, and the case studies it can belong to (src/content/articles/, src/lib/article-kinds.js)
-const software = (await getCollection('software')).sort((a, b) => a.data.order - b.data.order).map(({ id, data }) => ({ id, title: data.title }));
+const software = (await getCollection('software')).sort((a, b) => a.data.order - b.data.order).map(({ id, data }) => ({ id, title: data.title, branch: data.branch ?? 'software' }));
 // drafts prepared in the repo, by desk id (src/data/article-seeds/<id>.json): each shows up once on the desk
 const seeds = Object.fromEntries(Object.entries(import.meta.glob('../data/article-seeds/*.json', { eager: true, import: 'default' }))
   .map(([file, seed]) => [file.split('/').pop().replace(/\.json$/, ''), seed]));
-const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRatings, articleIdeas: articleIdeas.map((idea) => [idea.tag, idea.sources]), kinds: KINDS, software, seeds }).replace(/</g, '\\u003c');
+const wallArticles = (await getCollection('articles')).map(({id, data}) => ({id, desk: data.desk, title: data.title, kind: KINDS[data.kind].label, year: (data.published ?? data.updated).getFullYear()}));
+const wallProjects = allPosts.filter(p => p.type === 'post' && p.portfolio !== 'maup').map(p => ({id: `${p.portfolio}/${p.slug}`, slug: p.slug, title: p.title.trim(), published: p.published, year: new Date(p.published).getFullYear(), time: new Date(p.published).getTime()}));
+const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRatings, articleIdeas: articleIdeas.map((idea) => [idea.tag, idea.sources]), kinds: KINDS, software, seeds, wall, wallArticles, wallProjects }).replace(/</g, '\\u003c');
 ---
 <!doctype html>
 <html lang="en">
@@ -272,6 +276,16 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     .reading .out-mark button { flex: none; min-height: 2rem; padding: 0 .7rem; font-size: .85rem; }
     .reading .video-block .poster { aspect-ratio: 16 / 9; display: flex; align-items: center; justify-content: center; gap: .5rem; background: #111; color: #f5f5f0; font-size: .95rem; }
     .reading .video-block .poster span { font-size: 2.2rem; line-height: 1; }
+    /* an article's text bar (#80): bold, italic, link, headings, lists, quote, undo, redo; it stays at the top while the text scrolls */
+    .reading .text-bar { position: sticky; top: 0; z-index: 2; display: flex; flex-wrap: wrap; gap: .25rem; padding: .35rem 0; background: #f8f4e9; border-bottom: 1px solid #d8cfbb; }
+    .reading .text-bar[hidden], .reading .link-form[hidden] { display: none; }
+    .reading .text-bar button { min-height: 2rem; min-width: 2rem; padding: 0 .55rem; border: 1px solid #d8cfbb; color: #24211c; background: transparent; font-size: .85rem; }
+    .reading .text-bar button[aria-pressed="true"] { border-color: #24211c; color: #f8f4e9; background: #24211c; }
+    .reading .text-bar button:disabled { opacity: .4; cursor: default; }
+    .reading .text-bar button:focus-visible { outline: 2px solid #24211c; outline-offset: 1px; }
+    .reading .link-form { flex: 1 1 100%; display: flex; flex-wrap: wrap; gap: .25rem; }
+    .reading .link-form input { flex: 1 1 14rem; min-width: 0; min-height: 2rem; }
+    .reading .ProseMirror-selectednode { outline: 2px solid #c9b98f; outline-offset: 2px; }
     .video-form { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
     .video-form[hidden] { display: none; }
     .video-form input { flex: 1 1 14rem; min-width: 0; }
@@ -384,6 +398,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     </div>
     <div class="actions">
       <button id="open-overview" type="button">Overview</button>
+      <button id="open-wall" type="button">Wall organiser</button>
       <button id="send" class="primary" type="button">Send to site</button>
       <details class="more"><summary>More</summary>
         <div class="menu">
@@ -409,19 +424,32 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
         <button id="make-hero" class="lead" type="button" aria-pressed="false" data-for="picture">☆ Make this the lead picture</button>
         <a id="project-link" target="_blank" rel="noreferrer" data-for="page picture">Open the page ↗</a>
         <button id="add-picture-here" class="quiet" type="button" data-for="article">＋ Picture</button>
-        <button id="add-video-here" class="quiet" type="button" data-for="article">＋ Video</button>
+        <button id="add-video-here" class="quiet" type="button" data-for="article page">＋ Video</button>
         <button id="show-elsewhere" class="quiet" type="button" data-for="article">On the wall and as a link</button>
         <button id="back-to-projects" class="quiet" type="button" data-for="article">← Back to the projects</button>
       </div>
       <article class="reading" id="reading">
         <span class="when" id="read-when"></span>
         <p class="hint" id="page-note" aria-live="polite"></p>
-        <form class="video-form" id="video-form" hidden><input id="video-url" type="url" inputmode="url" autocomplete="off" placeholder="Paste a YouTube or Vimeo link" aria-label="A YouTube or Vimeo link"><button type="submit">Add</button><button id="video-cancel" class="quiet" type="button">Cancel</button></form>
+        <form class="video-form" id="video-form" hidden><input id="video-url" type="url" inputmode="url" autocomplete="off" placeholder="Paste a YouTube or Vimeo link" aria-label="A YouTube or Vimeo link"><label><input id="video-embed" type="checkbox" checked> Embed a player</label><button type="submit">Save video</button><button id="video-cancel" class="quiet" type="button">Cancel</button></form>
         <h2 class="reading-title" id="read-title" contenteditable="true" data-placeholder="The article's title" aria-label="The article's title"></h2>
         <p class="dek" id="read-dek" hidden></p>
         <div class="lead" id="read-lead" hidden></div>
         <p class="sum" id="read-sum" contenteditable="true" data-placeholder="A short summary: one or two lines, shown on the wall and under the title" aria-label="Short summary"></p>
         <p class="hint" id="layout-note" hidden>Marked at the left: the old site's own layout. Words changed there make it plain paragraphs on the site.</p>
+        <div class="text-bar" id="text-bar" role="toolbar" aria-label="Text" hidden>
+          <button type="button" data-cmd="bold" aria-label="Bold" aria-pressed="false"><b>B</b></button>
+          <button type="button" data-cmd="italic" aria-label="Italic" aria-pressed="false"><i>I</i></button>
+          <button type="button" data-cmd="link" aria-label="Link" aria-pressed="false">Link</button>
+          <button type="button" data-cmd="h2" aria-label="Heading" aria-pressed="false">H2</button>
+          <button type="button" data-cmd="h3" aria-label="Small heading" aria-pressed="false">H3</button>
+          <button type="button" data-cmd="bullet" aria-label="List" aria-pressed="false">• List</button>
+          <button type="button" data-cmd="ordered" aria-label="Numbered list" aria-pressed="false">1. List</button>
+          <button type="button" data-cmd="quote" aria-label="Quote" aria-pressed="false">❝ Quote</button>
+          <button type="button" data-cmd="undo" aria-label="Undo">↶</button>
+          <button type="button" data-cmd="redo" aria-label="Redo">↷</button>
+          <form class="link-form" id="link-form" hidden><input id="link-url" type="text" inputmode="url" autocomplete="off" placeholder="https://… or /portfolio/…" aria-label="The link's address"><button type="submit">Set link</button><button id="link-remove" class="quiet" type="button">Remove link</button></form>
+        </div>
         <div class="reading-text" id="read-text" contenteditable="true" role="textbox" aria-multiline="true" aria-label="The article's text"></div>
         <section class="read-rest" id="read-rest" hidden><h3 class="rest-title"></h3><div class="rest-rows"></div></section>
         <div class="block-tools" id="block-tools" hidden><button type="button" data-move="up" aria-label="Move this paragraph up (Alt+↑)">↑</button><button type="button" data-move="down" aria-label="Move this paragraph down (Alt+↓)">↓</button></div>
@@ -553,7 +581,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
             <div class="box-body row2">
               <label>Kind <select id="article-kind"></select></label>
               <label>Language <select id="article-lang"><option value="en">English</option><option value="nl">Nederlands</option></select></label>
-              <label>Year <input id="article-year" type="number" min="1990" max="2100" inputmode="numeric"></label>
+              <label>Year of work <input id="article-year" type="number" min="1990" max="2100" inputmode="numeric"></label>
             </div>
           </details>
           <details class="box" data-box="person" id="article-person">
@@ -655,7 +683,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     const same = (a, b) => a.toLowerCase() === b.toLowerCase();
     // desk-sync.js (below) stamps each change and copies it to Ryan's account when he is signed in
     // (and the boxes follow: one Ryan just handled folds, below)
-    const save = () => { window.deskSync?.stamp(state); try { localStorage.setItem(STORE, JSON.stringify(state)); } catch {} window.deskSync?.saved(); refreshAllBoxes(); };
+    const save = () => { window.deskSync?.stamp(state); try { localStorage.setItem(STORE, JSON.stringify(state)); } catch {} window.deskSync?.saved(); refreshAllBoxes(); window.dispatchEvent(new Event('desk-saved')); };
     const current = () => flat[state.cursor] ?? flat[0];
     const projectRecord = (project) => state.projects[project.id] ?? {};
     const recordFor = (image) => state.images[image.key] ?? state.images[image.url] ?? {};
@@ -678,6 +706,8 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     const projectTags = (project) => tags(pick(projectRecord(project), 'tags', project.keywords.join(', ')));
     const isDone = (project) => Boolean(projectRecord(project).reviewed ?? project.done);
     const summaryOf = (project) => pick(projectRecord(project), 'summary', project.summary);
+    const titleOf = (project) => pick(projectRecord(project), 'title', project.title);
+    const dateLabelOf = (project) => projectRecord(project).published ? new Date(`${projectRecord(project).published}T00:00:00Z`).toLocaleDateString('en-GB', {year:'numeric',month:'short',day:'numeric',timeZone:'UTC'}) : project.dateLabel;
     const ownKeywords = (project, image) => image.keywords.filter((word) => !project.keywords.some((shared) => same(shared, word)));
     const imageTags = (project, image) => tags(pick(recordFor(image), 'tags', ownKeywords(project, image).join(', ')));
     const descriptionOf = (image) => pick(recordFor(image), 'description', image.description || image.existingDescription || image.alt || '');
@@ -708,7 +738,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       state.article = null;
       history.replaceState(null, '', location.pathname + location.search);
     }
-    window.imageDesk = {DATA, STORE, state, flat, pinned: linkedIndex >= 0, render: (options) => render(options),
+    window.imageDesk = {DATA, STORE, state, flat, save, pinned: linkedIndex >= 0, render: (options) => { render(options); window.dispatchEvent(new Event('desk-render')); },
       // for scripts/desk-sync-check.mjs: the pieces a text is read in, and the piece a node of the page was drawn from
       pieces: (html) => textPieces(html).map((piece) => piece.source), pieceSource: (node) => pieceOf.get(node)?.source};
 
@@ -1078,7 +1108,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       const box = document.createElement('div');
       box.append(...nodes.map((node) => node.cloneNode(true)));
       for (const mark of box.querySelectorAll('.out-mark')) mark.remove();
-      tidy(box, null, noNode, noNode);
+      tidy(box, null, noNode);
       return box;
     }
     // what nodes of the text read as: a picture block as <figure data-media>, without the tools; and spaces the page
@@ -1108,7 +1138,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       for (const {source, loose, opens} of textPieces(html)) {
         const template = document.createElement('template');
         template.innerHTML = loose ? `<p>${source.replace(/\n/g, '<br>')}</p>` : source;
-        tidy(template.content, (media) => mediaBlock(project, media), noNode, noNode);
+        tidy(template.content, (media) => mediaBlock(project, media), noNode, videoBlock);
         wrapLoose(template.content);
         // a paragraph that holds only rows of pictures (WordPress's <p><strong> around five of them) is drawn as those
         // rows, so ↑ ↓ ✕ act on each one where it is; they stay its piece, written as it stands while none is moved
@@ -1532,12 +1562,13 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
         updateProgress();
         renderArticleMode();
         showStage();
+        window.dispatchEvent(new Event('desk-render'));
         return;
       }
       const {project, projectIndex} = current();
       $('portfolio').textContent = project.portfolio;
-      $('project-title').textContent = project.title;
-      $('project-when').textContent = [project.dateLabel, project.kinds.join(', ')].filter(Boolean).join(' · ');
+      $('project-title').textContent = titleOf(project);
+      $('project-when').textContent = [dateLabelOf(project), project.kinds.join(', ')].filter(Boolean).join(' · ');
       $('project-picker').value = String(projectIndex);
       renderStage();
       renderProject();
@@ -1546,6 +1577,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       refreshBoxes('picture', current().image.key);
       updateProgress();
       if (keepTab) showTab(tab);
+      window.dispatchEvent(new Event('desk-render'));
     }
     function goProject(delta) {
       // from an article, the arrows go back to the project you were on
@@ -1588,8 +1620,8 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       $('note').textContent = 'Lead picture chosen: the card and the wall show it.';
     });
     addEventListener('keydown', (event) => {
-      // not while a dialog or the overview is open: the desk behind it is out of sight
-      if (document.querySelector('dialog[open]') || $('overview')?.hidden === false) return;
+    // not while a dialog or the overview is open: the desk behind it is out of sight
+      if (document.querySelector('dialog[open]') || $('overview')?.hidden === false || $('wall-organiser')?.hidden === false) return;
       if ((event.ctrlKey || event.metaKey) && event.key === 'Enter' && !openArticleRecord()) { event.preventDefault(); markDone(); }
       if (event.altKey && event.key === 'ArrowLeft') { event.preventDefault(); goProject(-1); }
       if (event.altKey && event.key === 'ArrowRight') { event.preventDefault(); goProject(1); }
@@ -1656,7 +1688,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
         if (credit) entry.credit = {name: credit.name ?? '', url: credit.url ?? ''};
         return [image.key, entry];
       }));
-      const output = {version: 4, exportedAt: new Date().toISOString(), projects: state.projects, images, articles: state.articles};
+      const output = {version: 4, exportedAt: new Date().toISOString(), projects: state.projects, images, articles: state.articles, wall: {...DATA.wall, ...state.wall}};
       const link = el('a', {href: URL.createObjectURL(new Blob([JSON.stringify(output, null, 2) + '\n'], {type: 'application/json'})), download: 'reddy-world-image-metadata.json'});
       link.click();
       URL.revokeObjectURL(link.href);
@@ -1698,7 +1730,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       const groups = [];
       const own = drafts();
       if (own.length) groups.push(el('optgroup', {label: 'Your articles'}, ...own.map(([id, article]) => new Option(`${articleTitle(article)} · ${article.status === 'ready' ? 'ready' : 'draft'}`, `article:${id}`))));
-      groups.push(el('optgroup', {label: 'Projects'}, ...DATA.projects.map((project, index) => new Option(`${project.title} · ${project.portfolio}`, String(index)))));
+      groups.push(el('optgroup', {label: 'Projects'}, ...DATA.projects.map((project, index) => new Option(`${titleOf(project)} · ${project.portfolio}`, String(index)))));
       $('project-picker').replaceChildren(...groups);
     }
     // an article's text as its page will show it: the tags the post text keeps, links only to web or site addresses
@@ -1761,7 +1793,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       $('read-text').setAttribute('aria-label', 'The article\'s text');
       $('read-rest').hidden = true;
       $('layout-note').hidden = true;
-      $('read-when').textContent = `${DATA.kinds?.[article.kind ?? 'story']?.label ?? 'Story'} · ${article.status === 'ready' ? 'ready for the site' : 'draft'} · started ${started(article)}`;
+      $('read-when').textContent = `${DATA.kinds?.[article.kind ?? 'story']?.label ?? 'Story'} · ${article.published || `started ${started(article)}`} · ${article.status === 'ready' ? 'ready for the site' : 'draft'}`;
       if (document.activeElement !== $('read-title')) $('read-title').textContent = String(article.title ?? '');
       if (document.activeElement !== $('read-sum')) $('read-sum').textContent = String(article.summary ?? '');
       const person = (article.kind ?? 'story') === 'interview' && article.person?.name ? article.person : null;
@@ -1777,7 +1809,15 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       // the text is drawn again only for another article, or when the draft changed elsewhere (another device)
       const text = $('read-text');
       const content = String(article.content ?? '');
-      if (shownText.key !== `article:${state.article}` || (content !== shownText.content && !text.contains(document.activeElement))) {
+      // in the editor with the bar (src/lib/desk-editor.js) once it has loaded; a fresh one, and a fresh undo, per article
+      const editor = window.deskEditor;
+      $('text-bar').hidden = !editor;
+      if (editor && (shownText.key !== `article:${state.article}` || !editor.on)) {
+        text.replaceChildren();
+        editor.mount(text, {content: editorHtml(article, content), block: articleBlock, change: saveText, selection: renderTextBar, refused: refuseDrop, safeHref});
+        renderTextBar();
+      } else if (editor && content !== shownText.content && !editor.focused()) editor.set(editorHtml(article, content));
+      else if (!editor && (shownText.key !== `article:${state.article}` || (content !== shownText.content && !text.contains(document.activeElement)))) {
         drawText(photoNodes(article, cleanHtml(content), pictureBlock));
       }
       shownText = {key: `article:${state.article}`, content};
@@ -1795,11 +1835,15 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       const record = projectRecord(project);
       const pageKey = `project:${project.id}`;
       const content = record.content !== undefined ? record.content : project.content;
+      // a project's text is written in the page's own editor (until it moves into the bar's too)
+      if (window.deskEditor?.on) window.deskEditor.destroy();
+      $('text-bar').hidden = true;
+      $('link-form').hidden = true;
       $('reading').dataset.kind = 'project';
       $('video-form').hidden = true;
-      $('read-when').textContent = [project.dateLabel, project.kinds.join(', ')].filter(Boolean).join(' • ');
-      $('read-title').contentEditable = 'false';
-      $('read-title').textContent = project.title;
+      $('read-when').textContent = [dateLabelOf(project), project.kinds.join(', ')].filter(Boolean).join(' • ');
+      $('read-title').contentEditable = 'true';
+      if (document.activeElement !== $('read-title')) $('read-title').textContent = pick(record, 'title', project.title);
       $('read-title').setAttribute('aria-label', 'The project\'s title');
       if (document.activeElement !== $('read-sum')) $('read-sum').textContent = summaryOf(project);
       $('read-dek').hidden = true;
@@ -1893,16 +1937,69 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       const host = key.startsWith('youtube:') ? 'YouTube' : 'Vimeo';
       const figure = el('figure', {className: 'pic-block video-block', contentEditable: 'false', draggable: true},
         el('span', {className: 'poster'}, el('span', {textContent: '▶'}), host),
-        el('span', {className: 'pic-tools'}, blockTool('up', 'Move the video up', '↑'), blockTool('down', 'Move the video down', '↓'), blockTool('out', 'Take the video out of the text', '✕')));
+        el('span', {className: 'pic-tools'}, blockTool('edit-video', 'Edit the video link or embedding', 'Edit link'), blockTool('up', 'Move the video up', '↑'), blockTool('down', 'Move the video down', '↓'), blockTool('out', 'Take the video out of the text', '✕')));
       figure.dataset.video = key;
       return figure;
     }
     const markEmpty = () => { const text = $('read-text'); text.dataset.empty = String(!text.textContent.trim() && !text.querySelector('.pic-block')); };
+    // ---------- an article's text in the editor, with the bar (#80; src/lib/desk-editor.js) ----------
+    // its stored text for the editor: the markers of its pictures (one taken off the article goes) and of its videos
+    function editorHtml(article, content) {
+      const template = document.createElement('template');
+      template.innerHTML = cleanHtml(content);
+      tidy(template.content, null, (id) => {
+        if (!article.pictures?.[id] || article.pictures[id].removed) return document.createTextNode('');
+        const figure = document.createElement('figure');
+        figure.dataset.picture = id;
+        return figure;
+      });
+      return template.innerHTML;
+    }
+    // what the editor shows for a marker: the page's own picture or video block, with ↑ ↓ ✕
+    function articleBlock(kind, value) {
+      if (kind === 'video') return videoBlock(value);
+      const picture = openArticleRecord()?.pictures?.[value];
+      return picture ? pictureBlock(value, picture) : el('figure', {className: 'pic-block', contentEditable: 'false'});
+    }
+    const refuseDrop = () => { $('page-note').textContent = 'A picture can’t be dropped into the text: add it with ＋ Picture.'; };
+    // the bar shows what the caret is in (bold, a heading, a list…), and undo and redo only when there is something to undo
+    function renderTextBar() {
+      const editor = window.deskEditor;
+      if (!editor?.on) return;
+      for (const button of $('text-bar').querySelectorAll('button[data-cmd]')) {
+        const command = button.dataset.cmd;
+        if (command === 'undo' || command === 'redo') button.disabled = !editor.can(command);
+        else button.setAttribute('aria-pressed', String(editor.active(command)));
+      }
+    }
+    // a press on the bar leaves the caret in the text
+    $('text-bar').addEventListener('mousedown', (event) => { if (event.target.closest('button[data-cmd]')) event.preventDefault(); });
+    $('text-bar').addEventListener('click', (event) => {
+      const button = event.target.closest('button[data-cmd]');
+      if (!button || !editorOn()) return;
+      if (button.dataset.cmd !== 'link') { window.deskEditor.run(button.dataset.cmd); return; }
+      $('link-form').hidden = false;
+      $('link-url').value = window.deskEditor.link();
+      $('link-remove').hidden = !window.deskEditor.active('link');
+      $('link-url').focus();
+    });
+    const closeLinkForm = () => { $('link-form').hidden = true; $('link-url').value = ''; };
+    $('link-form').addEventListener('submit', (event) => {
+      event.preventDefault();
+      const href = $('link-url').value.trim();
+      if (href && !safeHref(href)) { $('page-note').textContent = 'A link goes to a web address (https://…), a page of this site (/…) or an e-mail address (mailto:…).'; return; }
+      window.deskEditor.run('link', href);
+      closeLinkForm();
+    });
+    $('link-remove').addEventListener('click', () => { window.deskEditor.run('link', ''); closeLinkForm(); });
+    $('link-url').addEventListener('keydown', (event) => { if (event.key === 'Escape') { closeLinkForm(); $('read-text').focus(); } });
+    // the editor is a module and loads after this script: an article open by then moves into it
+    document.addEventListener('desk-editor-ready', () => { if (openArticleRecord()) { shownText = {key: null, content: null}; renderReading(); } });
     // the page's text back into the draft, cleaned, so a pasted page or picture never fills the account copy
     function saveText() {
       markEmpty();
       if (!openArticleRecord()) return saveProjectText();
-      const content = cleanHtml($('read-text').innerHTML);
+      const content = cleanHtml(editorOn() ? window.deskEditor.html() : $('read-text').innerHTML);
       shownText = {key: `article:${state.article}`, content};
       setArticle('content', content);
     }
@@ -1942,10 +2039,12 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     const shows = (node) => !node.matches('br, .out-mark') && (node.textContent.trim() !== '' || node.matches('hr, .pic-block') || node.querySelector('img, hr, .pic-block') !== null);
     // the block above or below that the page shows, so every move is one the page shows
     const shownNeighbour = (block, up) => { let at = block; do at = up ? at.previousElementSibling : at.nextElementSibling; while (at && !shows(at)); return at; };
-    $('read-text').addEventListener('input', saveText);
+    // an article's text in the editor saves, moves, drags and drops itself: these handlers are for a project's text
+    const editorOn = () => Boolean(window.deskEditor?.on);
+    $('read-text').addEventListener('input', () => { if (!editorOn()) saveText(); });
     $('read-text').addEventListener('click', (event) => {
       const button = event.target.closest?.('.pic-tools button');
-      if (!button) return;
+      if (!button || editorOn()) return;
       event.preventDefault();
       const figure = button.closest('.pic-block');
       // a row of a project's text: the line goes where it is, also inside a paragraph, so Put it back puts it there
@@ -1984,7 +2083,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     const dropAt = (event) => { const block = topBlock(event.target); if (!block || block === dragged) return null; const box = block.getBoundingClientRect(); return {block, above: event.clientY < box.top + box.height / 2}; };
     $('read-text').addEventListener('dragstart', (event) => {
       const figure = event.target.closest?.('.pic-block');
-      if (!figure) return;
+      if (!figure || editorOn()) return;
       dragged = figure;
       event.dataTransfer.effectAllowed = 'move';
       event.dataTransfer.setData('text/plain', '');
@@ -1997,6 +2096,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       if (at) at.block.classList.add(at.above ? 'drop-above' : 'drop-below');
     });
     $('read-text').addEventListener('drop', (event) => {
+      if (editorOn()) return;
       if (!dragged) {
         // a picture from elsewhere (Photographs, the lead, a preview, a file) would show in the text but never be saved there
         if (event.dataTransfer?.types.includes('Files') || /<img\b/i.test(event.dataTransfer?.getData('text/html') ?? '')) {
@@ -2047,6 +2147,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       getSelection().addRange(range);
     }
     function moveBlock(block, up) {
+      if (editorOn()) { window.deskEditor.moveBlock(block, up); return; }
       const other = shownNeighbour(block, up);
       if (!other) return;
       const offset = caretIn(block);
@@ -2083,7 +2184,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     }
     document.addEventListener('selectionchange', placeBlockTools);
     $('read-text').addEventListener('keydown', (event) => {
-      if (!event.altKey || (event.key !== 'ArrowUp' && event.key !== 'ArrowDown')) return;
+      if (!event.altKey || (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') || editorOn()) return;
       const block = textBlock();
       if (!block) return;
       event.preventDefault();
@@ -2095,7 +2196,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     const nothingShown = (node) => node.nodeType === 8 || (node.nodeType === 3 ? !node.data.replace(/[ \t\n\r]+/g, '')
       : !node.matches('.pic-block, .out-mark, br, hr') && !node.textContent.replace(/[ \t\n\r]+/g, '') && !node.querySelector('br, hr, img, .pic-block, .out-mark'));
     $('read-text').addEventListener('keydown', (event) => {
-      if (event.key !== 'Backspace' && event.key !== 'Delete') return;
+      if ((event.key !== 'Backspace' && event.key !== 'Delete') || editorOn()) return;
       const selection = getSelection();
       if (!selection.rangeCount || !selection.isCollapsed) return;
       const block = topBlock(selection.anchorNode);
@@ -2124,6 +2225,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       $(id).addEventListener('input', () => {
         // on a project's page: the summary is the project's, set as its box sets it; the title is the site's
         if (!openArticleRecord()) {
+          if (field === 'title') {const {project} = current(); setProject(project, 'title', $(id).textContent.replace(/\s+/g, ' ').trim(), project.title);}
           if (field === 'summary') {
             const {project} = current();
             const value = $(id).textContent.replace(/\s+/g, ' ').trim();
@@ -2258,6 +2360,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       if (selection?.rangeCount && $('read-text').contains(selection.anchorNode)) lastRange = selection.getRangeAt(0).cloneRange();
     });
     function placePicture(id) {
+      if (editorOn()) { window.deskEditor.insert('picture', id); return; }
       const article = openArticleRecord();
       const figure = pictureBlock(id, article.pictures[id]);
       const block = lastRange && $('read-text').contains(lastRange.startContainer) ? topBlock(lastRange.startContainer) : null;
@@ -2266,25 +2369,45 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       saveText();
     }
     // ＋ Video on the page: a link, put after the paragraph the cursor is in (else at the end)
-    const closeVideoForm = () => { $('video-form').hidden = true; $('video-url').value = ''; };
-    $('add-video-here').addEventListener('click', () => {
-      if (elsewhere) $('show-elsewhere').click();
+    let editingVideo = null;
+    const videoHref = key => key.startsWith('youtube:') ? `https://www.youtube.com/watch?v=${key.split(':')[1]}` : `https://vimeo.com/${key.split(':')[1]}`;
+    const closeVideoForm = () => { $('video-form').hidden = true; $('video-url').value = ''; editingVideo = null; };
+    $('read-text').addEventListener('click', event => {
+      const button = event.target.closest?.('[data-move="edit-video"]');
+      if (!button) return;
+      event.preventDefault(); event.stopImmediatePropagation();
+      editingVideo = button.closest('[data-video]');
+      $('video-url').value = videoHref(editingVideo.dataset.video);
+      $('video-embed').checked = true; $('video-form').hidden = false; $('video-url').focus();
+    }, true);
+    function openVideoForm() {
+      editingVideo = null; $('video-url').value = ''; $('video-embed').checked = true;
+      if (!openArticleRecord()) {showTab('project'); renderReading();}
+      else {elsewhere = false; showStage();}
       $('video-form').hidden = false;
       $('video-url').focus();
-    });
+    }
+    $('add-video-here').addEventListener('click', openVideoForm);
     $('video-cancel').addEventListener('click', closeVideoForm);
     $('video-form').addEventListener('submit', (event) => {
       event.preventDefault();
-      // a video or a picture of its own goes only into an article's text
-      if (!openArticleRecord()) return;
       const key = videoKey($('video-url').value);
       if (!key) { $('page-note').textContent = 'That is not a YouTube or Vimeo link.'; return; }
-      const block = lastRange && $('read-text').contains(lastRange.startContainer) ? topBlock(lastRange.startContainer) : null;
-      if (block) block.after(videoBlock(key));
-      else $('read-text').append(videoBlock(key));
-      saveText();
+      const embed = $('video-embed').checked;
+      const href = videoHref(key);
+      if (editingVideo && editorOn()) window.deskEditor.replaceVideo(editingVideo, embed ? key : href, !embed);
+      else if (editorOn() && embed) window.deskEditor.insert('video', key);
+      else if (editorOn()) window.deskEditor.insertLink(href);
+      else {
+        const block = lastRange && $('read-text').contains(lastRange.startContainer) ? topBlock(lastRange.startContainer) : null;
+        const added = embed ? videoBlock(key) : el('p', {}, el('a', {href, textContent: href}));
+        if (editingVideo?.isConnected) editingVideo.replaceWith(added);
+        else if (block) block.after(added);
+        else $('read-text').append(added);
+        saveText();
+      }
       closeVideoForm();
-      $('page-note').textContent = 'Video added. On the site it loads only when someone presses play.';
+      $('page-note').textContent = embed ? 'Video saved. On the site it loads only when someone presses play.' : 'Video saved as a link, with no embedded player.';
     });
     // ＋ Picture on the page: add one from this computer and put it after the paragraph the cursor is in
     let placeAdded = false;
@@ -2525,7 +2648,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       save();
       render();
       $('article-note').textContent = '';
-      $('article-title').focus();
+      ($('piece-title') ?? $('article-title')).focus();
     }
     function openArticle(id) {
       if (!state.articles[id] || state.articles[id].deleted) return;
@@ -2561,7 +2684,37 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       render();
       $('note').textContent = `“${title}” deleted.`;
     });
-    Object.assign(window.imageDesk, {newArticle, openArticle});
+    Object.assign(window.imageDesk, {newArticle, openArticle, openVideoForm,
+      piece: () => {
+        const article = openArticleRecord();
+        if (article) return {type: 'article', id: state.article, ...article, published: article.published || new Date(article.readyAt ?? article.created ?? Date.now()).toISOString().slice(0,10)};
+        const {project} = current();
+        const record = projectRecord(project);
+        return {type: 'project', id: project.id, title: pick(record, 'title', project.title), summary: summaryOf(project), tags: projectTags(project).join(', '), published: pick(record, 'published', project.published), craft: record.craft ?? project.craft, images: project.images};
+      },
+      setPiece: (field, value) => {
+        if (field === 'published' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+          const key = (openArticleRecord() ? `a-${state.article}` : `p-${current().project.id.split('/').slice(1).join('/')}`).toLowerCase().replace(/[^a-z0-9]+/g, '-');
+          state.wall ??= {}; state.wall[key] = {...DATA.wall?.[key], ...state.wall[key], year: Number(value.slice(0,4))};
+        }
+        if (openArticleRecord()) setArticle(field, value);
+        else {const {project} = current(); setProject(project, field, value, field === 'tags' ? project.keywords.join(', ') : project[field] ?? '');}
+        render();
+      },
+      pieceMode: (mode) => {
+        if (openArticleRecord()) {
+          elsewhere = mode === 'preview'; renderReading(); showStage();
+          if (mode === 'picture') {const box = $('pic-list').closest('details'); box.open = true; box.scrollIntoView({block: 'nearest'});}
+        } else showTab(mode === 'page' ? 'project' : mode);
+      },
+      insertSelectedPicture: () => {
+        const {project, image} = current();
+        showTab('project'); renderReading();
+        const media = Object.keys(project.thumbs).find(index => project.thumbs[index] === image.src);
+        if (media === undefined) return;
+        $('read-text').append(mediaBlock(project, media)); saveProjectText();
+      },
+    });
 
     render();
   </script>
@@ -2578,6 +2731,60 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       <section class="ov-articles" id="ov-articles" aria-label="Your articles"></section>
     </div>
   </section>
+  <section id="piece-fields" hidden aria-label="Piece details">
+    <div class="piece-modes" role="group" aria-label="What to work on"><button type="button" data-piece-mode="page" aria-pressed="true">Page</button><button type="button" data-piece-mode="picture" aria-pressed="false">Pictures</button><button type="button" data-piece-mode="preview" aria-pressed="false">Preview</button></div>
+    <div class="piece-inputs">
+      <label>Title<input id="piece-title" autocomplete="off"></label>
+      <label>Summary<textarea id="piece-summary" rows="2"></textarea></label>
+      <label>Tags<input id="piece-tags" autocomplete="off" placeholder="Add tags, separated by commas"></label>
+      <p class="hint">Your tags describe the piece for search and organisation. Craft uses the fixed list below.</p>
+      <label>Craft<select id="piece-craft"><option value="">Automatic</option></select></label>
+      <label>Publication date<input id="piece-published" type="date" min="1900-01-01" max="2200-12-31"></label>
+      <p class="hint">The date shown on its page and used to place it on the wall. Changing the date does not publish a draft.</p>
+      <div class="piece-actions"><button id="piece-wall" type="button">Arrange on the wall</button><button id="piece-video" type="button">＋ Video or link</button><button id="piece-picture" type="button">Add picture</button></div>
+      <p id="piece-fields-note" class="hint" role="status"></p>
+    </div>
+  </section>
+  <style is:global>
+    #piece-fields[hidden] {display:none;}
+    #project-bench .tabs[hidden],#project-chips[hidden] {display:none;}
+    #piece-fields {margin-bottom:1rem;}
+    .piece-inputs {display:grid;gap:.65rem;margin:1rem 0;}
+    .piece-inputs > label {display:grid;gap:.3rem;}
+    .piece-inputs input,.piece-inputs textarea,.piece-inputs select {width:100%;max-width:100%;min-width:0;}
+    .piece-modes,.piece-actions {display:flex;gap:.4rem;flex-wrap:wrap;}
+    .piece-modes button[aria-pressed="true"] {background:var(--gold);color:var(--bg);}
+  </style>
+  <section id="wall-organiser" hidden role="dialog" aria-modal="true" aria-labelledby="wall-title">
+    <header><h2 id="wall-title" tabindex="-1">Wall organiser</h2><button id="close-wall" type="button">Back to the desk</button></header>
+    <p>Arrange the wall without changing the pages. Row 0 is automatic; rows 1–99 stay together at every screen width. Send to site prepares these changes for the site.</p>
+    <div class="wall-tools"><label>Find a tile<input id="wall-search" type="search" placeholder="Title or kind"></label><label>Show<select id="wall-filter"><option value="all">All tiles</option><option value="shown">On the wall</option><option value="hidden">Off the wall</option></select></label><button id="wall-send" type="button" class="primary">Send to site</button></div>
+    <p data-desk-saved aria-live="polite">Saved in this browser</p><p id="wall-status" role="status"></p><p id="wall-catalog-status"></p><div id="wall-tiles"></div>
+  </section>
+  <style is:global>
+    #wall-organiser {position: fixed; inset: 0; z-index: 12; overflow: auto; background: var(--bg); padding: clamp(1rem, 4vw, 3rem);}
+    #wall-organiser[hidden] {display: none;}
+    #wall-organiser header, .wall-tools, .wall-tile {display: flex; align-items: center; gap: .75rem; flex-wrap: wrap;}
+    #wall-organiser header {justify-content: space-between;}
+    #wall-organiser h2 {margin: 0;}
+    .wall-tools {margin: 1.5rem 0;}
+    .wall-tools label, .wall-tile label {display: grid; gap: .3rem; font-size: .8rem;}
+    .wall-tools input, .wall-tools select, .wall-tile input {max-width: 100%; width: 8rem;}
+    .wall-tools input {width: 16rem;}
+    .wall-tile {border-top: 1px solid var(--line); padding: 1rem 0;}
+    .wall-group {margin: 2rem 0 .5rem; font-size: 1rem; color: var(--muted);}
+    .wall-tile .tile-name {flex: 1 1 16rem; min-width: 0; overflow-wrap: anywhere;}
+    .wall-tile .tile-name strong, .wall-tile .tile-name small {display: block;}
+    .wall-tile small {color: var(--muted); margin-top: .3rem;}
+    .wall-tile[data-hidden="true"] .tile-name {opacity: .55;}
+    .wall-tile input {width: 5rem;}
+    .wall-tile button {min-height: 2.75rem;}
+    .wall-tile .tile-moves {display: flex; gap: .4rem;}
+    @media(max-width: 500px) {.wall-tools > label {flex: 1 1 100%;} .wall-tile .tile-name {flex-basis: 100%;}}
+  </style>
   <script>import '../lib/desk-sync.js';</script>
+  <script>import '../lib/desk-wall-ui.js';</script>
+  <script>import '../lib/desk-piece.js';</script>
+  <script>import '../lib/desk-editor.js';</script>
 </body>
 </html>

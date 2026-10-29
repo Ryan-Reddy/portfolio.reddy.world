@@ -96,6 +96,8 @@ export function deskProjects() {
       id: `${portfolio.id}/${post.slug}`,
       portfolio: portfolio.name,
       title: post.title.trim(),
+      published: String(post.published ?? '').slice(0, 10),
+      craft: post.craft ?? '',
       href: `${SITE}${post.path}`,
       // what the archive already says, so the desk opens on it instead of on nothing (Ryan, 2026-10-26:
       // "i cant see what keywords etc are already in the image")

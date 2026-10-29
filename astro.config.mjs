@@ -4,6 +4,7 @@ import { pageInfo, isRetired } from './src/lib/sitemap-images.js';
 
 // Built here, published by reddy.world under /portfolio (see src/lib/portfolios.js)
 export default defineConfig({
+  vite: {server: {proxy: process.env.WALL_SITE_URL ? {'/wall-catalog.json': {target: process.env.WALL_SITE_URL, changeOrigin: true}} : {}}},
   site: 'https://reddy.world',
   base: '/portfolio',
   trailingSlash: 'always',
