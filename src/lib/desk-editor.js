@@ -1,5 +1,5 @@
-// An article's text on the desk is written in Tiptap (#80; Ryan, 2026-10-27: "Tiptap sounds good"), mounted on the
-// page's own #read-text, with the bar above it. A project's page keeps the page's own editor until it moves here too.
+// Article and project text share Tiptap on #read-text. Project sessions keep the original source
+// of unchanged blocks, so formatting or moving one paragraph does not rewrite its neighbours.
 //
 // The page's script is inline and can't import, so it drives this through window.deskEditor. Pictures and videos stay
 // the page's own blocks (pictureBlock, videoBlock: ↑ ↓ ✕, dragged by ProseMirror), stored as they always were:
@@ -7,6 +7,9 @@
 import { Editor, Extension, Node } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import { NodeSelection, TextSelection } from '@tiptap/pm/state';
+import {DOMSerializer, Fragment} from '@tiptap/pm/model';
+import {editorPieces} from './desk-text.js';
+import {preserveBlocks} from './preserved-blocks.js';
 
 // The notice the MIT licence asks to ship with the code. The build drops comments, so it travels as a string
 // (window.deskEditor.licence).
@@ -19,6 +22,52 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 let editor = null;
 let opts = null;
 let placed = false; // the caret has been in the text since it opened, so ＋ Picture goes after its paragraph
+let sourceSession = null;
+const SourceIds = Extension.create({
+  name:'sourceIds',
+  addGlobalAttributes() {return [{types:['paragraph','heading','blockquote','bulletList','orderedList','horizontalRule','media','video','picture','keptSource'],attributes:{sourceId:{default:null,parseHTML:el=>el.getAttribute('data-desk-source'),renderHTML:attrs=>attrs.sourceId ? {'data-desk-source':attrs.sourceId} : {}}}}];},
+});
+const KeptSource = Node.create({name:'keptSource',group:'block',atom:true,
+  parseHTML:()=>[{tag:'div[data-kept-source]'}],
+  renderHTML:({HTMLAttributes})=>['div',{...HTMLAttributes,'data-kept-source':''}],
+  addNodeView:()=>()=>{const dom=document.createElement('span');dom.hidden=true;dom.setAttribute('aria-hidden','true');return {dom};},
+});
+function sourceInput(original) {
+  const pieces = editorPieces(original);
+  sourceSession = {original,pieces,baseline:[]};
+  return pieces.map(piece => {
+    const template = document.createElement('template'); template.innerHTML = piece.html;
+    if (!template.content.children.length) template.innerHTML = '<div data-kept-source=""></div>';
+    let inline=[];
+    const wrap=()=>{if(inline.length){const p=document.createElement('p');inline[0].before(p);p.append(...inline);inline=[];}};
+    for (const node of [...template.content.childNodes]) {
+      if(node.nodeType===3 || (node.nodeType===1 && !/^(P|H[2-4]|UL|OL|BLOCKQUOTE|HR|FIGURE|DIV)$/.test(node.nodeName))) inline.push(node);
+      else wrap();
+    }
+    wrap();
+    for (const node of template.content.children) node.setAttribute('data-desk-source',piece.id);
+    return template.innerHTML;
+  }).join('');
+}
+function sourceGroups() {
+  const groups = [];
+  editor.state.doc.forEach(node => {
+    const id=node.attrs.sourceId;
+    if (id && groups.at(-1)?.id===id) groups.at(-1).nodes.push(node);
+    else groups.push({id,nodes:[node]});
+  });
+  return groups.map(group => {
+    const json=group.nodes.map(node=>node.toJSON());
+    const signature=JSON.stringify(json,(key,value)=>key==='sourceId'?undefined:value);
+    const box=document.createElement('div'); box.append(DOMSerializer.fromSchema(editor.schema).serializeFragment(Fragment.fromArray(group.nodes)));
+    return {id:group.id,signature,html:stored(box.innerHTML)};
+  });
+}
+function captureSources() {
+  if (!sourceSession) return;
+  const originals=new Map(sourceSession.pieces.map(piece=>[piece.id,piece.source]));
+  sourceSession.baseline=sourceGroups().map(group=>({...group,source:originals.get(group.id)??''}));
+}
 
 // a block the page shows: not an empty paragraph (or one of line breaks only), so every move is one the page shows
 const shows = (node) => node.isAtom || node.type.name === 'horizontalRule' || node.textContent.trim() !== '';
@@ -95,6 +144,8 @@ const MoveBlocks = Extension.create({
 function stored(html) {
   const template = document.createElement('template');
   template.innerHTML = html;
+  for (const node of template.content.querySelectorAll('[data-kept-source]')) node.remove();
+  for (const node of template.content.querySelectorAll('[data-desk-source]')) node.removeAttribute('data-desk-source');
   for (const wrap of template.content.querySelectorAll('li, blockquote')) {
     const kids = [...wrap.childNodes];
     if (kids.length === 1 && kids[0].nodeName === 'P') kids[0].replaceWith(...kids[0].childNodes);
@@ -108,6 +159,7 @@ function destroy() {
   editor.destroy();
   editor = null;
   placed = false;
+  sourceSession = null;
   // the page's own editor takes the element back
   dom.classList.remove('ProseMirror', 'tiptap');
   dom.removeAttribute('translate');
@@ -123,7 +175,7 @@ window.deskEditor = {
     opts = options;
     editor = new Editor({
       element: { mount: element },
-      content: options.content,
+      content: options.preserveSource ? sourceInput(options.content) : options.content,
       extensions: [
         StarterKit.configure({
           code: false, codeBlock: false, strike: false, underline: false, trailingNode: false,
@@ -137,6 +189,9 @@ window.deskEditor = {
         }),
         figure('picture', 'picture'),
         figure('video', 'video'),
+        figure('media', 'media'),
+        KeptSource,
+        SourceIds,
         MoveBlocks,
       ],
       editorProps: {
@@ -151,11 +206,12 @@ window.deskEditor = {
       onTransaction: () => options.selection(),
       onFocus: () => { placed = true; },
     });
+    captureSources();
   },
   destroy,
   // the draft changed elsewhere (another device): its words, without an undo step
-  set(html) { editor?.chain().setMeta('addToHistory', false).setContent(html, { emitUpdate: false }).run(); },
-  html: () => stored(editor.getHTML()),
+  set(html) { editor?.chain().setMeta('addToHistory', false).setContent(opts.preserveSource ? sourceInput(html) : html, { emitUpdate: false }).run(); captureSources(); },
+  html: () => sourceSession ? preserveBlocks(sourceSession.original,sourceSession.baseline,sourceGroups()) : stored(editor.getHTML()),
   focused: () => Boolean(editor?.isFocused),
   // ↑ ↓ beside a paragraph (#block-tools), from the page
   moveBlock(dom, up) { editor.commands.focus(); return move(indexOfDom(dom), up) !== false; },
