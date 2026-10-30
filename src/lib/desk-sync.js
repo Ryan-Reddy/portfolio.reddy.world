@@ -31,7 +31,7 @@ function show(next) {
     local: 'Not signed in: saved in this browser only',
     checking: 'Checking your account…',
     saving: 'Saving…',
-    saved: `Saved · ${time(status.at ?? Date.now())}`,
+    saved: `Saved privately · ${time(status.at ?? Date.now())}`,
     denied: `Signed in as ${user?.email ?? 'another account'}: this account can't save the desk. Saved in this browser only`,
     offline: 'Offline: saved in this browser, your account follows when you are back online',
     error: `Not saved to your account (${status.message}). Saved in this browser`,
@@ -105,15 +105,15 @@ async function send() {
 // An article's pictures: uploaded to reddy.world's /api/desk-upload (functions/desk.js there), private in the
 // project's Storage until the article is published; shown on the desk from there with Ryan's sign-in.
 async function upload(file) {
-  if (!cloud || !user) throw new Error('sign in first: pictures are kept in your account');
+  if (!cloud || !user) throw new Error('Sign in to upload images to your account.');
   const response = await fetch('/api/desk-upload', {
     method: 'POST',
     headers: { Authorization: `Bearer ${await cloud.idToken()}`, 'Content-Type': file.type || 'application/octet-stream', 'X-File-Name': encodeURIComponent(file.name) },
     body: file,
   });
-  if (response.status === 404) throw new Error('pictures are added on reddy.world itself, not on a preview');
+  if (response.status === 404) throw new Error('Upload images from the live desk at reddy.world.');
   const body = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(body.error ?? `HTTP ${response.status}`);
+  if (!response.ok) throw new Error(body.error ?? (response.status >= 500 ? 'The image service is unavailable. Your page is saved; try the upload again later.' : `Upload failed (${response.status}). Try again.`));
   return { path: body.path, name: body.name };
 }
 async function picture(path) {
@@ -142,13 +142,13 @@ const drafts = (state = desk.state) => Object.entries(state.articles ?? {}).filt
   .sort(([, a], [, b]) => (b.created ?? 0) - (a.created ?? 0));
 
 // ---------- the overview ----------
-const label = { done: 'Done', started: 'Started', todo: 'Not started' };
+const label = { done: 'Reviewed', started: 'Started', todo: 'Not started' };
 const el = (tag, props = {}, ...children) => { const node = Object.assign(document.createElement(tag), props); node.append(...children.filter((child) => child !== null && child !== undefined && child !== false)); return node; };
 const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
 function bar(part) {
   const wrap = el('div', { className: 'ov-bar', role: 'img' });
-  wrap.setAttribute('aria-label', `${part.done} done, ${part.started} started, ${part.todo} not started, of ${part.total}`);
+  wrap.setAttribute('aria-label', `${part.done} reviewed, ${part.started} started, ${part.todo} not started, of ${part.total}`);
   for (const kind of ['done', 'started']) {
     const fill = el('span', { className: `ov-${kind}` });
     fill.style.width = `${(part[kind] / part.total) * 100}%`;
@@ -170,29 +170,29 @@ function renderOverview() {
   if (!root || root.hidden) return;
   const sum = summarize(desk.DATA.projects, desk.state, { credits });
   const next = $('ov-next');
-  next.textContent = sum.next ? `Next up: ${sum.next.title} →` : 'Every project is done ✓';
+  next.textContent = sum.next ? `Next up: ${sum.next.title} →` : 'Every project reviewed ✓';
   next.disabled = !sum.next;
   next.onclick = () => sum.next && openProject(sum.next.index);
-  $('ov-total').textContent = `${sum.done} of ${sum.total} projects done`;
+  $('ov-total').textContent = `${sum.done} of ${sum.total} projects reviewed`;
   $('ov-total-bar').replaceChildren(bar(sum));
-  $('ov-legend').textContent = `${sum.done} done · ${sum.started} started · ${sum.todo} not started`;
+  $('ov-legend').textContent = `${sum.done} reviewed · ${sum.started} started · ${sum.todo} not started`;
   $('ov-days').textContent = sum.daysWorked
-    ? `Worked on ${plural(sum.daysWorked, 'day')}${sum.doneToday ? ` · ${sum.doneToday} done today` : ''}`
+    ? `Worked on ${plural(sum.daysWorked, 'day')}${sum.doneToday ? ` · ${sum.doneToday} reviewed today` : ''}`
     : 'No days counted yet: the count starts with your next change.';
   $('ov-portfolios').replaceChildren(...sum.portfolios.map((part) => {
     const rows = part.rows.map((row) => {
       const facts = [
         label[row.status],
-        plural(row.keywords, 'keyword'),
-        row.lead ? '★ lead picture chosen' : null,
-        row.creditsMissing ? `${plural(row.creditsMissing, 'picture')} without photographer` : null,
+        plural(row.keywords, 'tag'),
+        row.lead ? 'Cover image chosen' : null,
+        row.creditsMissing ? `${plural(row.creditsMissing, 'image')} without photographer` : null,
       ].filter(Boolean).join(' · ');
       const button = el('button', { type: 'button', className: 'ov-row' }, el('span', { className: `ov-dot ov-${row.status}`, ariaHidden: 'true' }), el('strong', {}, row.title), el('small', {}, facts));
       button.addEventListener('click', () => openProject(row.index));
       return el('li', {}, button);
     });
     const details = el('details', { className: 'ov-portfolio' },
-      el('summary', {}, el('span', {}, el('strong', {}, part.name), el('small', {}, `${part.done} of ${part.total} done`)), bar(part)),
+      el('summary', {}, el('span', {}, el('strong', {}, part.name), el('small', {}, `${part.done} of ${part.total} reviewed`)), bar(part)),
       el('ul', {}, ...rows));
     return details;
   }));
@@ -277,10 +277,10 @@ import('./desk-cloud.js').then((module) => {
 }).catch((error) => show({ kind: 'error', message: `could not load the account code: ${error.message}` }));
 
 // History is beside publishing: restoring is a new draft, never an immediate site change.
-const historyButton=document.createElement('button');historyButton.type='button';historyButton.textContent='History';historyButton.className='quiet';$('send').after(historyButton);
-const historyDialog=document.createElement('dialog');historyDialog.setAttribute('aria-label','Previous sent versions');document.body.append(historyDialog);
+const historyButton=document.createElement('button');historyButton.type='button';historyButton.textContent='Version history';historyButton.className='quiet';document.querySelector('.more .menu').prepend(historyButton);
+const historyDialog=document.createElement('dialog');historyDialog.setAttribute('aria-label','Version history');document.body.append(historyDialog);
 historyButton.addEventListener('click',async()=>{
- historyDialog.replaceChildren();const title=document.createElement('h2');title.textContent='Previous sent versions';historyDialog.append(title);
+ historyDialog.replaceChildren();const title=document.createElement('h2');title.textContent='Version history';historyDialog.append(title);
  const note=document.createElement('p');note.textContent='Four recent versions, including three updates back. Restore loads a draft for review; Publish changes sends it to the site.';historyDialog.append(note);
  const close=document.createElement('button');close.textContent='Close';close.onclick=()=>historyDialog.close();historyDialog.append(close);historyDialog.showModal();
  try{
@@ -288,7 +288,7 @@ historyButton.addEventListener('click',async()=>{
   const versions=await cloud.versions();
   if(!versions.length){const empty=document.createElement('p');empty.textContent='Your first backup is created when you publish from this updated desk.';historyDialog.append(empty);}
   for(const [i,version] of versions.entries()){
-   const row=document.createElement('p');const button=document.createElement('button');button.textContent='Restore to desk';row.append(document.createTextNode((i===0?'Latest sent version':i+' update'+(i===1?'':'s')+' back')+' · '+new Date(version.at).toLocaleString()+' '),button);historyDialog.append(row);
+   const row=document.createElement('p');const button=document.createElement('button');button.textContent='Restore as draft';row.append(document.createTextNode((i===0?'Latest sent version':i+' update'+(i===1?'':'s')+' back')+' · '+new Date(version.at).toLocaleString()+' '),button);historyDialog.append(row);
    button.onclick=async()=>{button.disabled=true;try{await cloud.checkpoint(publicationSnapshot(desk));apply(restoredState(publicationSnapshot(desk),version.state),{keepPlace:true});desk.save();await saveNow();historyDialog.close();}catch(error){note.textContent=error.message;button.disabled=false;}};
   }
  }catch(error){note.textContent=error.message;}
