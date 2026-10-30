@@ -672,7 +672,7 @@ const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING
     import {nextToReview,rememberPlace,resumeCursor} from '../lib/desk-progress.js';
     import {VIDEO_KEY,videoKey,videoFor} from '../lib/article-video.js';
     import {uploadedVideoUrl,VIDEO_UPLOAD_LIMIT} from '../lib/uploaded-video.js';
-    import {placeTextImages} from '../lib/text-media.js';
+    import {placeTextImages,projectEditorText} from '../lib/text-media.js';
     import {labelSourceLinks} from '../lib/source-links.js';
     const DATA = JSON.parse(document.querySelector('#queue-data').textContent);
     const STORE = 'reddy-world-image-metadata-v4';
@@ -1881,7 +1881,7 @@ const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING
       const {project, image} = current();
       const record = projectRecord(project);
       const pageKey = `project:${project.id}`;
-      const content = record.content !== undefined ? record.content : project.content;
+      const content = projectEditorText(record.content !== undefined ? record.content : project.content, project.linkedMedia ?? []);
       const editor = window.deskEditor;
       $('text-bar').hidden = !editor;
       if (shownText.key !== pageKey) $('link-form').hidden = true;
