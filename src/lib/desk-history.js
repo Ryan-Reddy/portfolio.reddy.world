@@ -2,7 +2,7 @@
 export function publicationSnapshot(desk) {
  const state=structuredClone(desk.state);
  state.wall={...desk.DATA.wall,...state.wall};
- for(const p of desk.DATA.projects){const own=state.projects[p.id] ?? {};state.projects[p.id]={title:p.title,summary:p.summary ?? '',tags:p.keywords.join(', '),content:p.content,hero:p.hero,craft:p.craft ?? '',published:p.published,pageLayout:p.pageLayout ?? 'story',bannerVideo:p.bannerVideo ?? '',bannerFocus:p.bannerFocus ?? 'center',...own};
+ for(const p of desk.DATA.projects){const own=state.projects[p.id] ?? {};state.projects[p.id]={title:p.title,summary:p.summary ?? '',tags:p.keywords.join(', '),content:p.content,hero:p.hero,craft:p.craft ?? '',published:p.published,pageLayout:p.pageLayout ?? 'cover',bannerVideo:p.bannerVideo ?? '',bannerFocus:p.bannerFocus ?? 'center',...own};
   for(const image of p.images){state.images[image.key]={description:image.description || image.existingDescription || image.alt || '',tags:image.keywords.filter(w=>!p.keywords.includes(w)).join(', '),credit:image.credit,...state.images[image.key]};}
  }
  return state;
@@ -14,7 +14,7 @@ export function restoredState(current,version,now=Date.now()) {
   for(const key of new Set([...Object.keys(current[kind] ?? {}),...Object.keys(restored[kind])])){
    const entry=restored[kind][key];
    if(!entry) restored[kind][key]=kind==='articles'?{deleted:true,at:now}:{at:now};
-   else {entry.at=now;if(kind==='projects'){for(const [id,p] of Object.entries(current.projects?.[key]?.pictures ?? {}))if(!entry.pictures?.[id]){entry.pictures ??= {};entry.pictures[id]={...p,removed:true};}const empty=['summary','tags','content','hero'].filter(field=>Object.hasOwn(entry,field) && !entry[field]);entry.cleared=[...new Set([...(entry.cleared ?? []),...empty])];}}
+   else {entry.at=now;if(kind==='projects'){for(const [id,v] of Object.entries(current.projects?.[key]?.videos??{}))if(!entry.videos?.[id]){entry.videos??={};entry.videos[id]={...v,removed:true};}for(const [id,p] of Object.entries(current.projects?.[key]?.pictures ?? {}))if(!entry.pictures?.[id]){entry.pictures ??= {};entry.pictures[id]={...p,removed:true};}const empty=['summary','tags','content','hero'].filter(field=>Object.hasOwn(entry,field) && !entry[field]);entry.cleared=[...new Set([...(entry.cleared ?? []),...empty])];}}
   }
  }
  restored.savedAt=now;return restored;

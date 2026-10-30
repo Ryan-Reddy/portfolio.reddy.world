@@ -1,7 +1,7 @@
 // Article and project text share Tiptap on #read-text. Project sessions keep the original source
 // of unchanged blocks, so formatting or moving one paragraph does not rewrite its neighbours.
 //
-// The page's script is inline and can't import, so it drives this through window.deskEditor. Pictures and videos stay
+// The desk page drives this through window.deskEditor. Pictures and videos stay
 // the page's own blocks (pictureBlock, videoBlock: ↑ ↓ ✕, dragged by ProseMirror), stored as they always were:
 // <figure data-picture="id"></figure> and <figure data-video="youtube:…"></figure>.
 import { Editor, Extension, Node } from '@tiptap/core';
@@ -126,7 +126,7 @@ const figure = (name, key) => Node.create({
         // the same button again, on the block in its new place
         if (to !== false) editor.view.nodeDOM(to)?.querySelector(`.pic-tools [data-move="${button.dataset.move}"]`)?.focus();
       });
-      return { dom, stopEvent: (event) => Boolean(event.target.closest?.('.pic-tools')), ignoreMutation: () => true };
+      return { dom, stopEvent: (event) => Boolean(event.target.closest?.('.pic-tools,video')), ignoreMutation: () => true };
     };
   },
 });
@@ -221,6 +221,14 @@ window.deskEditor = {
     const index = placed ? indexAt(state.selection.from) : state.doc.childCount - 1;
     const at = offsetOf(state.doc, index) + state.doc.child(index).nodeSize;
     editor.view.dispatch(state.tr.insert(at, state.schema.nodes[name].create({ [name]: value })));
+  },
+  addText() {
+    if(!editor)return;
+    const {state}=editor,index=placed?indexAt(state.selection.from):state.doc.childCount-1;
+    const at=offsetOf(state.doc,index)+state.doc.child(index).nodeSize;
+    let tr=state.tr.insert(at,state.schema.nodes.paragraph.create());
+    tr=tr.setSelection(TextSelection.near(tr.doc.resolve(at+1)));
+    editor.view.dispatch(tr.scrollIntoView());editor.commands.focus();placed=true;
   },
   // the bar
   insertLink(href) { editor.chain().focus().insertContent({type:'paragraph',content:[{type:'text',text:href,marks:[{type:'link',attrs:{href}}]}]}).run(); },

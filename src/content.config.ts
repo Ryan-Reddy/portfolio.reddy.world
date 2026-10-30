@@ -1,3 +1,4 @@
+import {VIDEO_KEY} from './lib/article-video.js';
 import { defineCollection, reference } from 'astro:content';
 import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
@@ -79,9 +80,9 @@ const articles = defineCollection({
   schema: z.object({
     kind: z.enum(['interview', 'story', 'case-study', 'project', 'recipe', 'writing', 'poem']),
     title: z.string(),
-    pageLayout:z.enum(['story','cover','split']).default('story'),
+    pageLayout:z.enum(['story','cover','split']).default('cover'),
     bannerFocus:z.enum(['top','center','bottom']).default('center'),
-    bannerVideo:z.string().regex(/^(youtube:[\w-]{11}|vimeo:\d{1,12})$/).optional(),
+    bannerVideo:z.string().refine(value=>VIDEO_KEY.test(value),'Use a supported video').optional(),
     craft: z.enum(['software', 'decor', 'signs', 'furniture', 'art', 'performance', 'work']).optional(),
     tags: z.array(z.string()).default([]),
     // the title's language when it differs from the article's
