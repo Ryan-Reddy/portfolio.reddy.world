@@ -1,6 +1,7 @@
 // The image desk's projects and its first two suggestion columns (built at /portfolio/image-metadata/, served at reddy.world/private/portfolio/).
 // Shared by the page and by scripts/keyword-ratings.mjs, which rates the same words at build time.
 import { portfolios, photos, picture, SITE, KIND_LABEL, formatDate } from './portfolios.js';
+import {startingTags} from './desk-progress.js';
 import { BRAND } from './brands.js';
 import { isMachineAlt } from './alt-text.js';
 import rmaekers from '../data/rmaekers.json';
@@ -89,7 +90,7 @@ export function deskProjects() {
     const handwritten = projectPhotos.map((image, index) => ({index, text: handwrittenDescription(image, post.title)})).filter(({text}) => text);
     const originalSuggestions = metadataKeywords(handwritten.map(({text}) => text));
     const raw = rawPost(portfolio.id, post.id) ?? post;
-    const keywords = (raw.keywords ?? []).map(useful).filter(Boolean);
+    const keywords = startingTags(raw).map(useful).filter(Boolean);
     // every picture the text can place (<figure data-media="3">), by its index in the post's media
     const thumbs = Object.fromEntries((raw.media ?? []).map((m, i) => [i, m]).filter(([, m]) => m.type === 'image').map(([i, m]) => [i, picture(m).src]));
     return {
@@ -104,8 +105,8 @@ export function deskProjects() {
       // "i cant see what keywords etc are already in the image")
       keywords,
       // the projects whose words were imported from an earlier desk count as done
-      done: keywords.length > 0,
-      summary: useful(raw.summary),
+      done: (raw.keywords ?? []).length > 0,
+      summary: useful(raw.summary) || plain(raw.excerpt),
       excerpt: plain(post.excerpt),
       content: String(post.content ?? ''),
       thumbs,
