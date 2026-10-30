@@ -60,3 +60,5 @@
  .top .actions button,.top .actions summary{min-height:2.75rem;}
  .top .actions summary{justify-content:center;}
 }
+
+.uploaded-video video{display:block;width:100%;max-height:75vh;background:#111;}

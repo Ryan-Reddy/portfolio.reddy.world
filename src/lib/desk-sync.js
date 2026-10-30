@@ -107,15 +107,15 @@ async function send() {
 // An article's pictures: uploaded to reddy.world's /api/desk-upload (functions/desk.js there), private in the
 // project's Storage until the article is published; shown on the desk from there with Ryan's sign-in.
 async function upload(file) {
-  if (!cloud || !user) throw new Error('Sign in to upload images to your account.');
+  if (!cloud || !user) throw new Error('Sign in to upload images or videos to your account.');
   const response = await fetch('/api/desk-upload', {
     method: 'POST',
     headers: { Authorization: `Bearer ${await cloud.idToken()}`, 'Content-Type': file.type || 'application/octet-stream', 'X-File-Name': encodeURIComponent(file.name) },
     body: file,
   });
-  if (response.status === 404) throw new Error('Upload images from the live desk at reddy.world.');
+  if (response.status === 404) throw new Error('Upload files from the live desk at reddy.world.');
   const body = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(body.error ?? (response.status >= 500 ? 'The image service is unavailable. Your page is saved; try the upload again later.' : `Upload failed (${response.status}). Try again.`));
+  if (!response.ok) throw new Error(body.error ?? (response.status >= 500 ? 'The upload service is unavailable. Your page is saved; try the upload again later.' : `Upload failed (${response.status}). Try again.`));
   return { path: body.path, name: body.name };
 }
 async function picture(path) {
@@ -262,6 +262,7 @@ import('./desk-cloud.js').then((module) => {
     remoteCopy = null;
     unwatch = cloud.watchRemote((remote, updated) => {
       owner(true);
+      if(first)queueMicrotask(()=>desk.render({focus:false}));
       remoteCopy = remote;
       const merged = mergeStates(desk.state, remote, existing);
       if (!sameWork(merged, desk.state) || (first && remote && !samePlace(merged,desk.state))) {

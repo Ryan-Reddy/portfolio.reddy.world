@@ -426,15 +426,22 @@ const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING
         <button id="back-to-page" class="quiet" type="button" data-for="picture">Back to page</button>
         <button id="make-hero" class="lead" type="button" aria-pressed="false" data-for="picture">Use as cover image</button>
         <a id="project-link" target="_blank" rel="noreferrer" data-for="page picture">View live page ↗</a>
-        <button id="add-picture-here" class="quiet" type="button" data-for="article">Add image</button>
-        <button id="add-video-here" class="quiet" type="button" data-for="article page">Add video</button>
+        <div id="page-add" class="page-add" role="group" aria-label="Add to page" data-for="article page">
+          <button id="add-text-here" class="quiet" type="button">Add text</button>
+          <button id="add-picture-here" class="quiet" type="button">Add images</button>
+          <button id="add-video-here" class="quiet" type="button">Add video</button>
+          <span>Click text to edit · Enter adds a paragraph · select words to format</span>
+        </div>
         <button id="show-elsewhere" class="quiet" type="button" data-for="article">Preview wall card</button>
         <button id="back-to-projects" class="quiet" type="button" data-for="article">Back to projects</button>
       </div>
       <article class="reading" id="reading">
         <span class="when" id="read-when"></span>
         <p class="hint" id="page-note" aria-live="polite"></p>
-        <form class="video-form" id="video-form" hidden><input id="video-url" type="url" inputmode="url" autocomplete="off" placeholder="Paste a YouTube or Vimeo link" aria-label="A YouTube or Vimeo link"><label><input id="video-embed" type="checkbox" checked> Embed a player</label><button type="submit">Save video</button><button id="video-cancel" class="quiet" type="button">Cancel</button></form>
+        <form class="video-form" id="video-form" hidden>
+          <label>Add video<select id="video-source"><option value="link">YouTube or Vimeo link</option><option value="file">Upload a video file</option></select></label>
+          <label id="video-file-label" hidden>MP4 or WebM · up to 25 MB<input id="video-file" type="file" accept="video/mp4,video/webm,.mp4,.webm"></label>
+          <label><input id="video-banner" type="checkbox"> Use as the page banner</label><input id="video-url" type="url" inputmode="url" autocomplete="off" placeholder="Paste a YouTube or Vimeo link" aria-label="A YouTube or Vimeo link"><label><input id="video-embed" type="checkbox" checked> Embed a player</label><button type="submit">Add video to page</button><p id="video-status" class="hint" role="status"></p><button id="video-cancel" class="quiet" type="button">Cancel</button></form>
         <h2 class="reading-title" id="read-title" contenteditable="true" data-placeholder="The article's title" aria-label="The article's title"></h2>
         <p class="dek" id="read-dek" hidden></p>
         <div class="lead" id="read-lead" hidden></div>
@@ -618,7 +625,7 @@ const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING
           </details>
           <details class="box" data-box="text">
             <summary><span class="box-name">The text</span><span class="box-line"></span><span class="box-tick" aria-hidden="true">✓</span></summary>
-            <div class="box-body"><p class="hint">Write on the page, left. Ctrl+B and Ctrl+I work; move a picture or video with ↑ ↓ or drag it. ＋ Video takes a YouTube or Vimeo link; the site loads it only on play.</p></div>
+            <div class="box-body"><p class="hint">Write on the page, left. Ctrl+B and Ctrl+I work; move a picture or video with ↑ ↓ or drag it. Add video accepts a YouTube/Vimeo link or an MP4/WebM file up to 25 MB.</p></div>
           </details>
           <details class="box" data-box="pictures">
             <summary><span class="box-name">Images</span><span class="box-line"></span><span class="box-tick" aria-hidden="true">✓</span></summary>
@@ -663,6 +670,8 @@ const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING
   <script type="application/json" id="credit-data" set:html={archiveCredits()}></script>
   <script>
     import {nextToReview,rememberPlace,resumeCursor} from '../lib/desk-progress.js';
+    import {VIDEO_KEY,videoKey,videoFor} from '../lib/article-video.js';
+    import {uploadedVideoUrl,VIDEO_UPLOAD_LIMIT} from '../lib/uploaded-video.js';
     const DATA = JSON.parse(document.querySelector('#queue-data').textContent);
     const STORE = 'reddy-world-image-metadata-v4';
     const PREVIOUS = 'reddy-world-image-metadata-v3';
@@ -1822,7 +1831,7 @@ const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING
       }
       if (!article) return renderProjectPage();
       $('reading').dataset.kind = 'article';
-      $('reading').dataset.pageLayout=article.pageLayout ?? 'story';
+      $('reading').dataset.pageLayout=article.pageLayout ?? 'cover';
       $('read-title').contentEditable = 'true';
       $('read-title').setAttribute('aria-label', 'The article\'s title');
       $('read-text').setAttribute('aria-label', 'The article\'s text');
@@ -1874,7 +1883,7 @@ const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING
       $('text-bar').hidden = !editor;
       if (shownText.key !== pageKey) $('link-form').hidden = true;
       $('reading').dataset.kind = 'project';
-      $('reading').dataset.pageLayout=record.pageLayout ?? project.pageLayout ?? 'story';
+      $('reading').dataset.pageLayout=record.pageLayout ?? project.pageLayout ?? 'cover';
       $('reading').style.setProperty('--banner-focus',record.bannerFocus ?? project.bannerFocus ?? 'center');
       $('video-form').hidden = true;
       $('read-when').textContent = [dateLabelOf(project), project.kinds.join(', ')].filter(Boolean).join(' • ');
@@ -1886,7 +1895,7 @@ const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING
       $('read-text').setAttribute('aria-label', 'The project\'s text');
       if (shownText.key !== pageKey) $('page-note').textContent = '';
       // a ★ chosen on the desk is one of the photos, which the site never puts above the text
-      const layout=record.pageLayout ?? project.pageLayout ?? 'story';
+      const layout=record.pageLayout ?? project.pageLayout ?? 'cover';
       const chosenLead=project.images.find(image=>image.url===heroOf(project)) ?? project.images[0];
       const lead = layout!=='story' ? chosenLead?.src ?? '' : project.leadSrc && !record.hero ? project.leadSrc : '';
       const leadKey = lead ? `p:${lead}` : '';
@@ -1967,25 +1976,26 @@ const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING
     // ---------- a video in the text (Ryan, 2026-10-27, #77: "A") ----------
     // A YouTube or Vimeo link, read with the patterns of src/lib/article-video.js, kept as <figure data-video="youtube:<id>">.
     // The desk shows a plain frame (nothing loads from YouTube here); the site's play button loads the player.
-    const VIDEO_KEY = /^(?:youtube:[\w-]{11}|vimeo:\d{1,12})$/;
-    function videoKey(url) {
-      const text = String(url ?? '').trim();
-      const youtube = /(?:youtu\.be\/|youtube(?:-nocookie)?\.com\/(?:watch\?(?:[^\s"'<]*&(?:amp;)?)?v=|embed\/|shorts\/|live\/))([\w-]{11})/.exec(text);
-      if (youtube) return `youtube:${youtube[1]}`;
-      const vimeo = /vimeo\.com\/(?:video\/)?(\d{1,12})/.exec(text);
-      return vimeo ? `vimeo:${vimeo[1]}` : null;
-    }
     function projectPictureBlock(project,id) {
       const picture=projectRecord(project).pictures?.[id];
       const image=project.images.find(image=>image.pictureId===id);
       const figure=el('figure',{className:'pic-block',contentEditable:'false'},picture ? photoImg({...picture,src:photoUrls.get(picture.path) || image?.src},image ? descriptionOf(image) : '') : el('span',{textContent:'Picture unavailable'}),el('span',{className:'pic-tools'},blockTool('up','Move the picture up','↑'),blockTool('down','Move the picture down','↓'),blockTool('out','Take the picture out of the text','✕')));
       figure.dataset.picture=id;return figure;
     }
+    const pendingVideos=new Set();
+    function videoPreviewSource(key) {
+      const details=videoFor(key);if(!details?.file)return details?.src;
+      const record=openArticleRecord()??projectRecord(current().project);
+      const uploaded=Object.values(record.videos??{}).find(video=>video.url===details.src);
+      const preview=uploaded&&photoUrls.get(uploaded.path);
+      if(uploaded&&!preview&&!pendingVideos.has(uploaded.path)&&window.deskSync?.picture){pendingVideos.add(uploaded.path);window.deskSync.picture(uploaded.path).then(src=>{if(src){photoUrls.set(uploaded.path,src);renderReading();window.dispatchEvent(new Event('desk-render'));}}).catch(()=>{});}
+      return preview||details.src;
+    }
     function videoBlock(key) {
-      const host = key.startsWith('youtube:') ? 'YouTube' : 'Vimeo';
+      const details=videoFor(key),host=details?.host??'Video',preview=videoPreviewSource(key);
       const figure = el('figure', {className: 'pic-block video-block', contentEditable: 'false', draggable: true},
-        el('span', {className: 'poster'}, el('span', {textContent: '▶'}), host),
-        el('span', {className: 'pic-tools'}, blockTool('edit-video', 'Edit the video link or embedding', 'Edit link'), blockTool('up', 'Move the video up', '↑'), blockTool('down', 'Move the video down', '↓'), blockTool('out', 'Take the video out of the text', '✕')));
+        details?.file ? el('video',{controls:true,preload:'metadata',src:preview||details.src}) : el('span', {className: 'poster'}, el('span', {textContent: '▶'}), host),
+        el('span', {className: 'pic-tools'}, blockTool('edit-video', 'Edit or replace this video', details?.file?'Replace video':'Edit video'), blockTool('up', 'Move the video up', '↑'), blockTool('down', 'Move the video down', '↓'), blockTool('out', 'Take the video out of the text', '✕')));
       figure.dataset.video = key;
       return figure;
     }
@@ -2009,7 +2019,7 @@ const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING
       const picture = openArticleRecord()?.pictures?.[value];
       return picture ? pictureBlock(value, picture) : el('figure', {className: 'pic-block', contentEditable: 'false'});
     }
-    const refuseDrop = () => { $('page-note').textContent = 'A picture can’t be dropped into the text: add it with ＋ Picture.'; };
+    const refuseDrop = () => { $('page-note').textContent = 'Use Add images to upload and place an image on this page.'; };
     // the bar shows what the caret is in (bold, a heading, a list…), and undo and redo only when there is something to undo
     function renderTextBar() {
       const editor = window.deskEditor;
@@ -2418,18 +2428,20 @@ const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING
     }
     // ＋ Video on the page: a link, put after the paragraph the cursor is in (else at the end)
     let editingVideo = null;
-    const videoHref = key => key.startsWith('youtube:') ? `https://www.youtube.com/watch?v=${key.split(':')[1]}` : `https://vimeo.com/${key.split(':')[1]}`;
+    const videoHref = key => videoFor(key)?.href??'';
+    const videoStatus=text=>{$('video-status').textContent=text;$('page-note').textContent=text;};
     const closeVideoForm = () => { $('video-form').hidden = true; $('video-url').value = ''; editingVideo = null; };
     $('read-text').addEventListener('click', event => {
       const button = event.target.closest?.('[data-move="edit-video"]');
       if (!button) return;
       event.preventDefault(); event.stopImmediatePropagation();
       editingVideo = button.closest('[data-video]');
-      $('video-url').value = videoHref(editingVideo.dataset.video);
+      $('video-source').value=videoFor(editingVideo.dataset.video)?.file?'file':'link';$('video-file').value='';$('video-source').dispatchEvent(new Event('change'));$('video-banner').checked=false;
+      $('video-url').value = videoFor(editingVideo.dataset.video)?.file?'':videoHref(editingVideo.dataset.video);
       $('video-embed').checked = true; $('video-form').hidden = false; $('video-url').focus();
     }, true);
     function openVideoForm() {
-      editingVideo = null; $('video-url').value = ''; $('video-embed').checked = true;
+      editingVideo = null; $('video-status').textContent='';$('video-url').value = ''; $('video-embed').checked = true;$('video-banner').checked=false;$('video-source').value='link';$('video-file').value='';$('video-source').dispatchEvent(new Event('change'));
       if (!openArticleRecord()) {showTab('project'); renderReading();}
       else {elsewhere = false; showStage();}
       $('video-form').hidden = false;
@@ -2437,25 +2449,44 @@ const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING
     }
     $('add-video-here').addEventListener('click', openVideoForm);
     $('video-cancel').addEventListener('click', closeVideoForm);
-    $('video-form').addEventListener('submit', (event) => {
+    $('video-source').addEventListener('change',()=>{const file=$('video-source').value==='file';$('video-file-label').hidden=!file;$('video-url').hidden=file;$('video-url').disabled=file;$('video-embed').closest('label').hidden=file;});
+    $('add-text-here').addEventListener('click',()=>{showTab('project');elsewhere=false;renderReading();showStage();window.deskEditor?.addText();});
+    $('video-form').addEventListener('submit', async (event) => {
       event.preventDefault();
-      const key = videoKey($('video-url').value);
-      if (!key) { $('page-note').textContent = 'That is not a YouTube or Vimeo link.'; return; }
-      const embed = $('video-embed').checked;
+      const destination=state.article?{article:state.article}:{project:current().project.id};
+      let key;
+      const submit=event.submitter,sourceIsFile=$('video-source').value==='file',makeBanner=$('video-banner').checked,replacing=editingVideo;
+      const embed=sourceIsFile||$('video-embed').checked;
+      if(sourceIsFile){
+        const file=$('video-file').files?.[0];if(!file){videoStatus('Choose an MP4 or WebM file.');return;}
+        if(!['video/mp4','video/webm'].includes(file.type)||file.size>VIDEO_UPLOAD_LIMIT){videoStatus('Use an MP4 or WebM video up to 25 MB, or paste a YouTube/Vimeo link.');return;}
+        submit.disabled=true;submit.textContent='Uploading…';
+        try{
+          const result=await window.deskSync.upload(file),url=uploadedVideoUrl(result.path,file.type);
+          const video={path:result.path,name:result.name,type:file.type,url};const id='v'+Date.now().toString(36);
+          if(destination.article){const record=state.articles[destination.article];if(!record||record.deleted)return;state.articles[destination.article]={...record,videos:{...record.videos,[id]:video}};}
+          else {const record=state.projects[destination.project]??{};state.projects[destination.project]={...record,videos:{...record.videos,[id]:video}};}
+          photoUrls.set(result.path,URL.createObjectURL(file));save();key='file:'+url;
+          if(destination.article?state.article!==destination.article:state.article||current().project.id!==destination.project)return;
+        }catch(error){videoStatus('Video was not added. '+error.message);return;}
+        finally{submit.disabled=false;submit.textContent='Add video to page';}
+      }else key=videoKey($('video-url').value);
+      if (!key) { videoStatus('That is not a YouTube or Vimeo link.'); return; }
       const href = videoHref(key);
-      if (editingVideo && editorOn()) window.deskEditor.replaceVideo(editingVideo, embed ? key : href, !embed);
+      if(makeBanner){window.imageDesk.setPiece('bannerVideo',key);closeVideoForm();videoStatus('Banner video saved privately.');return;}
+      if (replacing && editorOn()) window.deskEditor.replaceVideo(replacing, embed ? key : href, !embed);
       else if (editorOn() && embed) window.deskEditor.insert('video', key);
       else if (editorOn()) window.deskEditor.insertLink(href);
       else {
         const block = lastRange && $('read-text').contains(lastRange.startContainer) ? topBlock(lastRange.startContainer) : null;
         const added = embed ? videoBlock(key) : el('p', {}, el('a', {href, textContent: href}));
-        if (editingVideo?.isConnected) editingVideo.replaceWith(added);
+        if (replacing?.isConnected) replacing.replaceWith(added);
         else if (block) block.after(added);
         else $('read-text').append(added);
         saveText();
       }
       closeVideoForm();
-      $('page-note').textContent = embed ? 'Video saved. On the site it loads only when someone presses play.' : 'Video saved as a link, with no embedded player.';
+      videoStatus(embed ? 'Video added to the page. Save keeps the draft; Publish changes sends it live.' : 'Video saved as a link, with no embedded player.');
     });
     // ＋ Picture on the page: add one from this computer and put it after the paragraph the cursor is in
     let placeAdded = false;
@@ -2754,13 +2785,13 @@ const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING
       render();
       $('note').textContent = `“${title}” deleted.`;
     });
-    Object.assign(window.imageDesk, {newArticle, openArticle, openVideoForm,
+    Object.assign(window.imageDesk, {newArticle, openArticle, openVideoForm,videoSource:videoPreviewSource,
       piece: () => {
         const article = openArticleRecord();
         if (article) return {type: 'article', id: state.article, ...article, published: article.published || new Date(article.readyAt ?? article.created ?? Date.now()).toISOString().slice(0,10)};
         const {project} = current();
         const record = projectRecord(project);
-        return {type: 'project', id: project.id, mode:tab==='picture'?'picture':tab==='preview'?'preview':'page', selectedPicture:current().image, wordpress:project.wordpress, ideas:project.ideas, pageLayout:record.pageLayout ?? project.pageLayout ?? 'story',bannerVideo:record.bannerVideo ?? project.bannerVideo ?? '',bannerFocus:record.bannerFocus ?? project.bannerFocus ?? 'center', title: pick(record, 'title', project.title), summary: summaryOf(project), tags: projectTags(project).join(', '), published: pick(record, 'published', project.published), craft: record.craft ?? project.craft, images: project.images};
+        return {type: 'project', id: project.id, mode:tab==='picture'?'picture':tab==='preview'?'preview':'page', selectedPicture:current().image, wordpress:project.wordpress, ideas:project.ideas, pageLayout:record.pageLayout ?? project.pageLayout ?? 'cover',bannerVideo:record.bannerVideo ?? project.bannerVideo ?? '',bannerFocus:record.bannerFocus ?? project.bannerFocus ?? 'center', title: pick(record, 'title', project.title), summary: summaryOf(project), tags: projectTags(project).join(', '), published: pick(record, 'published', project.published), craft: record.craft ?? project.craft, images: project.images};
       },
       setPiece: (field, value) => {
         if (field === 'published' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {

@@ -47,3 +47,11 @@ Untouched projects start with their WordPress title, content, summary/excerpt, t
 **Save** stores the current draft privately and reports **Saved** (account) or **Saved here** (signed out/browser). It does not publish or mark reviewed. **Save & next** saves and marks the project reviewed, then opens the next pending item. **Next to review** skips reviewed items and prefers untouched work before returning to in-progress items. Previous and the project list can still revisit anything. Default WordPress tags alone do not mark a project reviewed.
 
 The saved position uses stable project/image ids and a separate navigation timestamp, so image insertions and older account cursors do not reset progress. Navigation from the project list, image strip and overview is saved too. Signed-in navigation syncs even when no content changed. Legacy numeric cursors remain supported.
+
+## Adding page blocks and video files
+
+Use the visible **Add text / Add images / Add video** row above the page. Add text creates a paragraph after the last selected block, ready to type. Click existing text to edit it; Enter creates a paragraph; select words for headings, lists or formatting. Images upload to the current piece and are placed on the page. Images mode still provides the library and credits.
+
+Add video offers a YouTube/Vimeo link or an MP4/WebM file up to 25 MB. Use as the page banner is optional. Large clips can use a hosted link. Uploaded video files stay in the existing private originals bucket and are copied into the public archive only when a public project or ready article references them during Publish changes. Files are served as supplied, without transcoding; use a browser-compatible MP4/WebM. Previously published video files remain available when removed from a page.
+
+An unconfigured layout now defaults to **Full-width banner**, including the public feed. An explicit Text first or Side by side selection is retained. Native videos can play on the standalone page and in the expanded wall's body/banner.
