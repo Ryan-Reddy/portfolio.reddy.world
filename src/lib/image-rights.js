@@ -17,6 +17,8 @@ export const WEB_STATEMENT = 'https://reddy.world/';
 // they carry the mark (the unicorn and reddy.world) but not his name as creator or his copyright
 // in their metadata or structured data: that would claim someone else's picture.
 const NOT_RYANS = [
+  // Linked third-party pictures: preserve their source, without claiming authorship.
+  /^\/portfolio\/images\/project-uploads\/[^/]+\/[^/]+\/linked\//,
   // Maup: kept in the repo, not Ryan's work, never shown (src/lib/archive-curation.js)
   /^\/portfolio\/images\/maup\//,
   // The two airport photos on Fenne Roefs' interview: found by Ryan, not his own (Ryan, 2026-10-26: "airport

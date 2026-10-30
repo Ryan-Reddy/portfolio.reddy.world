@@ -672,6 +672,8 @@ const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING
     import {nextToReview,rememberPlace,resumeCursor} from '../lib/desk-progress.js';
     import {VIDEO_KEY,videoKey,videoFor} from '../lib/article-video.js';
     import {uploadedVideoUrl,VIDEO_UPLOAD_LIMIT} from '../lib/uploaded-video.js';
+    import {placeTextImages} from '../lib/text-media.js';
+    import {labelSourceLinks} from '../lib/source-links.js';
     const DATA = JSON.parse(document.querySelector('#queue-data').textContent);
     const STORE = 'reddy-world-image-metadata-v4';
     const PREVIOUS = 'reddy-world-image-metadata-v3';
@@ -1161,9 +1163,10 @@ const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING
     // place in a project's text. A piece the desk shows nothing of keeps its place as an empty comment.
     function projectNodes(project, html) {
       const fragment = document.createDocumentFragment();
+      html = placeTextImages(html, project.linkedMedia ?? []);
       for (const {source, loose, opens} of textPieces(html)) {
         const template = document.createElement('template');
-        template.innerHTML = loose ? `<p>${source.replace(/\n/g, '<br>')}</p>` : source;
+        template.innerHTML = labelSourceLinks(loose ? `<p>${source.replace(/\n/g, '<br>')}</p>` : source);
         tidy(template.content, (media) => mediaBlock(project, media), noNode, videoBlock);
         wrapLoose(template.content);
         // a paragraph that holds only rows of pictures (WordPress's <p><strong> around five of them) is drawn as those

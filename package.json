@@ -11,6 +11,7 @@
     "preview": "astro preview",
     "import": "python scripts/parse_wordpress.py",
     "media:self-host": "node scripts/self-host-wordpress.mjs",
+    "media:text": "node scripts/text-media.mjs",
     "media:capture": "node scripts/wordpress-capture.mjs",
     "keywords:import": "node scripts/import-image-keywords.mjs",
     "shots": "node scripts/shots.mjs",
