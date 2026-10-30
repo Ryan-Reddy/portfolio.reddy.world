@@ -11,6 +11,7 @@ import {publicationSnapshot,restoredState} from './desk-history.js';
 // The page's own script (src/pages/image-metadata.astro) exposes window.imageDesk and calls
 // window.deskSync.stamp / .saved from its save(); everything else lives here.
 import { stamp, snapshotOf, mergeStates, sameWork, summarize, applyExport } from './desk-store.js';
+import {allDeskItems,findDeskItems} from './desk-items.js';
 
 const desk = window.imageDesk;
 const $ = (id) => document.getElementById(id);
@@ -199,34 +200,34 @@ function renderOverview() {
       el('ul', {}, ...rows));
     return details;
   }));
-  renderArticles();
+  renderItemList();
 }
 
-// the articles Ryan is writing for the wall: drafts until he publishes them
-function renderArticles() {
-  const box = $('ov-articles');
-  if (!box) return;
-  const when = (ms) => new Date(ms).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-  const rows = drafts().map(([id, article]) => {
+function renderItemList() {
+  const items = allDeskItems(desk.DATA,desk.state);
+  const matches = findDeskItems(items,{query:$('ov-search').value,type:$('ov-type').value,status:$('ov-status').value});
+  const statusLabels={draft:'Draft',ready:'Ready to publish',published:'Published',todo:'Needs review',reviewed:'Reviewed'};
+  $('ov-results').textContent=`${matches.length} of ${items.length} items · ${plural(items.filter(i=>i.type==='article').length,'article')} · ${plural(items.filter(i=>i.type==='project').length,'project')}`;
+  const rows = matches.map(item => {
     const button = el('button', { type: 'button', className: 'ov-row' }, el('span', { className: 'ov-dot', ariaHidden: 'true' }),
-      el('strong', {}, String(article.title ?? '').trim() || 'Untitled article'), el('small', {}, `${article.status === 'ready' ? 'Ready for the site' : 'Draft'}${article.at ? ` · saved ${when(article.at)}` : ''}`));
-    button.addEventListener('click', () => { closeOverview(); desk.openArticle(id); });
-    return el('li', {}, button);
+      el('strong', {}, item.title), el('small', {}, [item.type==='article'?'Article':'Project',item.detail,statusLabels[item.status],!item.hasText?'No body text':null].filter(Boolean).join(' · ')));
+    if(item.editable)button.addEventListener('click',()=>{if(item.type==='project')openProject(item.index);else{closeOverview();desk.openArticle(item.id);}});
+    else {
+      const link=el('a',{href:item.href,className:'ov-row'},el('strong',{},item.title),el('small',{},'Published article · View page'));
+      return el('li',{},link);
+    }
+    return el('li',{},button);
   });
-  const add = el('button', { type: 'button' }, '＋ New article');
-  add.addEventListener('click', () => { closeOverview(); desk.newArticle(); });
-  box.replaceChildren(
-    el('h3', {}, 'Your articles'),
-    rows.length ? el('ul', {}, ...rows) : el('p', { className: 'ov-line' }, 'No drafts yet. A new article stays a draft, only for you, until you publish it.'),
-    add,
-  );
+  $('ov-items').replaceChildren(...(rows.length?rows:[el('li',{},'No items match. Try a different search or filter.')]));
 }
+for(const id of ['ov-search','ov-type','ov-status'])$(id).addEventListener(id==='ov-search'?'input':'change',renderItemList);
+$('ov-new').addEventListener('click',()=>{closeOverview();desk.newArticle();});
 
 function openOverview() {
   $('overview').hidden = false;
   renderOverview();
   if (location.hash !== '#overview') history.replaceState(null, '', '#overview');
-  $('ov-next').focus({ preventScroll: true });
+  $('ov-search').focus({ preventScroll: true });
 }
 function closeOverview() {
   $('overview').hidden = true;

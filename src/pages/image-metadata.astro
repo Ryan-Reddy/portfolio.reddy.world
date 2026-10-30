@@ -37,7 +37,7 @@ const software = (await getCollection('software')).sort((a, b) => a.data.order -
 // drafts prepared in the repo, by desk id (src/data/article-seeds/<id>.json): each shows up once on the desk
 const seeds = Object.fromEntries(Object.entries(import.meta.glob('../data/article-seeds/*.json', { eager: true, import: 'default' }))
   .map(([file, seed]) => [file.split('/').pop().replace(/\.json$/, ''), seed]));
-const wallArticles = (await getCollection('articles')).map(({id, data}) => ({id, desk: data.desk, title: data.title, kind: KINDS[data.kind].label, year: (data.published ?? data.updated).getFullYear()}));
+const wallArticles = (await getCollection('articles')).map(({id, data,body}) => ({id, desk: data.desk, title: data.title, summary:data.summary ?? '', tags:data.tags ?? [], text:String(body ?? '').replace(/<[^>]*>/g,' '),href:`/portfolio/${KINDS[data.kind].path}/${id}/`, hasText:Boolean(String(body ?? '').replace(/<[^>]*>/g,' ').trim()),kind: KINDS[data.kind].label, year: (data.published ?? data.updated).getFullYear()}));
 const wallProjects = allPosts.filter(p => p.type === 'post' && p.portfolio !== 'maup').map(p => ({id: `${p.portfolio}/${p.slug}`, slug: p.slug, title: p.title.trim(), published: p.published, year: new Date(p.published).getFullYear(), time: new Date(p.published).getTime()}));
 const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING, projects, count, ratingsInfo, ratings: ideaRatings, articleIdeas: articleIdeas.map((idea) => [idea.tag, idea.sources]), kinds: KINDS, software, seeds, wall, wallArticles, wallProjects }).replace(/</g, '\\u003c');
 ---
@@ -390,7 +390,7 @@ const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING
       <button id="previous" class="quiet" type="button" title="Previous project (Alt+←)">←</button>
       <select id="project-picker" aria-label="Project"></select>
       <button id="next-project" class="quiet" type="button" title="Next project to review (Alt+→)">Next to review →</button>
-      <button id="new-article" class="quiet" type="button" title="A new article for the wall, kept as a draft">New article</button>
+      <button id="new-article" class="quiet" type="button" title="A new item for the wall, kept as a private draft">New item</button>
     </nav>
     <div class="progress">
       <span id="progress-label"></span>
@@ -398,13 +398,13 @@ const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING
       <span class="saved"><span data-desk-saved aria-live="polite">Saved in this browser</span><button data-desk-signin type="button" hidden>Sign in</button></span>
     </div>
     <div class="actions">
-      <button id="open-overview" type="button">All projects</button>
+      <button id="open-overview" type="button">All items</button>
       <button id="open-wall" type="button">Arrange wall</button>
       <button id="save-desk" class="quiet" type="button" title="Save privately without publishing">Save</button>
       <button id="send" class="primary" type="button">Publish changes</button>
       <details class="more"><summary>Tools</summary>
         <div class="menu">
-          <button id="new-article-tools" class="mobile-new-article" type="button">New article</button>
+          <button id="new-article-tools" class="mobile-new-article" type="button">New item</button>
           <button id="map" type="button">Browse all tags</button>
           <button id="help" type="button">How this desk works</button>
           <button id="export" type="button">Download backup</button>
@@ -2766,6 +2766,7 @@ const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING
     }
     $('new-article').addEventListener('click', newArticle);
     $('new-article-tools').addEventListener('click',newArticle);
+    $('wall-new').addEventListener('click',()=>{$('wall-organiser').hidden=true;newArticle();});
     $('back-to-projects').addEventListener('click', leaveArticle);
     let deleteTimer = 0;
     function resetDelete() {
@@ -2827,7 +2828,16 @@ const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING
   </script>
   <section id="overview" class="overview" hidden aria-labelledby="ov-title">
     <div class="ov-wrap">
-      <header class="ov-head"><h2 id="ov-title">Where you are</h2><button id="ov-close" type="button">Back to the desk</button></header>
+      <header class="ov-head"><h2 id="ov-title">All items</h2><button id="ov-close" type="button">Back to the desk</button></header>
+      <div class="ov-find">
+        <label>Search projects and articles<input id="ov-search" type="search" placeholder="Title, text or tag" autocomplete="off" /></label>
+        <label>Type<select id="ov-type"><option value="all">All items</option><option value="article">Articles</option><option value="project">Projects</option></select></label>
+        <label>Status<select id="ov-status"><option value="all">Any status</option><option value="draft">Draft</option><option value="ready">Ready to publish</option><option value="published">Published articles</option><option value="todo">Projects to review</option><option value="reviewed">Reviewed projects</option><option value="no-text">No body text</option></select></label>
+        <button id="ov-new" class="primary" type="button">New item</button>
+      </div>
+      <p id="ov-results" class="ov-line" role="status"></p>
+      <ul id="ov-items" class="ov-items"></ul>
+      <details class="ov-progress"><summary>Project review progress</summary>
       <button id="ov-next" class="primary ov-next" type="button">Next up</button>
       <p class="ov-big" id="ov-total"></p>
       <div id="ov-total-bar"></div>
@@ -2835,9 +2845,20 @@ const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING
       <p class="ov-line"><span data-desk-saved></span> <button data-desk-signin type="button" hidden>Sign in</button></p>
       <p class="ov-line" id="ov-days"></p>
       <div id="ov-portfolios"></div>
-      <section class="ov-articles" id="ov-articles" aria-label="Your articles"></section>
+      </details>
     </div>
   </section>
+  <style is:global>
+    .ov-find {display:flex;gap:.75rem;flex-wrap:wrap;align-items:end;margin:1rem 0;}
+    .ov-find label {display:grid;gap:.3rem;min-width:0;}
+    .ov-find label:first-child {flex:1 1 16rem;}
+    .ov-find input,.ov-find select {width:100%;min-height:2.75rem;}
+    .ov-items {list-style:none;padding:0;display:grid;gap:.4rem;}
+    .ov-items .ov-row {width:100%;text-align:left;min-width:0;}
+    .ov-items .ov-row strong {overflow-wrap:anywhere;}
+    .ov-progress {margin-top:2rem;}
+    .ov-progress > summary {cursor:pointer;padding:.75rem 0;}
+  </style>
   <section id="piece-fields" hidden aria-label="Piece details">
     <div class="piece-modes" role="group" aria-label="What to work on"><button type="button" data-piece-mode="page" aria-pressed="true">Edit page</button><button type="button" data-piece-mode="picture" aria-pressed="false">Images</button><button type="button" data-piece-mode="preview" aria-pressed="false">Wall preview</button></div>
     <div class="piece-inputs">
@@ -2868,7 +2889,7 @@ const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING
     .piece-modes button[aria-pressed="true"] {background:var(--gold);color:var(--bg);}
   </style>
   <section id="wall-organiser" hidden role="dialog" aria-modal="true" aria-labelledby="wall-title">
-    <header><h2 id="wall-title" tabindex="-1">Wall organiser</h2><button id="close-wall" type="button">Back to the desk</button></header>
+    <header><h2 id="wall-title" tabindex="-1">Wall organiser</h2><button id="wall-new" type="button">New item</button><button id="close-wall" type="button">Back to the desk</button></header>
     <p>Arrange the wall without changing the pages. Row 0 is automatic; rows 1–99 stay together at every screen width. Publish changes prepares these changes for the site.</p>
     <div class="wall-tools"><label>Find a tile<input id="wall-search" type="search" placeholder="Title or kind"></label><label>Show<select id="wall-filter"><option value="all">All tiles</option><option value="shown">On the wall</option><option value="hidden">Off the wall</option></select></label><button id="wall-send" type="button" class="primary">Publish changes</button></div>
     <p data-desk-saved aria-live="polite">Saved in this browser</p><p id="wall-status" role="status"></p><p id="wall-catalog-status"></p><div id="wall-tiles"></div>
