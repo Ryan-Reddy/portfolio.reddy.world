@@ -6,7 +6,7 @@ Ryan's feedback, 30 October 2026: the organiser exists, but managing the wall sh
 
 - #82 and #83 are open. Their descriptions understate the remaining product work.
 - The organiser writes year, row, order and visibility to the existing desk state. The public wall reads the published settings. These are currently separate views.
-- The private desk has New item, Add text, Add images and Add video. The expanded items on the actual wall have no equivalent editing interface.
+- The private desk has New item, Add text, Add images and Add video. A reproduced bug inherited wall-preview mode when creating/opening an article, hiding the editor although Edit page looked selected; fix this with the searchable overview. The expanded items on the actual wall have no equivalent editing interface.
 - The archive-page edit bar is another editing route. It creates an empty text region in some layouts, but does not expose the full desk's insertion controls.
 - The saved-link recognition bug is fixed separately in #114/#115: the active editor now receives resolved image blocks and labelled Instagram sources.
 

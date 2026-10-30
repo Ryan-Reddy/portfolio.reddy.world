@@ -2745,6 +2745,7 @@ const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING
     });
     $('article-summary').addEventListener('input', () => setArticle('summary', $('article-summary').value));
     function newArticle() {
+      elsewhere = false; // A new blank piece must open in its editor, including after a wall preview.
       const id = `a${Date.now().toString(36)}`;
       state.articles[id] = {title: '', summary: '', content: '', status: 'draft', kind: 'story', lang: 'en', year: new Date().getFullYear(), created: Date.now()};
       state.article = id;
@@ -2755,6 +2756,7 @@ const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING
     }
     function openArticle(id) {
       if (!state.articles[id] || state.articles[id].deleted) return;
+      elsewhere = false;
       state.article = id;
       save();
       render();
