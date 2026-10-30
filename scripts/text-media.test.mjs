@@ -23,6 +23,7 @@ test('recognises linked and plain images, deduplicates, preserves prose and exis
 });
 test('unwraps Google image results without accepting pages or unsafe addresses', () => {
   assert.equal(imageLink('https://www.google.com/imgres?imgurl='+encodeURIComponent(image)),image);
+  assert.equal(imageLink('https://lh3.googleusercontent.com/opaque-photo=s1200'),'https://lh3.googleusercontent.com/opaque-photo=s1200');
   for(const value of ['javascript:alert(1)','https://user:pass@i0.wp.com/a.jpg','https://i0.wp.com:8443/a.jpg','https://www.instagram.com/p/abc/'])assert.equal(imageLink(value),null);
   assert.equal(trustedImageHost('https://i0.wp.com/a.jpg'),true);
   assert.equal(trustedImageHost('https://i0.wp.com.evil.test/a.jpg'),false);

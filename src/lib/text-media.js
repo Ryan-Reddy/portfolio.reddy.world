@@ -8,7 +8,8 @@ export function imageLink(value) {
       url = new URL(url.searchParams.get('imgurl'));
     }
     if (url.protocol !== 'https:' || url.username || url.password || url.port) return null;
-    if (!/\.(?:jpe?g|png|webp|gif)$/i.test(url.pathname)) return null;
+    // Google-hosted photographs often have opaque paths rather than file extensions.
+    if (!/\.(?:jpe?g|png|webp|gif)$/i.test(url.pathname) && !/(^|\.)googleusercontent\.com$/.test(url.hostname)) return null;
     url.hash = '';
     return url.href;
   } catch { return null; }
