@@ -1,0 +1,53 @@
+/* Editing controls: one vocabulary, clear groups, one publish action. */
+button{border-radius:4px;transition:background .12s,border-color .12s;}
+button:not(:disabled):hover{background:var(--chip);}
+button.primary:not(:disabled):hover{background:#dfc38a;}
+.top button:not(.primary){border-color:var(--line);color:var(--fg);}
+.top .nav{flex-basis:24rem;}
+.top .actions{gap:.5rem;}
+.top .actions>button{white-space:nowrap;}
+.top .nav select{text-overflow:ellipsis;}
+.panel>.head{position:static;padding:1.1rem 1.2rem .6rem;border:0;}
+.panel>.head h1{font-size:1.25rem;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+#piece-fields{padding:0 1.2rem;}
+.piece-modes{display:grid!important;grid-template-columns:1fr 1fr 1fr;gap:0!important;border-bottom:1px solid var(--line);padding-bottom:0;margin-bottom:.9rem;}
+.piece-modes button{padding:.7rem .35rem;border:0;border-bottom:3px solid transparent;border-radius:0;color:var(--muted);background:transparent;}
+.piece-modes button[aria-pressed=true]{background:transparent!important;color:var(--fg)!important;border-bottom-color:var(--gold);font-weight:650;}
+.piece-media-actions{margin:.4rem 0 1rem;align-items:center;}
+#piece-upload{color:var(--fg);border-color:#79766e;background:#262520;}
+#piece-upload-status:empty,#piece-fields-note:empty{display:none;}
+#piece-upload-status{width:100%;line-height:1.5;color:var(--fg);}
+.desk-selected-image{flex-basis:100%;padding:.8rem;background:#191917;border:1px solid var(--line);border-radius:6px;display:grid;gap:.75rem;}
+.desk-selected-image>button{justify-self:start;border-color:#79766e;color:var(--fg);}
+.piece-selection{font-size:.9rem;color:var(--fg);min-width:0;}
+.piece-selection img{width:4rem;height:3.5rem;border-color:var(--line);border-radius:3px;}
+.piece-selection span{min-width:0;overflow:hidden;}
+.piece-selection small{display:block;color:var(--muted);font-size:.72rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:.3rem;}
+.piece-inputs{gap:.9rem!important;}
+.piece-inputs>label{font-weight:600;}
+.piece-inputs input,.piece-inputs textarea,.piece-inputs select{font-size:.95rem;line-height:1.5;font-weight:400;background:#191917;border:1px solid #56534c;border-radius:4px;padding:.65rem .75rem;}
+.desk-design{border-block:1px solid var(--line);padding:.9rem 0;}
+.desk-design>summary{font-size:.9rem;font-weight:600;cursor:pointer;color:var(--fg);}
+.desk-design[open]>summary{margin-bottom:.8rem;}
+.desk-design .layout-choice{border:0;padding:.8rem 0 0;margin:0;}
+.desk-design .layout-choice legend{font-size:.82rem;color:var(--muted);}
+#piece-layouts{margin-top:.6rem;}
+#piece-layouts button{font-size:.8rem;line-height:1.35;border:1px solid #504d46;color:var(--muted);background:transparent;align-content:start;}
+#piece-layouts button[aria-pressed=true]{outline:0;border:2px solid var(--gold);color:var(--fg);background:#28251e;}
+#piece-layouts button[aria-pressed=true]::after{content:'Selected';font-size:.7rem;color:var(--gold);}
+.layout-sketch{height:2.6rem;opacity:.65;}
+#piece-layouts button[aria-pressed=true] .layout-sketch{opacity:1;}
+.field-source{border:0;padding:.2rem 0;font-size:.78rem;}
+.field-source summary{color:#c2b69e;}
+.field-source p{max-height:12rem;overflow:auto;}
+#piece-fields [hidden],.panel [hidden]{display:none!important;}
+.reading .pic-tools{position:static;justify-content:flex-end;padding:.4rem;background:#191917;flex-wrap:wrap;}
+.reading .pic-tools button{font-size:.75rem;min-height:2rem;background:transparent;border:1px solid #514e46;color:var(--fg);padding:.2rem .5rem;}
+#text-bar{gap:.2rem;padding:.4rem;flex-wrap:wrap;}
+#text-bar button{border-radius:3px;}
+#read-text a{overflow-wrap:anywhere;}
+#project-bench .bottom,#article-bench .bottom{flex-wrap:wrap;}
+@media(min-width:1100px){.workbench{grid-template-columns:minmax(0,1fr) 29rem;}.top .progress{min-width:9rem;}.top .brand{font-size:1.15rem;}}
+@media(max-width:900px){.top .actions{grid-template-columns:1fr 1fr 1fr auto;}.top .actions>button{white-space:normal;font-size:.8rem;padding:.4rem;}.top .actions summary{font-size:.8rem;padding:.4rem;}.top .progress{width:100%;}.panel>.head{padding:.8rem 1rem .5rem;}#piece-fields{padding-inline:1rem;}.piece-modes button{min-height:2.75rem;}.piece-inputs input,.piece-inputs textarea,.piece-inputs select{font-size:1rem;}}
+
+.piece-modes{position:sticky;top:0;z-index:4;background:var(--bg);}

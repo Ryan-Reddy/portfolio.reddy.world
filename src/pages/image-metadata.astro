@@ -390,7 +390,7 @@ const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING
       <button id="previous" class="quiet" type="button" title="Previous project (Alt+←)">←</button>
       <select id="project-picker" aria-label="Project"></select>
       <button id="next-project" class="quiet" type="button" title="Next project (Alt+→)">→</button>
-      <button id="new-article" class="quiet" type="button" title="A new article for the wall, kept as a draft">＋ Article</button>
+      <button id="new-article" class="quiet" type="button" title="A new article for the wall, kept as a draft">New article</button>
     </nav>
     <div class="progress">
       <span id="progress-label"></span>
@@ -398,15 +398,15 @@ const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING
       <span class="saved"><span data-desk-saved aria-live="polite">Saved in this browser</span><button data-desk-signin type="button" hidden>Sign in</button></span>
     </div>
     <div class="actions">
-      <button id="open-overview" type="button">Overview</button>
-      <button id="open-wall" type="button">Wall organiser</button>
+      <button id="open-overview" type="button">All projects</button>
+      <button id="open-wall" type="button">Arrange wall</button>
       <button id="send" class="primary" type="button">Publish changes</button>
-      <details class="more"><summary>More</summary>
+      <details class="more"><summary>Tools</summary>
         <div class="menu">
-          <button id="map" type="button">Keyword map</button>
+          <button id="map" type="button">Browse all tags</button>
           <button id="help" type="button">How this desk works</button>
-          <button id="export" type="button">Export a copy</button>
-          <button id="load" type="button">Load an export</button>
+          <button id="export" type="button">Download backup</button>
+          <button id="load" type="button">Restore backup file</button>
           <input id="load-file" type="file" accept=".json,application/json" hidden>
         </div>
       </details>
@@ -418,16 +418,16 @@ const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING
          A project's Picture tab shows one picture large here instead. data-for: the views a control of the bar is in. -->
     <section class="stage" aria-label="The page">
       <div class="stage-bar">
-        <span class="count" id="article-view" data-for="article page">Write on the page</span>
+        <span class="count" id="article-view" data-for="article page">Edit page · changes save privately</span>
         <span class="count" id="image-counter" data-for="picture"></span>
         <span class="spacer"></span>
-        <button id="back-to-page" class="quiet" type="button" data-for="picture">← Its page</button>
-        <button id="make-hero" class="lead" type="button" aria-pressed="false" data-for="picture">☆ Make this the lead picture</button>
-        <a id="project-link" target="_blank" rel="noreferrer" data-for="page picture">Open the page ↗</a>
-        <button id="add-picture-here" class="quiet" type="button" data-for="article">＋ Picture</button>
-        <button id="add-video-here" class="quiet" type="button" data-for="article page">＋ Video</button>
-        <button id="show-elsewhere" class="quiet" type="button" data-for="article">On the wall and as a link</button>
-        <button id="back-to-projects" class="quiet" type="button" data-for="article">← Back to the projects</button>
+        <button id="back-to-page" class="quiet" type="button" data-for="picture">Back to page</button>
+        <button id="make-hero" class="lead" type="button" aria-pressed="false" data-for="picture">Use as cover image</button>
+        <a id="project-link" target="_blank" rel="noreferrer" data-for="page picture">View live page ↗</a>
+        <button id="add-picture-here" class="quiet" type="button" data-for="article">Add image</button>
+        <button id="add-video-here" class="quiet" type="button" data-for="article page">Add video</button>
+        <button id="show-elsewhere" class="quiet" type="button" data-for="article">Preview wall card</button>
+        <button id="back-to-projects" class="quiet" type="button" data-for="article">Back to projects</button>
       </div>
       <article class="reading" id="reading">
         <span class="when" id="read-when"></span>
@@ -442,23 +442,23 @@ const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING
           <button type="button" data-cmd="bold" aria-label="Bold" aria-pressed="false"><b>B</b></button>
           <button type="button" data-cmd="italic" aria-label="Italic" aria-pressed="false"><i>I</i></button>
           <button type="button" data-cmd="link" aria-label="Link" aria-pressed="false">Link</button>
-          <button type="button" data-cmd="h2" aria-label="Heading" aria-pressed="false">H2</button>
-          <button type="button" data-cmd="h3" aria-label="Small heading" aria-pressed="false">H3</button>
-          <button type="button" data-cmd="bullet" aria-label="List" aria-pressed="false">• List</button>
-          <button type="button" data-cmd="ordered" aria-label="Numbered list" aria-pressed="false">1. List</button>
-          <button type="button" data-cmd="quote" aria-label="Quote" aria-pressed="false">❝ Quote</button>
-          <button type="button" data-cmd="undo" aria-label="Undo">↶</button>
-          <button type="button" data-cmd="redo" aria-label="Redo">↷</button>
+          <button type="button" data-cmd="h2" aria-label="Heading" aria-pressed="false">Heading</button>
+          <button type="button" data-cmd="h3" aria-label="Small heading" aria-pressed="false">Subheading</button>
+          <button type="button" data-cmd="bullet" aria-label="List" aria-pressed="false">Bullet list</button>
+          <button type="button" data-cmd="ordered" aria-label="Numbered list" aria-pressed="false">Numbered list</button>
+          <button type="button" data-cmd="quote" aria-label="Quote" aria-pressed="false">Quote</button>
+          <button type="button" data-cmd="undo" aria-label="Undo">Undo</button>
+          <button type="button" data-cmd="redo" aria-label="Redo">Redo</button>
           <form class="link-form" id="link-form" hidden><input id="link-url" type="text" inputmode="url" autocomplete="off" placeholder="https://… or /portfolio/…" aria-label="The link's address"><button type="submit">Set link</button><button id="link-remove" class="quiet" type="button">Remove link</button></form>
         </div>
         <details id="page-source" class="field-source"><summary>Original text and writing help</summary><div id="page-source-content"></div></details>
         <div class="reading-text" id="read-text" contenteditable="true" role="textbox" aria-multiline="true" aria-label="The article's text"></div>
         <section class="read-rest" id="read-rest" hidden><h3 class="rest-title"></h3><div class="rest-rows"></div></section>
-        <div class="block-tools" id="block-tools" hidden><button type="button" data-move="up" aria-label="Move this paragraph up (Alt+↑)">↑</button><button type="button" data-move="down" aria-label="Move this paragraph down (Alt+↓)">↓</button></div>
+        <div class="block-tools" id="block-tools" hidden><button type="button" data-move="up" aria-label="Move this paragraph up (Alt+↑)">↑ Move up</button><button type="button" data-move="down" aria-label="Move this paragraph down (Alt+↓)">↓ Move down</button></div>
       </article>
       <div class="elsewhere" id="elsewhere" hidden></div>
       <div class="picture" id="picture-view" hidden><img id="picture" alt=""></div>
-      <nav class="filmstrip" id="filmstrip" hidden aria-label="All pictures in this project"></nav>
+      <nav class="filmstrip" id="filmstrip" hidden aria-label="All images in this project"></nav>
     </section>
 
     <section class="panel" id="project-bench" aria-label="This project">
@@ -484,7 +484,7 @@ const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING
           </details>
 
           <details class="box" data-box="keywords">
-            <summary><span class="box-name">Keywords</span><span class="box-line"></span><span class="box-tick" aria-hidden="true">✓</span></summary>
+            <summary><span class="box-name">Tags</span><span class="box-line"></span><span class="box-tick" aria-hidden="true">✓</span></summary>
             <div class="box-body">
               <div class="chips" id="project-chips"></div>
               <p class="hint" id="project-keywords-hint"></p>
@@ -513,8 +513,8 @@ const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING
         </div>
 
         <div class="bottom">
-          <button id="done" class="primary" type="button">Done, next project →</button>
-          <button id="reopen" class="quiet" type="button" hidden>Not done yet</button>
+          <button id="done" class="primary" type="button">Mark reviewed & next →</button>
+          <button id="reopen" class="quiet" type="button" hidden>Mark as not reviewed</button>
         </div>
         <p class="note" id="note" aria-live="polite"></p>
       </div>
@@ -522,14 +522,14 @@ const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING
       <div class="tab" role="tabpanel" id="pane-picture" aria-labelledby="tab-picture" hidden>
         <div class="box-list" data-boxes="picture">
           <details class="box" data-box="description">
-            <summary><span class="box-name">What it shows</span><span class="box-line"></span><span class="box-tick" aria-hidden="true">✓</span></summary>
+            <summary><span class="box-name">Image description</span><span class="box-line"></span><span class="box-tick" aria-hidden="true">✓</span></summary>
             <div class="box-body">
               <textarea id="description" aria-label="What someone who can't see this picture should hear" placeholder="Who or what is in it, and where"></textarea>
               <p class="hint">Its alt text on the site, for someone who can't see it.</p>
             </div>
           </details>
           <details class="box" data-box="keywords">
-            <summary><span class="box-name">Keywords</span><span class="box-line"></span><span class="box-tick" aria-hidden="true">✓</span></summary>
+            <summary><span class="box-name">Tags</span><span class="box-line"></span><span class="box-tick" aria-hidden="true">✓</span></summary>
             <div class="box-body">
               <div class="chips" id="image-chips"></div>
               <p class="hint">Dashed: from the project.</p>
@@ -539,12 +539,12 @@ const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING
           <details class="box" data-box="credit" id="credit-panel">
             <summary><span class="box-name">Photographer</span><span class="box-line"></span><span class="box-tick" aria-hidden="true">✓</span></summary>
             <div class="box-body">
-              <label>This picture by <input id="credit-image-name" autocomplete="off" placeholder="Name as it should appear"></label>
-              <label>Their site <input id="credit-image-url" inputmode="url" autocomplete="off" placeholder="https://…"></label>
-              <label>Every picture in this project by <input id="credit-project-name" autocomplete="off" placeholder="Name as it should appear"></label>
-              <label>Their site <input id="credit-project-url" inputmode="url" autocomplete="off" placeholder="https://…"></label>
+              <label>Photographer for this image <input id="credit-image-name" autocomplete="off" placeholder="Name as it should appear"></label>
+              <label>Photographer website <input id="credit-image-url" inputmode="url" autocomplete="off" placeholder="https://…"></label>
+              <label>Photographer for all project images <input id="credit-project-name" autocomplete="off" placeholder="Name as it should appear"></label>
+              <label>Photographer website <input id="credit-project-url" inputmode="url" autocomplete="off" placeholder="https://…"></label>
               <p class="hint" id="credit-shown" aria-live="polite"></p>
-              <button id="next-uncredited" type="button">Next picture without a photographer →</button>
+              <button id="next-uncredited" type="button">Next image missing a credit →</button>
             </div>
           </details>
           <details class="box" data-box="wordpress">
@@ -618,11 +618,11 @@ const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING
             <div class="box-body"><p class="hint">Write on the page, left. Ctrl+B and Ctrl+I work; move a picture or video with ↑ ↓ or drag it. ＋ Video takes a YouTube or Vimeo link; the site loads it only on play.</p></div>
           </details>
           <details class="box" data-box="pictures">
-            <summary><span class="box-name">Pictures</span><span class="box-line"></span><span class="box-tick" aria-hidden="true">✓</span></summary>
+            <summary><span class="box-name">Images</span><span class="box-line"></span><span class="box-tick" aria-hidden="true">✓</span></summary>
             <div class="box-body">
               <div class="pic-list" id="pic-list" data-boxes="pictures"></div>
               <label class="add-pics">＋ Add pictures <input id="pic-input" type="file" accept="image/*" multiple hidden></label>
-              <p class="hint" id="pic-hint">Private until you publish. ★ is the lead; "In the text" goes after your cursor.</p>
+              <p class="hint" id="pic-hint">Uploads stay private until you publish. Add to page places an image after your cursor.</p>
             </div>
           </details>
           <details class="box" data-box="publish">
@@ -961,7 +961,7 @@ const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING
       const {project} = current();
       const words = projectTags(project);
       const input = renderChips('project-chips', words, {
-        placeholder: 'Add a keyword',
+        placeholder: 'Add a tag',
         onRemove: (word) => setProjectTags(projectTags(project).filter((w) => !same(w, word)), project),
         onAdd: (word, options) => {
           const now = projectTags(project);
@@ -1060,7 +1060,7 @@ const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING
       const images = media.split(',').map((index) => imageAt(project, index.trim())).filter(Boolean);
       const figure = el('figure', {className: 'pic-block media-block', contentEditable: 'false', draggable: true},
         ...(images.length ? shotRows(images) : [el('span', {className: 'hint', textContent: 'The site leaves this picture out (a duplicate).'})]),
-        el('span', {className: 'pic-tools'}, blockTool('up', 'Move the pictures up', '↑'), blockTool('down', 'Move the pictures down', '↓'), blockTool('out', 'Take the pictures out of the text', '✕')));
+        el('span', {className: 'pic-tools'}, blockTool('up', 'Move the images up', '↑ Move up'), blockTool('down', 'Move the images down', '↓ Move down'), blockTool('out', 'Remove images from page', 'Remove from page')));
       figure.dataset.media = media;
       return figure;
     }
@@ -1359,7 +1359,7 @@ const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING
         {label: 'Excerpt', value: project.wordpress.excerpt, use: () => { $('summary').value = project.wordpress.excerpt; $('summary').dispatchEvent(new Event('input')); }},
       ]);
       const done = isDone(project);
-      $('done').textContent = done ? 'Next project →' : 'Done, next project →';
+      $('done').textContent = done ? 'Next project →' : 'Mark reviewed & next →';
       $('reopen').hidden = !done;
     }
     $('summary').addEventListener('input', () => {
@@ -1375,7 +1375,7 @@ const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING
       const words = imageTags(project, image);
       renderChips('image-chips', words, {
         inherited: projectTags(project),
-        placeholder: 'Add a keyword for this picture',
+        placeholder: 'Add a tag for this image',
         onRemove: (word) => setImageTags(imageTags(project, image).filter((w) => !same(w, word)), project, image),
         onAdd: (word, options) => {
           const now = imageTags(project, image);
@@ -1538,17 +1538,17 @@ const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING
       $('picture').src = image.src;
       $('picture').srcset = image.srcset;
       $('picture').alt = descriptionOf(image) || `${project.title}, picture ${imageIndex + 1}`;
-      $('image-counter').textContent = `Picture ${imageIndex + 1} of ${project.images.length}`;
+      $('image-counter').textContent = `Image ${imageIndex + 1} of ${project.images.length}`;
       const lead = image.url === heroOf(project);
       $('make-hero').setAttribute('aria-pressed', String(lead));
-      $('make-hero').textContent = lead ? '★ The lead picture' : '☆ Make this the lead picture';
+      $('make-hero').textContent = lead ? 'Cover image selected' : 'Use as cover image';
       $('project-link').href = project.href;
       const start = flat.findIndex((item) => item.projectIndex === projectIndex);
       $('filmstrip').replaceChildren(...project.images.map((img, index) => {
         const button = el('button', {type: 'button'}, el('img', {src: img.src, alt: '', loading: 'lazy'}));
         const isLead = img.url === heroOf(project);
         button.dataset.lead = String(isLead);
-        button.setAttribute('aria-label', `Picture ${index + 1} of ${project.images.length}${isLead ? ', the lead picture' : ''}`);
+        button.setAttribute('aria-label', `Image ${index + 1} of ${project.images.length}${isLead ? ', cover image' : ''}`);
         button.setAttribute('aria-current', String(index === imageIndex));
         button.addEventListener('click', () => { state.cursor = start + index; render({keepTab: true}); });
         return button;
@@ -1557,10 +1557,10 @@ const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING
     }
     function updateProgress() {
       const done = completed();
-      $('progress-label').textContent = `${done} of ${DATA.projects.length} projects done`;
+      $('progress-label').textContent = `${done} of ${DATA.projects.length} projects reviewed`;
       $('bar').style.width = `${(done / DATA.projects.length) * 100}%`;
       const {project} = current();
-      $('project-state').textContent = isDone(project) ? 'Done' : 'Not done yet';
+      $('project-state').textContent = isDone(project) ? 'Reviewed' : 'Not reviewed';
       $('project-state').dataset.done = String(isDone(project));
       document.title = `${done}/${DATA.projects.length} · ${project.title} — Portfolio desk`;
     }
@@ -1784,7 +1784,7 @@ const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING
       $('picture-view').hidden = !picture;
       $('filmstrip').hidden = !picture;
       for (const node of document.querySelectorAll('.stage-bar [data-for]')) node.hidden = !node.dataset.for.split(' ').includes(view);
-      $('article-view').textContent = article && elsewhere ? 'On the wall, as a link, in search' : 'Write on the page';
+      $('article-view').textContent = article && elsewhere ? 'Wall card preview' : 'Edit page · changes save privately';
       if ($('reading').hidden) $('block-tools').hidden = true;
     }
     // The page is where the article is written: title, summary and text are edited in place. A part Ryan is
@@ -1939,7 +1939,7 @@ const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING
     }
     // a picture in the page's text: shown as the page shows it, with ↑ ↓ to move it and ✕ to take it out of the
     // text (it stays in the pictures list); it can be dragged too. Stored as <figure data-picture="id"> (tidy)
-    const blockTool = (move, label, text) => { const button = el('button', {type: 'button', textContent: text}); button.dataset.move = move; button.setAttribute('aria-label', label); return button; };
+    const blockTool = (move, label, text) => { const button = el('button', {type: 'button', textContent: move === 'up' ? '↑ Move up' : move === 'down' ? '↓ Move down' : move === 'out' ? 'Remove from page' : text}); button.dataset.move = move; button.setAttribute('aria-label', label); return button; };
     function pictureBlock(id, picture) {
       const figure = el('figure', {className: 'pic-block', contentEditable: 'false', draggable: true},
         photoImg(picture, picture.alt),
@@ -2330,7 +2330,7 @@ const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING
       function drawWords() {
         const words = pictureWords(now());
         renderChips(chips, words, {
-          placeholder: 'Add a keyword',
+          placeholder: 'Add a tag',
           onRemove: (word) => setWords(pictureWords(now()).filter((w) => !same(w, word))),
           onAdd: (word, options) => { const had = pictureWords(now()); setWords([...had, ...tags(word).filter((w) => !had.some((x) => same(x, w)))], options); },
         });
@@ -2348,12 +2348,12 @@ const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING
         input.addEventListener('keydown', (event) => { if (event.key === 'Enter') event.preventDefault(); });
         return input;
       };
-      const lead = el('button', {type: 'button', textContent: article.hero === id ? '★ Lead picture' : '☆ Lead'});
+      const lead = el('button', {type: 'button', textContent: article.hero === id ? 'Cover image selected' : 'Use as cover image'});
       lead.setAttribute('aria-pressed', String(article.hero === id));
       lead.addEventListener('click', () => { setArticle('hero', article.hero === id ? undefined : id); renderPictureList(); });
-      const place = el('button', {type: 'button', textContent: 'In the text'});
+      const place = el('button', {type: 'button', textContent: 'Add to page'});
       place.addEventListener('click', () => placePicture(id));
-      const remove = el('button', {type: 'button', className: 'quiet', textContent: 'Remove'});
+      const remove = el('button', {type: 'button', className: 'quiet', textContent: 'Remove image'});
       remove.addEventListener('click', () => {
         const current = state.articles[state.article];
         const content = String(current.content ?? '').replace(new RegExp(`<figure data-picture="${id}"></figure>`, 'g'), '');
@@ -2363,9 +2363,9 @@ const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING
       });
       row.append(el('div', {className: 'box-body'},
         alt,
-        el('span', {className: 'row-label', textContent: 'Keywords'}), chips,
+        el('span', {className: 'row-label', textContent: 'Tags'}), chips,
         el('details', {className: 'drawer'}, el('summary', {textContent: 'Ideas'}), el('div', {}, ideas.tabs, ideas.list, ideas.hint)),
-        el('div', {className: 'row2'}, el('label', {}, 'Photo by', credit('name', 'Name as it should appear')), el('label', {}, 'Their site', credit('url', 'https://…'))),
+        el('div', {className: 'row2'}, el('label', {}, 'Photographer', credit('name', 'Name as it should appear')), el('label', {}, 'Photographer website', credit('url', 'https://…'))),
         el('div', {className: 'row'}, lead, place, remove)));
       return row;
     }
@@ -2468,8 +2468,8 @@ const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING
               showTab('picture');render();
               if(place) {showTab('project');renderReading();window.deskEditor?.insert('picture',id);}
             }
-            $('page-note').textContent=name+' uploaded. Add its description and photographer in Pictures.';
-            uploadStatus(name+' uploaded. Add its description and photographer in Pictures.');
+            $('page-note').textContent=name+' uploaded. Add a description and photographer below.';
+            uploadStatus(name+' uploaded. Add a description and photographer below.');
             continue;
           }
           const article = state.articles[destination.article];
@@ -2482,11 +2482,12 @@ const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING
           renderReading();
           renderPublish();
           document.querySelector('[data-boxes="article"] > [data-box="pictures"]').open = true;
-          $('pic-hint').textContent = `${file.name} added: say what it shows.`;
+          $('pic-hint').textContent = `${file.name} uploaded. Add a description below.`;
+          document.querySelector('[data-piece-mode="picture"]').click();
           uploadStatus(file.name+' uploaded. Add a description and photographer.');
           $('page-note').textContent = place ? `${file.name} added: say what it shows, on the right.` : '';
         } catch (error) {
-          uploadStatus(file.name+' was not added: '+error.message+'.');
+          uploadStatus('Could not upload '+file.name+'. '+error.message);
           $('pic-hint').textContent = `${file.name} was not added: ${error.message}.`;
           $('page-note').textContent = place ? `${file.name} was not added: ${error.message}.` : '';
         }
@@ -2786,21 +2787,21 @@ const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING
     </div>
   </section>
   <section id="piece-fields" hidden aria-label="Piece details">
-    <div class="piece-modes" role="group" aria-label="What to work on"><button type="button" data-piece-mode="page" aria-pressed="true">Page</button><button type="button" data-piece-mode="picture" aria-pressed="false">Pictures</button><button type="button" data-piece-mode="preview" aria-pressed="false">Preview</button></div>
+    <div class="piece-modes" role="group" aria-label="What to work on"><button type="button" data-piece-mode="page" aria-pressed="true">Edit page</button><button type="button" data-piece-mode="picture" aria-pressed="false">Images</button><button type="button" data-piece-mode="preview" aria-pressed="false">Wall preview</button></div>
     <div class="piece-inputs">
       <label>Title<input id="piece-title" autocomplete="off"></label>
       <label>Summary<textarea id="piece-summary" rows="2"></textarea></label>
       <label>Tags<input id="piece-tags" autocomplete="off" placeholder="Add tags, separated by commas"></label>
-      <p class="hint">Your tags describe the piece for search and organisation. Craft uses the fixed list below.</p>
-      <label>Craft<select id="piece-craft"><option value="">Automatic</option></select></label>
-      <label>Publication date<input id="piece-published" type="date" min="1900-01-01" max="2200-12-31"></label>
+      <p class="hint">Your tags describe the piece for search and organisation. Choose the type of work below.</p>
+      <label>Type of work<select id="piece-craft"><option value="">Automatic</option></select></label>
+      <label>Date shown on page<input id="piece-published" type="date" min="1900-01-01" max="2200-12-31"></label>
       <p class="hint">The date shown on its page and used to place it on the wall. Changing the date does not publish a draft.</p>
-      <div class="piece-actions"><button id="piece-wall" type="button">Arrange on the wall</button><button id="piece-video" type="button">＋ Video or link</button><button id="piece-upload" type="button">Upload new images</button><button id="piece-picture" type="button">Insert picture</button></div>
+      <div class="piece-actions"><button id="piece-wall" type="button">Arrange on the wall</button><button id="piece-video" type="button">Add video</button><button id="piece-upload" type="button">Upload images</button><button id="piece-picture" type="button">Add to page</button></div>
       <div id="piece-selection" class="piece-selection"></div>
-      <fieldset class="layout-choice"><legend>Page layout</legend><div id="piece-layouts"></div><p class="hint" id="layout-description"></p></fieldset>
-      <label>Banner media<select id="piece-banner-kind"><option value="image">Lead picture</option><option value="video">Video</option></select></label>
+      <fieldset class="layout-choice"><legend>Opening layout</legend><div id="piece-layouts"></div><p class="hint" id="layout-description"></p></fieldset>
+      <label>Banner content<select id="piece-banner-kind"><option value="image">Cover image</option><option value="video">Video</option></select></label>
       <label id="piece-banner-video-label" hidden>Banner video<input id="piece-banner-video" type="url" placeholder="YouTube or Vimeo link"></label>
-      <label>Picture framing<select id="piece-banner-focus"><option value="center">Centre</option><option value="top">Keep the top visible</option><option value="bottom">Keep the bottom visible</option></select></label>
+      <label>Image crop<select id="piece-banner-focus"><option value="center">Centre</option><option value="top">Keep the top visible</option><option value="bottom">Keep the bottom visible</option></select></label>
       <p id="piece-fields-note" class="hint" role="status"></p>
     </div>
   </section>

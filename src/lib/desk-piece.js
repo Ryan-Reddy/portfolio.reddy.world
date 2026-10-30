@@ -2,6 +2,7 @@ import {CRAFTS, articleCraft, publicationDay, pieceTags} from './piece-fields.js
 import {PAGE_LAYOUTS,pageLayout,bannerVideo,bannerFocus} from './page-layout.js';
 import {videoFigure,videoFor} from './article-video.js';
 import '../styles/page-layout.css';
+import '../styles/desk-ui.css';
 const desk = window.imageDesk;
 const $ = id => document.getElementById(id);
 const fields = $('piece-fields');
@@ -13,8 +14,18 @@ $('project-chips').hidden = true;
 const make=(tag,text)=>{const node=document.createElement(tag);if(text)node.textContent=text;return node;};
 const mediaTools=make('div');mediaTools.className='piece-media-actions';fields.querySelector('.piece-modes').after(mediaTools);mediaTools.append($('piece-upload'),$('piece-picture'),$('piece-selection'));
 const uploadStatus=make('p');uploadStatus.id='piece-upload-status';uploadStatus.className='hint';uploadStatus.setAttribute('role','status');mediaTools.append(uploadStatus);
-const layoutBox=fields.querySelector('.layout-choice');mediaTools.after(layoutBox);
-const bannerSettings=make('details');bannerSettings.className='field-source';bannerSettings.append(make('summary','Banner picture or video'));
+const layoutBox=fields.querySelector('.layout-choice');
+const design=make('details');design.className='desk-design';
+const designTitle=make('summary','Page design');design.append(designTitle,layoutBox);
+$('piece-summary').closest('label').after(design);
+const designHint=make('p','Choose the opening layout and cover image or video.');designHint.className='hint';design.prepend(designHint);design.prepend(designTitle);
+// The selected image and its action stay together, only while editing images.
+const selectionCard=make('div');selectionCard.className='desk-selected-image';mediaTools.append(selectionCard);selectionCard.append($('piece-selection'),$('piece-picture'));
+const imageHelp=make('p','Select an image from the image strip to edit its description and credit.');imageHelp.className='hint';selectionCard.append(imageHelp);
+const previewHelp=make('p','This is the wall card preview. Use View live page to open the published page.');previewHelp.className='hint';mediaTools.append(previewHelp);
+$('piece-video').hidden=true;
+$('piece-wall').hidden=true;
+const bannerSettings=make('details');bannerSettings.className='field-source';bannerSettings.append(make('summary','Cover image or video'));
 for(const id of ['piece-banner-kind','piece-banner-video','piece-banner-focus'])bannerSettings.append($(id).closest('label'));
 layoutBox.append(bannerSettings);
 
@@ -31,9 +42,9 @@ const textBox=document.querySelector('#project-bench [data-box="text"]');
 $('page-source-content').append(textBox.querySelector('.box-body'));
 textBox.hidden=true;
 document.querySelector('#project-bench [data-box="wordpress"]').hidden=true;
-const pictureSource=sourceHint($('description'),'Original picture description');
+const pictureSource=sourceHint($('description'),'Original image description');
 document.querySelector('#pane-picture [data-box="wordpress"]').hidden=true;
-const explanations={story:'Readable text with wide photographs. Best for articles, interviews and process stories.',cover:'A wide lead picture or video with the title over it. Best for stages, installations and strong opening images.',split:'Media beside the title and introduction on desktop; stacked on phones. Best for objects, portraits and modelling.'};
+const explanations={story:'Title, then text and images.',cover:'A wide image or video, with the title over it on desktop.',split:'Image or video beside the title on desktop. Stacked on phones.'};
 for(const [value,label] of Object.entries(PAGE_LAYOUTS)) {
  const button=make('button');button.type='button';button.dataset.layout=value;button.setAttribute('aria-pressed','false');
  const sketch=make('span');sketch.className='layout-sketch sketch-'+value;sketch.setAttribute('aria-hidden','true');sketch.append(make('i'),make('b'),make('em'));
@@ -45,6 +56,7 @@ $('piece-banner-video').addEventListener('change',()=>{const key=bannerVideo($('
 $('piece-banner-focus').addEventListener('change',()=>desk.setPiece('bannerFocus',bannerFocus($('piece-banner-focus').value)));
 let bannerShown='';
 let context = '';
+let articleMode='page';
 function render() {
   const piece = desk.piece();
   const panel = $(piece.type === 'article' ? 'article-bench' : 'project-bench');
@@ -56,28 +68,43 @@ function render() {
     // Browsers must not keep the undo history of another piece in these shared fields.
     if (fields.contains(document.activeElement)) document.activeElement.blur();
     for (const input of fields.querySelectorAll('input,textarea')) {const parent = input.parentNode, next = input.nextSibling; input.remove(); parent.insertBefore(input, next);}
-    context = key;
+    context = key;articleMode='page';design.open=false;
   }
   for (const name of ['title', 'summary', 'tags', 'craft', 'published']) {
     const input = $(`piece-${name}`);
     if (input && document.activeElement !== input) input.value = piece[name] ?? '';
   }
-  $('piece-craft').options[0].textContent = piece.type === 'article' ? `Automatic · ${CRAFTS[articleCraft(piece, desk.DATA.software)]}` : 'Automatic · from its kind of work';
+  $('piece-craft').options[0].textContent = piece.type === 'article' ? `Automatic · ${CRAFTS[articleCraft(piece, desk.DATA.software)]}` : 'Automatic';
   const selected=piece.selectedPicture;
-  if(piece.type==='project')for(const button of fields.querySelectorAll('[data-piece-mode]'))button.setAttribute('aria-pressed',String(button.dataset.pieceMode===piece.mode));
+  const mode=piece.type==='project' ? piece.mode : articleMode;
+  fields.querySelector('.piece-inputs').hidden=mode!=='page';
+  fields.dataset.mode=mode;
+  selectionCard.hidden=mode!=='picture' || piece.type==='article';
+  previewHelp.hidden=mode!=='preview';
+  $('piece-upload').hidden=mode==='preview';
+  $('add-picture-here').hidden=true;$('show-elsewhere').hidden=true;
+  $('add-video-here').hidden=mode!=='page';
+  $('delete-article').hidden=mode!=='page';
+  $('pic-input').closest('label').hidden=true;
+  for(const button of fields.querySelectorAll('[data-piece-mode]'))button.setAttribute('aria-pressed',String(button.dataset.pieceMode===mode));
+  if(piece.type==='article')for(const box of document.querySelectorAll('#article-bench .box-list>[data-box]')){
+    const name=box.dataset.box;box.hidden=mode==='preview' || (mode==='picture' ? name!=='pictures' : ['pictures','title','summary'].includes(name));
+  }
+  $('pane-picture').dataset.imageEditor='true';
   $('piece-selection').hidden=piece.type==='article';
   $('piece-picture').hidden=piece.type==='article';
-  $('piece-picture').textContent='Insert this picture in the text';
+  $('piece-picture').textContent='Add this image to page';
   $('piece-selection').replaceChildren();
   if(selected && piece.type==='project') {
     const thumb=make('img');thumb.src=selected.src;thumb.alt='';
     const name=selected.wordpress?.file || 'Picture '+selected.index;
-    $('piece-selection').append(thumb,make('span','Picture '+selected.index+' of '+piece.images.length+' · '+name));
-    $('piece-picture').setAttribute('aria-label','Insert '+name+' in the text');
+    const caption=make('span','Selected image '+selected.index+' of '+piece.images.length);const filename=make('small',name);filename.title=name;caption.append(filename);$('piece-selection').append(thumb,caption);
+    $('piece-picture').setAttribute('aria-label','Add '+name+' to page');
   }
   const layout=pageLayout(piece.pageLayout);
   for(const button of $('piece-layouts').children)button.setAttribute('aria-pressed',String(button.dataset.layout===layout));
   $('layout-description').textContent=explanations[layout];
+  designTitle.textContent='Page design · '+PAGE_LAYOUTS[layout];
   const video=bannerVideo(piece.bannerVideo);
   if(document.activeElement!==$('piece-banner-video'))$('piece-banner-video').value=videoFor(video)?.href ?? '';
   if(document.activeElement!==$('piece-banner-video') && document.activeElement!==$('piece-banner-kind')){$('piece-banner-kind').value=video?'video':'image';$('piece-banner-video-label').hidden=!video;}
@@ -93,12 +120,12 @@ function render() {
   for(const hint of [summarySource,titleSource,tagsSource])hint.box.hidden=!project;
   ideaBox.hidden=!project;
   $('page-source').hidden=!project;
-  const choice=(body,text,field)=>{body.replaceChildren();if(!text){body.append(make('p','No original value.'));return;}body.append(make('p',text));const button=make('button','Use this');button.type='button';button.addEventListener('click',()=>desk.setPiece(field,field==='tags'?pieceTags([...(desk.piece().tags ?? '').split(','),...text.split(',')]).join(', '):text));body.append(button);};
+  const choice=(body,text,field)=>{body.replaceChildren();if(!text){body.append(make('p','No original value.'));return;}body.append(make('p',text));const button=make('button',field==='title'?'Use original title':field==='summary'?'Use original summary':'Add these tags');button.type='button';button.addEventListener('click',()=>desk.setPiece(field,field==='tags'?pieceTags([...(desk.piece().tags ?? '').split(','),...text.split(',')]).join(', '):text));body.append(button);};
   if(project){choice(summarySource.body,project.wordpress.excerpt,'summary');choice(titleSource.body,project.title,'title');choice(tagsSource.body,[...project.wordpress.categories,...project.wordpress.tags].join(', '),'tags');}
   pictureSource.box.hidden=!selected || !(selected.wordpress?.caption || selected.wordpress?.alt);
   if(selected){const description=selected.wordpress?.caption || selected.wordpress?.alt || '';pictureSource.body.replaceChildren(make('p',description));if(description){const use=make('button','Use as description');use.type='button';use.onclick=()=>{$('description').value=description;$('description').dispatchEvent(new Event('input',{bubbles:true}));};pictureSource.body.append(use);}}
 
-  $('piece-fields-note').textContent = 'Upload new images adds files to this piece. Pictures shows the library, lead choice, descriptions and photographer credits.';
+  $('piece-fields-note').textContent = '';
 }
 for (const name of ['title', 'summary', 'tags', 'craft', 'published']) {
   const input = $(`piece-${name}`);
@@ -117,7 +144,8 @@ for (const name of ['title', 'summary', 'tags', 'craft', 'published']) {
 }
 for (const button of fields.querySelectorAll('[data-piece-mode]')) button.addEventListener('click', () => {
   for (const tab of fields.querySelectorAll('[data-piece-mode]')) tab.setAttribute('aria-pressed', String(tab === button));
-  desk.pieceMode(button.dataset.pieceMode);
+  articleMode=button.dataset.pieceMode;
+  desk.pieceMode(button.dataset.pieceMode);render();
 });
 $('piece-wall').addEventListener('click', () => {$('open-wall').click(); $('wall-search').value = desk.piece().title ?? ''; $('wall-search').dispatchEvent(new Event('input'));});
 $('piece-video').addEventListener('click', () => desk.openVideoForm());
