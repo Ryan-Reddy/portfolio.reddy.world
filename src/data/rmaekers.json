@@ -2641,27 +2641,44 @@
           "id": "1718",
           "url": "/portfolio/images/rmaekers/2018/05/img_3277.jpg",
           "title": "IMG_3277",
-          "alt": "IMG_3277",
+          "alt": "Vbx @ Bret, photo 1 — sloterdijk",
           "caption": "",
           "description": "",
           "width": 2000,
           "height": 1500,
           "type": "image",
-          "wp_url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2018/05/img_3277.jpg"
+          "wp_url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2018/05/img_3277.jpg",
+          "keywords": [
+            "vbx",
+            "bret",
+            "sloterdijk"
+          ]
         },
         {
           "id": "1717",
           "url": "/portfolio/images/rmaekers/2018/05/img_3302.jpg",
           "title": "IMG_3302",
-          "alt": "IMG_3302",
+          "alt": "Vbx @ Bret, photo 2 — sloterdijk",
           "caption": "",
           "description": "",
           "width": 2000,
           "height": 1500,
           "type": "image",
-          "wp_url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2018/05/img_3302.jpg"
+          "wp_url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2018/05/img_3302.jpg",
+          "keywords": [
+            "vbx",
+            "bret",
+            "sloterdijk"
+          ]
         }
-      ]
+      ],
+      "craft": "signs",
+      "keywords": [
+        "vbx",
+        "bret",
+        "sloterdijk"
+      ],
+      "summary": "For the VBX party at BRET on Koningsdag 2018, we made these banners to lighten up the place!"
     },
     {
       "id": "1702",
@@ -2704,13 +2721,24 @@
           "id": "1703",
           "url": "/portfolio/images/rmaekers/2018/05/c4530fc6-7bbd-4dc6-bfd3-aae195490b67.jpg",
           "title": "c4530fc6-7bbd-4dc6-bfd3-aae195490b67",
-          "alt": "c4530fc6-7bbd-4dc6-bfd3-aae195490b67",
+          "alt": "vbx shelter",
           "caption": "",
-          "description": "",
+          "description": "vbx shelter",
           "width": 1024,
           "height": 769,
           "type": "image",
-          "wp_url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2018/05/c4530fc6-7bbd-4dc6-bfd3-aae195490b67.jpg"
+          "wp_url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2018/05/c4530fc6-7bbd-4dc6-bfd3-aae195490b67.jpg",
+          "keywords": [
+            "kunstinstallaties",
+            "nightlife design",
+            "Light",
+            "club",
+            "dj",
+            "vbx",
+            "vrijbuiters",
+            "amsterdam",
+            "shelter"
+          ]
         }
       ],
       "videos": [
@@ -2725,7 +2753,20 @@
           "thumbnail": "/portfolio/images/rmaekers/video/Kze6sH4xZSs.jpg",
           "checked": "2026-10-25"
         }
-      ]
+      ],
+      "edited_title": "VBX @ SHELTER - KINGSNIGHT 2018",
+      "keywords": [
+        "kunstinstallaties",
+        "nightlife design",
+        "Light",
+        "club",
+        "dj",
+        "vbx",
+        "vrijbuiters",
+        "amsterdam",
+        "shelter"
+      ],
+      "summary": "For the kings night party at the shelter we divised a construction to pump out some industrial hardware lights!"
     },
     {
       "id": "1629",
