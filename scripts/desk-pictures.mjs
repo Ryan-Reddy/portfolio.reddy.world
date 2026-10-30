@@ -14,7 +14,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 import { readySlugs, shownPictures, deskIdOf } from './desk-articles.mjs';
+import {isPublicArchivePost} from '../src/lib/archive-curation.js';
 import { articleImages } from '../src/lib/article-kinds.js';
+import {projectPictureFolder, PICTURE_ID} from '../src/lib/project-pictures.js';
 
 sharp.cache(false);
 const WIDTHS = [480, 800, 1200];
@@ -27,26 +29,31 @@ const MAX = 2000;
  * @param {string} originals the folder with the originals
  * @param {string} publicDir the site's public/ folder
  */
-export async function makePictures(state, existing, originals, publicDir) {
+export async function makePictures(state, existing, originals, publicDir, allowedProjects = null) {
   const slugs = readySlugs(state, existing);
   const out = {};
-  for (const [id, slug] of Object.entries(slugs)) {
-    const article = state.articles[id];
-    const shown = shownPictures(article);
-    const dir = path.join(publicDir, 'images', articleImages(slug));
+  const work=Object.entries(slugs).map(([id,slug])=>({id,article:state.articles[id],folder:articleImages(slug)}));
+  for (const [id,project] of Object.entries(state.projects ?? {})) {
+    if ((allowedProjects && !allowedProjects.has(id)) || !Object.keys(project.pictures ?? {}).length) continue;
+    work.push({id,project:true,article:{...project,pictures:Object.fromEntries(Object.entries(project.pictures).filter(([pid,p])=>PICTURE_ID.test(pid) && !p.removed)),content:''},folder:projectPictureFolder(id)});
+  }
+  for (const task of work) {
+    const {id,article,folder}=task;
+    const shown = task.project ? Object.keys(article.pictures) : shownPictures(article);
+    const dir = path.join(publicDir, 'images', folder);
     const made = {};
     for (const pid of shown) {
       const master = path.join(dir, `${pid}.webp`);
       // a draft seeded from the repo (src/data/article-seeds/) brings its picture as this copy, with no original
       if (!existsSync(master)) {
         const original = article.pictures[pid].path && path.join(originals, path.basename(article.pictures[pid].path));
-        if (!original || !existsSync(original)) continue; // not fetched: the article waits (scripts/desk-articles.mjs says so)
+        if (!original || !existsSync(original)) {if(task.project)throw new Error('Project upload is missing: '+id+'/'+pid);continue;} // not fetched: the article waits (scripts/desk-articles.mjs says so)
         mkdirSync(dir, { recursive: true });
         // turned the way the camera held it, at most 2000 px wide
         await sharp(original).rotate().resize({ width: MAX, withoutEnlargement: true }).webp({ quality: 82 }).toFile(master);
       }
       const { width, height } = await sharp(master).metadata();
-      const url = `/portfolio/images/${articleImages(slug)}/${pid}.webp`;
+      const url = `/portfolio/images/${folder}/${pid}.webp`;
       const widths = WIDTHS.filter((w) => w < width);
       for (const w of widths) {
         const copy = path.join(dir, `${pid}-${w}w.webp`);
@@ -71,7 +78,7 @@ export async function makePictures(state, existing, originals, publicDir) {
         if (pid && !made[pid]) unlinkSync(path.join(dir, name));
       }
     }
-    out[id] = made;
+    if (task.project) {out.projects ??= {};out.projects[id]=made;} else out[id] = made;
   }
   return out;
 }
@@ -86,8 +93,10 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   const ARTICLES = new URL('../src/content/articles/', import.meta.url);
   const existing = existsSync(ARTICLES) ? Object.fromEntries(readdirSync(ARTICLES).filter((f) => f.endsWith('.md')).map((f) => [f.replace(/\.md$/, ''), { desk: deskIdOf(readFileSync(new URL(f, ARTICLES), 'utf-8')) }])) : {};
   const publicDir = fileURLToPath(new URL('../public/', import.meta.url));
-  const made = await makePictures(state, existing, originals, publicDir);
+  const allowedProjects=new Set(['rmaekers','rrproductions','vaguelyvulgar'].flatMap(key=>JSON.parse(readFileSync(new URL('../src/data/'+key+'.json',import.meta.url),'utf8')).posts.filter(post=>isPublicArchivePost(key,post)).map(post=>key+'/'+post.slug)));
+  const made = await makePictures(state, existing, originals, publicDir, allowedProjects);
   writeFileSync(outFile, `${JSON.stringify(made, null, 1)}\n`);
-  const count = Object.values(made).reduce((sum, pictures) => sum + Object.keys(pictures).length, 0);
-  console.log(`desk-pictures: ${count} pictures in ${Object.keys(made).length} published articles`);
+  const groups=[...Object.entries(made).filter(([key])=>key!=='projects').map(([,pictures])=>pictures),...Object.values(made.projects ?? {})];
+  const count=groups.reduce((sum,pictures)=>sum+Object.keys(pictures).length,0);
+  console.log(`desk-pictures: ${count} pictures prepared for ${groups.length} pieces`);
 }

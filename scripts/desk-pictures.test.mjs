@@ -79,3 +79,15 @@ test("a seeded draft's picture already in the repo needs no original from the ac
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test('new project pictures use the existing private-original image processor and remain separate from articles',async()=>{
+ const {root,originals,publicDir}=await setup();
+ try{
+  const made=await makePictures({projects:{'rmaekers/one':{pictures:{pabc:{path:'desk-uploads/aaaaaaaaaaaaaaaa-front.jpg',name:'front.jpg'}}}}},{},originals,publicDir);
+  assert.equal(made.projects['rmaekers/one'].pabc.width,2000);
+  assert.match(made.projects['rmaekers/one'].pabc.src,/project-uploads\/rmaekers\/one\/pabc/);
+  assert.ok(existsSync(path.join(publicDir,'images','project-uploads','rmaekers','one','pabc.webp')));
+  const again=await makePictures({projects:{'rmaekers/one':{pictures:{pabc:{path:'desk-uploads/aaaaaaaaaaaaaaaa-front.jpg',name:'front.jpg'}}}}},{},originals,publicDir);
+  assert.deepEqual(again,made);
+ } finally{rmSync(root,{recursive:true,force:true});}
+});

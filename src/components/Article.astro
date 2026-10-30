@@ -3,6 +3,9 @@
 // a recipe, writing or a poem, on the case studies' paper layout. Started as the interview page of
 // portfolio.reddy.world#65 (reddy.world#176).
 import Base from '../layouts/Base.astro';
+import {pageLayout,bannerVideo,bannerFocus} from '../lib/page-layout.js';
+import {videoFigure} from '../lib/article-video.js';
+import '../styles/page-layout.css';
 import { getEntry, render } from 'astro:content';
 import { PERSON_ID, ORIGIN, SITE, BASE } from '../lib/portfolios.js';
 import { pictureAt } from '../lib/software.js';
@@ -125,7 +128,7 @@ const jsonLd = [
   lang={d.lang}
   footnote={related ? 'Software and websites by Ryan Reddy.' : undefined}
 >
-  <article class:list={['case', 'article', `article-${d.kind}`, { interview: d.kind === 'interview' }]} data-desk-article={entry.id}>
+  <article data-page-layout={pageLayout(d.pageLayout)} data-has-banner={Boolean(hero || bannerVideo(d.bannerVideo))} style={`--banner-focus:${bannerFocus(d.bannerFocus)}`} class:list={['case', 'article','page-layout', `article-${d.kind}`, { interview: d.kind === 'interview' }]} data-desk-article={entry.id}>
     <nav class="breadcrumb" aria-label="Breadcrumb" lang="en">
       <a href={`${BASE}/`}>Portfolio</a>
       {related && <Fragment> <span aria-hidden="true">/</span> <a href={`${BASE}/software/`}>Software</a> <span aria-hidden="true">/</span> <a href={`${BASE}/software/${related.id}/`}>{related.data.title}</a></Fragment>}
@@ -138,7 +141,8 @@ const jsonLd = [
       {d.summary && <p class="dek">{d.summary}</p>}
     </header>
 
-    {hero && (
+    {bannerVideo(d.bannerVideo) && <div class="case-hero page-banner" set:html={videoFigure(bannerVideo(d.bannerVideo))} />}
+    {hero && !bannerVideo(d.bannerVideo) && (
       <figure class="case-hero">
         <img src={hero.src} srcset={hero.srcset} sizes="(max-width: 1152px) 100vw, 1120px" width={hero.width} height={hero.height} alt={hero.alt} fetchpriority="high" decoding="async">
         {heroCredit && <figcaption><span class="photo-credit">Photo: {httpUrl(heroCredit.url) ? <a href={httpUrl(heroCredit.url)} rel="noopener">{heroCredit.name}</a> : heroCredit.name}</span></figcaption>}

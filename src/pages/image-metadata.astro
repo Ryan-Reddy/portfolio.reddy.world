@@ -6,6 +6,7 @@ import { archiveCredits } from '../lib/desk-credits.js';
 import { getCollection } from 'astro:content';
 import { KINDS } from '../lib/article-kinds.js';
 import wall from '../data/wall.json';
+import {AUTOMATIC_DESK_PUBLISHING} from '../lib/publishing-policy.js';
 import {allPosts} from '../lib/portfolios.js';
 
 // Every word idea in one list, each rated (scripts/keyword-ratings.mjs fetches the numbers at build time):
@@ -38,7 +39,7 @@ const seeds = Object.fromEntries(Object.entries(import.meta.glob('../data/articl
   .map(([file, seed]) => [file.split('/').pop().replace(/\.json$/, ''), seed]));
 const wallArticles = (await getCollection('articles')).map(({id, data}) => ({id, desk: data.desk, title: data.title, kind: KINDS[data.kind].label, year: (data.published ?? data.updated).getFullYear()}));
 const wallProjects = allPosts.filter(p => p.type === 'post' && p.portfolio !== 'maup').map(p => ({id: `${p.portfolio}/${p.slug}`, slug: p.slug, title: p.title.trim(), published: p.published, year: new Date(p.published).getFullYear(), time: new Date(p.published).getTime()}));
-const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRatings, articleIdeas: articleIdeas.map((idea) => [idea.tag, idea.sources]), kinds: KINDS, software, seeds, wall, wallArticles, wallProjects }).replace(/</g, '\\u003c');
+const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING, projects, count, ratingsInfo, ratings: ideaRatings, articleIdeas: articleIdeas.map((idea) => [idea.tag, idea.sources]), kinds: KINDS, software, seeds, wall, wallArticles, wallProjects }).replace(/</g, '\\u003c');
 ---
 <!doctype html>
 <html lang="en">
@@ -399,7 +400,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     <div class="actions">
       <button id="open-overview" type="button">Overview</button>
       <button id="open-wall" type="button">Wall organiser</button>
-      <button id="send" class="primary" type="button">Send to site</button>
+      <button id="send" class="primary" type="button">Publish changes</button>
       <details class="more"><summary>More</summary>
         <div class="menu">
           <button id="map" type="button">Keyword map</button>
@@ -450,6 +451,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
           <button type="button" data-cmd="redo" aria-label="Redo">↷</button>
           <form class="link-form" id="link-form" hidden><input id="link-url" type="text" inputmode="url" autocomplete="off" placeholder="https://… or /portfolio/…" aria-label="The link's address"><button type="submit">Set link</button><button id="link-remove" class="quiet" type="button">Remove link</button></form>
         </div>
+        <details id="page-source" class="field-source"><summary>Original text and writing help</summary><div id="page-source-content"></div></details>
         <div class="reading-text" id="read-text" contenteditable="true" role="textbox" aria-multiline="true" aria-label="The article's text"></div>
         <section class="read-rest" id="read-rest" hidden><h3 class="rest-title"></h3><div class="rest-rows"></div></section>
         <div class="block-tools" id="block-tools" hidden><button type="button" data-move="up" aria-label="Move this paragraph up (Alt+↑)">↑</button><button type="button" data-move="down" aria-label="Move this paragraph down (Alt+↓)">↓</button></div>
@@ -627,7 +629,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
             <summary><span class="box-name">Publishing</span><span class="box-line"></span><span class="box-tick" aria-hidden="true">✓</span></summary>
             <div class="box-body">
               <p class="hint" id="publish-hint"></p>
-              <div class="bottom"><button id="publish-article" class="primary" type="button">Publish</button><button id="unpublish-article" class="quiet" type="button" hidden>Back to draft</button></div>
+              <div class="bottom"><button id="publish-article" class="primary" type="button">Include in next publish</button><button id="unpublish-article" class="quiet" type="button" hidden>Back to draft</button></div>
               <p class="hint" id="article-address"></p>
             </div>
           </details>
@@ -640,7 +642,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
 
   <dialog id="keyword-map" class="map-dialog"><h2>Keyword map</h2><p class="hint">Every keyword in the archive and on this desk, and how many projects use it.</p><div class="map-tools"><input id="map-filter" type="search" placeholder="Filter keywords…" aria-label="Filter keywords"><button id="close-map" type="button">Close</button></div><div class="keyword-map" id="map-list"></div></dialog>
   <dialog id="sent" aria-labelledby="sent-title">
-    <h2 id="sent-title">Send to site</h2>
+    <h2 id="sent-title">Publish changes</h2>
     <p id="sent-text"></p>
     <p><a id="sent-link" target="_blank" rel="noreferrer"></a></p>
     <button id="close-sent" class="primary" type="button">Close</button>
@@ -676,6 +678,15 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     for (const [id, seed] of Object.entries(DATA.seeds ?? {})) {
       if (!(id in state.articles)) state.articles[id] = {...seed, status: 'draft', created: Date.now()};
     }
+    function hydrateProjectPictures() {
+      for(const project of DATA.projects)project.images=project.images.filter(image=>!image.pictureId || !state.projects[project.id]?.pictures?.[image.pictureId]?.removed);
+      for (const project of DATA.projects) for (const [id,picture] of Object.entries(state.projects[project.id]?.pictures ?? {})) {
+        if (picture.removed || project.images.some(image=>image.pictureId===id)) continue;
+        const url='/portfolio/images/project-uploads/'+project.id+'/'+id+'.webp';
+        project.images.push({key:project.id+'::'+url,url,src:photoUrls.get(picture.path) || url,pictureId:id,index:project.images.length+1,width:0,height:0,existingDescription:'',alt:picture.alt ?? '',description:'',keywords:[],credit:null,wordpress:{title:picture.name,caption:'',alt:'',file:picture.name},nearby:[],nearbySuggestions:[],suggestions:[]});
+        if (!photoUrls.has(picture.path) && window.deskSync?.picture) window.deskSync.picture(picture.path).then(src=>{if(src){photoUrls.set(picture.path,src);const image=project.images.find(image=>image.pictureId===id);if(image)image.src=src;render();}}).catch(()=>{});
+      }
+    }
     const flat = DATA.projects.flatMap((project, projectIndex) => project.images.map((image, imageIndex) => ({project, projectIndex, image, imageIndex})));
     const $ = (id) => document.getElementById(id);
     const el = (tag, props = {}, ...children) => { const node = Object.assign(document.createElement(tag), props); node.append(...children.filter((c) => c !== null && c !== undefined && c !== false)); return node; };
@@ -691,7 +702,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     // What the desk shows: Ryan's change when he made one, else what the archive has today.
     // A record is only written once he changes something, so opening a project changes nothing.
     // A blank field counts as unchanged: earlier desks wrote blanks just by showing a project (and
-    // "Send to site" reads blanks the same way). A field Ryan empties on purpose is named in `cleared`.
+    // "Publish changes" reads blanks the same way). A field Ryan empties on purpose is named in `cleared`.
     const isCleared = (record, field) => Array.isArray(record?.cleared) && record.cleared.includes(field);
     const pick = (record, field, base) => (isCleared(record, field) ? '' : String(record[field] ?? '').trim() ? record[field] : base);
     // the record with its new value, `cleared` kept in step: emptying a field the archive fills clears it on purpose
@@ -1055,7 +1066,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     }
     // The text in pieces, as the site draws it: a block with all it holds (a <p>, a <figure>, a <div>) or a paragraph of
     // loose text, each as it stands in the text ({source, loose}). A copy of src/lib/content.js segments(), the same
-    // rules: Send to site keeps a piece of the site's text as it is (scripts/import-image-keywords.mjs deskText).
+    // rules: Publish changes keeps a piece of the site's text as it is (scripts/import-image-keywords.mjs deskText).
     const SITE_BLOCKS = new Set(['address', 'article', 'aside', 'blockquote', 'dd', 'details', 'div', 'dl', 'dt', 'fieldset',
       'figcaption', 'figure', 'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'header', 'hr',
       'iframe', 'li', 'main', 'nav', 'ol', 'p', 'pre', 'section', 'table', 'tbody', 'td', 'tfoot',
@@ -1554,6 +1565,12 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       document.title = `${done}/${DATA.projects.length} · ${project.title} — Portfolio desk`;
     }
     function render({keepTab = true} = {}) {
+      const selected=flat[state.cursor]?.image?.key;
+      const selectedProject=flat[state.cursor]?.project?.id;
+      hydrateProjectPictures();
+      flat.splice(0,flat.length,...DATA.projects.flatMap((project,projectIndex)=>project.images.map((image,imageIndex)=>({project,projectIndex,image,imageIndex}))));
+      if(selected) {let at=flat.findIndex(item=>item.image.key===selected);if(at<0)at=flat.findIndex(item=>item.project.id===selectedProject);state.cursor=Math.max(0,at);}
+
       fillPicker();
       const article = openArticleRecord();
       $('article-bench').hidden = !article;
@@ -1653,11 +1670,11 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
 
     // ---------- send to site: a pull request with your changes and a preview; it goes live when you merge it ----------
     const SENT = {
-      sent: {title: 'Sent', text: 'Your changes are on their way as a pull request with a preview, in about five minutes. Look at the preview, then merge it: that puts them live.', link: 'Your desk pull requests'},
-      manual: {title: 'Send from GitHub', text: 'This address cannot send by itself. On the page below, click "Run workflow": it reads the desk in your account and opens a pull request with a preview.', link: 'The Send to site workflow'},
+      sent: {title: 'Publishing queued', text: DATA.automaticDeskPublishing ? 'Your saved changes are queued for checks, then publish automatically. The live site follows when the build finishes. Previous sent versions are available in History.' : 'Your saved changes are queued for a preview. Publishing still needs the GitHub merge step. Previous sent versions are available in History.', link: 'Publishing progress'},
+      manual: {title: 'Open the live desk', text: 'This preview cannot publish. Open the live desk to publish the changes saved in your account.', link: 'Open the live desk'},
       signin: {title: 'Sign in first', text: 'Sending reads the desk saved in your account. Sign in (next to the save status), then send again.'},
       unsaved: {title: 'Not saved to your account yet', text: 'Sending reads the desk saved in your account, and the newest work is not there yet.'},
-      failed: {title: 'Not sent', text: 'Something went wrong. The workflow page below can send it by hand.', link: 'The Send to site workflow'},
+      failed: {title: 'Not sent', text: 'Your work is saved. Try publishing again; publishing progress can show why it stopped.', link: 'Publishing progress'},
     };
     $('send').addEventListener('click', async () => {
       $('send').disabled = true;
@@ -1666,13 +1683,13 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       try { result = window.deskSync ? await window.deskSync.send() : {kind: 'failed', message: 'the desk is still starting'}; }
       catch (error) { result = {kind: 'failed', message: error.message}; }
       $('send').disabled = false;
-      $('send').textContent = 'Send to site';
+      $('send').textContent = 'Publish changes';
       const copy = SENT[result.kind];
       $('sent-title').textContent = copy.title;
       $('sent-text').textContent = copy.text + (result.line ? ` (${result.line})` : '') + (result.message ? ` (${result.message})` : '');
       $('sent-link').hidden = !copy.link;
       $('sent-link').textContent = copy.link ?? '';
-      $('sent-link').href = result.prs ?? result.url ?? '#';
+      $('sent-link').href = result.run ?? result.url ?? '#';
       $('sent').showModal();
     });
     $('close-sent').addEventListener('click', () => $('sent').close());
@@ -1714,7 +1731,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     // ---------- articles: new pieces for the wall, kept as private drafts until Ryan publishes them ----------
     // Ryan, 2026-10-26: "would be great to park them as "drafts" until publication right?" They are part of the
     // desk's state, so they save to his account like the rest (desk-store.js merges them entry by entry).
-    // "Send to site" reads projects and pictures only, so a draft never reaches the site. Deleting leaves a
+    // "Publish changes" reads projects and pictures only, so a draft never reaches the site. Deleting leaves a
     // stamped {deleted: true}, so a copy on another device can't bring the article back.
     state.articles ??= {};
     function drafts() {
@@ -1788,6 +1805,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       }
       if (!article) return renderProjectPage();
       $('reading').dataset.kind = 'article';
+      $('reading').dataset.pageLayout=article.pageLayout ?? 'story';
       $('read-title').contentEditable = 'true';
       $('read-title').setAttribute('aria-label', 'The article\'s title');
       $('read-text').setAttribute('aria-label', 'The article\'s text');
@@ -1839,6 +1857,8 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       $('text-bar').hidden = !editor;
       if (shownText.key !== pageKey) $('link-form').hidden = true;
       $('reading').dataset.kind = 'project';
+      $('reading').dataset.pageLayout=record.pageLayout ?? project.pageLayout ?? 'story';
+      $('reading').style.setProperty('--banner-focus',record.bannerFocus ?? project.bannerFocus ?? 'center');
       $('video-form').hidden = true;
       $('read-when').textContent = [dateLabelOf(project), project.kinds.join(', ')].filter(Boolean).join(' • ');
       $('read-title').contentEditable = 'true';
@@ -1849,7 +1869,9 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       $('read-text').setAttribute('aria-label', 'The project\'s text');
       if (shownText.key !== pageKey) $('page-note').textContent = '';
       // a ★ chosen on the desk is one of the photos, which the site never puts above the text
-      const lead = project.leadSrc && !record.hero ? project.leadSrc : '';
+      const layout=record.pageLayout ?? project.pageLayout ?? 'story';
+      const chosenLead=project.images.find(image=>image.url===heroOf(project)) ?? project.images[0];
+      const lead = layout!=='story' ? chosenLead?.src ?? '' : project.leadSrc && !record.hero ? project.leadSrc : '';
       const leadKey = lead ? `p:${lead}` : '';
       if ($('read-lead').dataset.key !== leadKey) {
         $('read-lead').dataset.key = leadKey;
@@ -1859,7 +1881,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       // the text is drawn again only for another project, or when it changed elsewhere (the edit bar, another device)
       const text = $('read-text');
       if (editor && (!editor.on || shownText.key !== pageKey)) {
-        editor.mount(text,{content,preserveSource:true,block:(kind,value)=>kind==='media'?mediaBlock(project,value):videoBlock(value),change:saveText,selection:renderTextBar,refused:refuseDrop,safeHref});
+        editor.mount(text,{content,preserveSource:true,block:(kind,value)=>kind==='media'?mediaBlock(project,value):kind==='picture'?projectPictureBlock(project,value):videoBlock(value),change:saveText,selection:renderTextBar,refused:refuseDrop,safeHref});
         renderTextBar();
       } else if (editor && content !== shownText.content && !editor.focused()) editor.set(content);
       else if (!editor && (shownText.key !== pageKey || (content !== shownText.content && !text.contains(document.activeElement)))) {
@@ -1871,7 +1893,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       $('story-reset').hidden = record.content === undefined;
       $('layout-note').hidden = !ARCHIVE_LAYOUT.test(content);
       const placed = placedSrcs(project, content);
-      const rest = project.images.filter((picture) => !placed.has(picture.src));
+      const rest = project.images.filter((picture) => !placed.has(picture.src) && !(picture.pictureId && content.includes('data-picture=\"'+picture.pictureId+'\"')));
       const restKey = rest.map((picture) => picture.key).join('\n');
       if ($('read-rest').dataset.key !== restKey) {
         $('read-rest').dataset.key = restKey;
@@ -1935,6 +1957,12 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       if (youtube) return `youtube:${youtube[1]}`;
       const vimeo = /vimeo\.com\/(?:video\/)?(\d{1,12})/.exec(text);
       return vimeo ? `vimeo:${vimeo[1]}` : null;
+    }
+    function projectPictureBlock(project,id) {
+      const picture=projectRecord(project).pictures?.[id];
+      const image=project.images.find(image=>image.pictureId===id);
+      const figure=el('figure',{className:'pic-block',contentEditable:'false'},picture ? photoImg({...picture,src:photoUrls.get(picture.path) || image?.src},image ? descriptionOf(image) : '') : el('span',{textContent:'Picture unavailable'}),el('span',{className:'pic-tools'},blockTool('up','Move the picture up','↑'),blockTool('down','Move the picture down','↓'),blockTool('out','Take the picture out of the text','✕')));
+      figure.dataset.picture=id;return figure;
     }
     function videoBlock(key) {
       const host = key.startsWith('youtube:') ? 'YouTube' : 'Vimeo';
@@ -2011,7 +2039,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       const {project} = current();
       const content = editorOn() ? window.deskEditor.html() : projectText();
       const record = state.projects[project.id];
-      // Send to site skips an empty text, one with no words and no pictures (scripts/import-image-keywords.mjs deskText),
+      // Publish changes skips an empty text, one with no words and no pictures (scripts/import-image-keywords.mjs deskText),
       // so the site keeps the text it has: the record keeps no change, and the page shows that text again. Nor does a
       // page that reads as it opened (a click that moved nothing, a row put back, words typed and taken out again).
       const blank = blankText(content);
@@ -2265,7 +2293,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
     // A picture's field on the article it belongs to (`articleId`: the one it was drawn for, so a word still in the
     // box when Ryan opens another article lands where he typed it). An article's picture gets what a project's
     // picture gets (Ryan, 2026-10-27: "the images get the same metadata tools"): what it shows (`alt`), its
-    // keywords (`tags`, with the rated ideas) and its photographer (`credit`); Send to site writes them
+    // keywords (`tags`, with the rated ideas) and its photographer (`credit`); Publish changes writes them
     // (scripts/desk-articles.mjs).
     function setPicture(id, field, value, articleId = state.article) {
       const article = state.articles[articleId];
@@ -2420,25 +2448,45 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       event.target.value = '';
       const place = placeAdded;
       placeAdded = false;
-      if (!openArticleRecord()) return;
+      const destination=state.article ? {article:state.article} : {project:current().project.id};
+      const uploadStatus=text=>{if(destination.article ? state.article===destination.article : !state.article && current().project.id===destination.project){const note=$('piece-upload-status');if(note)note.textContent=text;}};
       for (const file of files) {
         const id = `p${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
         $('pic-hint').textContent = `Adding ${file.name}…`;
+        uploadStatus('Uploading '+file.name+'…');
         try {
           if (!window.deskSync?.upload) throw new Error('the desk is still starting');
           const {path, name} = await window.deskSync.upload(file);
           photoUrls.set(path, URL.createObjectURL(file));
-          const article = state.articles[state.article];
-          state.articles[state.article] = {...article, pictures: {...article.pictures, [id]: {path, name, alt: ''}}, hero: article.hero ?? id};
+          if (destination.project) {
+            const record=state.projects[destination.project] ?? {};
+            state.projects[destination.project]={...record,pictures:{...record.pictures,[id]:{path,name,alt:''}}};
+            save();render();
+            if (!state.article && current().project.id===destination.project) {
+              const selected=flat.findIndex(item=>item.project.id===destination.project && item.image.pictureId===id);
+              if(selected>=0) state.cursor=selected;
+              showTab('picture');render();
+              if(place) {showTab('project');renderReading();window.deskEditor?.insert('picture',id);}
+            }
+            $('page-note').textContent=name+' uploaded. Add its description and photographer in Pictures.';
+            uploadStatus(name+' uploaded. Add its description and photographer in Pictures.');
+            continue;
+          }
+          const article = state.articles[destination.article];
+          if (!article || article.deleted) continue;
+          state.articles[destination.article] = {...article, pictures: {...article.pictures, [id]: {path, name, alt: ''}}, hero: article.hero ?? id};
           save();
+          if (state.article!==destination.article) continue;
           if (place) placePicture(id);
           renderPictureList();
           renderReading();
           renderPublish();
           document.querySelector('[data-boxes="article"] > [data-box="pictures"]').open = true;
           $('pic-hint').textContent = `${file.name} added: say what it shows.`;
+          uploadStatus(file.name+' uploaded. Add a description and photographer.');
           $('page-note').textContent = place ? `${file.name} added: say what it shows, on the right.` : '';
         } catch (error) {
+          uploadStatus(file.name+' was not added: '+error.message+'.');
           $('pic-hint').textContent = `${file.name} was not added: ${error.message}.`;
           $('page-note').textContent = place ? `${file.name} was not added: ${error.message}.` : '';
         }
@@ -2461,7 +2509,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       const space = room.lastIndexOf(' ');
       return `${(space > max / 2 ? room.slice(0, space) : room).replace(/[\s,;:.!?…–—-]+$/, '')}…`;
     }
-    // the page's search description, as Send to site writes it (scripts/desk-articles.mjs descriptionFrom):
+    // the page's search description, as Publish changes writes it (scripts/desk-articles.mjs descriptionFrom):
     // the summary, with the start of the text after it when the summary is short; '' with too few words
     function articleDescription(article) {
       const own = String(article.summary ?? '').replace(/\s+/g, ' ').trim();
@@ -2531,7 +2579,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       $('unpublish-article').hidden = !ready;
       $('publish-article').disabled = missing.length > 0;
       $('publish-hint').textContent = ready
-        ? 'Ready: the next Send to site makes a preview; it goes live when you merge it. Back to draft takes it off again.'
+        ? 'Included in your next publish. Publish changes runs the checks and puts it live automatically. Back to draft removes it from the next published version.'
         : missing.length ? `A draft, only in your account. To publish it needs ${missing.join(', ')}.` : 'A draft, only in your account, until you publish it.';
       const slug = slugOf(article);
       $('article-address').textContent = slug ? `Its address: reddy.world/portfolio/${kinds[kindOf(article)]?.path ?? 'stories'}/${slug}/` : '';
@@ -2598,13 +2646,13 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       state.articles[state.article] = {...article, status: 'ready', slug: slugOf(article), readyAt: article.readyAt ?? Date.now()};
       save();
       renderPublish();
-      $('article-note').textContent = 'Published on the desk: Send to site puts it on the site.';
+      $('article-note').textContent = 'Included in your next publish. Use Publish changes when you are ready to put it live.';
     });
     $('unpublish-article').addEventListener('click', () => {
       state.articles[state.article] = {...state.articles[state.article], status: 'draft'};
       save();
       renderPublish();
-      $('article-note').textContent = 'Back to draft: the next Send to site takes it off the site if it was there.';
+      $('article-note').textContent = 'Back to draft: your next publish takes it off the site if it was there.';
     });
     function renderArticleMode() {
       const article = openArticleRecord();
@@ -2693,7 +2741,7 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
         if (article) return {type: 'article', id: state.article, ...article, published: article.published || new Date(article.readyAt ?? article.created ?? Date.now()).toISOString().slice(0,10)};
         const {project} = current();
         const record = projectRecord(project);
-        return {type: 'project', id: project.id, title: pick(record, 'title', project.title), summary: summaryOf(project), tags: projectTags(project).join(', '), published: pick(record, 'published', project.published), craft: record.craft ?? project.craft, images: project.images};
+        return {type: 'project', id: project.id, mode:tab==='picture'?'picture':tab==='preview'?'preview':'page', selectedPicture:current().image, wordpress:project.wordpress, ideas:project.ideas, pageLayout:record.pageLayout ?? project.pageLayout ?? 'story',bannerVideo:record.bannerVideo ?? project.bannerVideo ?? '',bannerFocus:record.bannerFocus ?? project.bannerFocus ?? 'center', title: pick(record, 'title', project.title), summary: summaryOf(project), tags: projectTags(project).join(', '), published: pick(record, 'published', project.published), craft: record.craft ?? project.craft, images: project.images};
       },
       setPiece: (field, value) => {
         if (field === 'published' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
@@ -2710,9 +2758,11 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
           if (mode === 'picture') {const box = $('pic-list').closest('details'); box.open = true; box.scrollIntoView({block: 'nearest'});}
         } else showTab(mode === 'page' ? 'project' : mode);
       },
+      uploadPictures: () => {placeAdded=false;$('pic-input').click();},
       insertSelectedPicture: () => {
         const {project, image} = current();
         showTab('project'); renderReading();
+        if (image.pictureId && editorOn()) {window.deskEditor.insert('picture',image.pictureId);return;}
         const media = Object.keys(project.thumbs).find(index => project.thumbs[index] === image.src);
         if (media === undefined) return;
         if (editorOn()) window.deskEditor.insert('media',media);
@@ -2745,7 +2795,12 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
       <label>Craft<select id="piece-craft"><option value="">Automatic</option></select></label>
       <label>Publication date<input id="piece-published" type="date" min="1900-01-01" max="2200-12-31"></label>
       <p class="hint">The date shown on its page and used to place it on the wall. Changing the date does not publish a draft.</p>
-      <div class="piece-actions"><button id="piece-wall" type="button">Arrange on the wall</button><button id="piece-video" type="button">＋ Video or link</button><button id="piece-picture" type="button">Add picture</button></div>
+      <div class="piece-actions"><button id="piece-wall" type="button">Arrange on the wall</button><button id="piece-video" type="button">＋ Video or link</button><button id="piece-upload" type="button">Upload new images</button><button id="piece-picture" type="button">Insert picture</button></div>
+      <div id="piece-selection" class="piece-selection"></div>
+      <fieldset class="layout-choice"><legend>Page layout</legend><div id="piece-layouts"></div><p class="hint" id="layout-description"></p></fieldset>
+      <label>Banner media<select id="piece-banner-kind"><option value="image">Lead picture</option><option value="video">Video</option></select></label>
+      <label id="piece-banner-video-label" hidden>Banner video<input id="piece-banner-video" type="url" placeholder="YouTube or Vimeo link"></label>
+      <label>Picture framing<select id="piece-banner-focus"><option value="center">Centre</option><option value="top">Keep the top visible</option><option value="bottom">Keep the bottom visible</option></select></label>
       <p id="piece-fields-note" class="hint" role="status"></p>
     </div>
   </section>
@@ -2761,8 +2816,8 @@ const queue = JSON.stringify({ projects, count, ratingsInfo, ratings: ideaRating
   </style>
   <section id="wall-organiser" hidden role="dialog" aria-modal="true" aria-labelledby="wall-title">
     <header><h2 id="wall-title" tabindex="-1">Wall organiser</h2><button id="close-wall" type="button">Back to the desk</button></header>
-    <p>Arrange the wall without changing the pages. Row 0 is automatic; rows 1–99 stay together at every screen width. Send to site prepares these changes for the site.</p>
-    <div class="wall-tools"><label>Find a tile<input id="wall-search" type="search" placeholder="Title or kind"></label><label>Show<select id="wall-filter"><option value="all">All tiles</option><option value="shown">On the wall</option><option value="hidden">Off the wall</option></select></label><button id="wall-send" type="button" class="primary">Send to site</button></div>
+    <p>Arrange the wall without changing the pages. Row 0 is automatic; rows 1–99 stay together at every screen width. Publish changes prepares these changes for the site.</p>
+    <div class="wall-tools"><label>Find a tile<input id="wall-search" type="search" placeholder="Title or kind"></label><label>Show<select id="wall-filter"><option value="all">All tiles</option><option value="shown">On the wall</option><option value="hidden">Off the wall</option></select></label><button id="wall-send" type="button" class="primary">Publish changes</button></div>
     <p data-desk-saved aria-live="polite">Saved in this browser</p><p id="wall-status" role="status"></p><p id="wall-catalog-status"></p><div id="wall-tiles"></div>
   </section>
   <style is:global>

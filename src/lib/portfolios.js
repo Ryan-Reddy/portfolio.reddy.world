@@ -155,6 +155,7 @@ const OWN_WITH_VARIANTS = /^\/portfolio\/images\/[a-z]+\/\d{4}\/\d{2}\/.+\.(jpe?
  */
 export function picture(media) {
   const { url, width, height } = media;
+  if (media.deskPicture && media.srcset) return {src:url,srcset:media.srcset,width,height};
   if (OWN_WITH_VARIANTS.test(url) && width) {
     const widths = OWN_VARIANTS.filter((w) => w < width);
     const at = (w) => url.replace(/\.(jpe?g|png)$/i, `-${w}w.$1`);

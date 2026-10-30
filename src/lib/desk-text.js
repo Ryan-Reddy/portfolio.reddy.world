@@ -31,6 +31,7 @@ export function tidy(root, pictures = null) {
     if (child.nodeType === 8) { child.remove(); continue; }
     if (child.nodeType !== 1) continue;
     const tag = child.tagName.toUpperCase();
+    if (tag==='FIGURE' && /^p[a-z0-9]{1,60}$/.test(child.dataset?.picture ?? '')) {const id=child.dataset.picture;child.replaceChildren();for(const attr of [...child.attributes]) child.removeAttribute(attr.name);child.dataset.picture=id;continue;}
     const video = child.dataset?.video;
     if (video && VIDEO_KEY.test(video) && (tag === 'FIGURE' || child.classList.contains('desk-video'))) {
       const figure = document.createElement('figure'); figure.dataset.video = video; child.replaceWith(figure); continue;

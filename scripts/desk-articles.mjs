@@ -17,6 +17,7 @@ import { cutAt, DESCRIPTION_MIN, DESCRIPTION_MAX } from '../src/lib/snippet.js';
 import { KINDS } from '../src/lib/article-kinds.js';
 import { videoFigure } from '../src/lib/article-video.js';
 import {craftOf, publicationDay, pieceTags} from '../src/lib/piece-fields.js';
+import {pageLayout,bannerVideo,bannerFocus} from '../src/lib/page-layout.js';
 
 const clean = (value) => String(value ?? '').replace(/\s+/g, ' ').trim();
 const plain = (html) => clean(String(html ?? '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'"));
@@ -84,6 +85,8 @@ export function missing(article, photos = null) {
 export function articleFile(id, article, { software = [], photos = {} } = {}) {
   const kind = article.kind ?? 'story';
   const lines = ['---', `kind: ${kind}`, `title: ${str(clean(article.title))}`];
+  lines.push('pageLayout: '+pageLayout(article.pageLayout), 'bannerFocus: '+bannerFocus(article.bannerFocus));
+  if (bannerVideo(article.bannerVideo)) lines.push('bannerVideo: '+str(bannerVideo(article.bannerVideo)));
   if (craftOf(article.craft)) lines.push(`craft: ${article.craft}`);
   const tags = pieceTags(article.tags);
   if (tags.length) lines.push(`tags: ${JSON.stringify(tags)}`);
