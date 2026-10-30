@@ -59,7 +59,7 @@ jobs:
             echo "::error::$msg"; exit 1
           fi
           # the originals of the pictures the published articles show (desk-uploads/<id>-<name>)
-          jq -r '[ (.articles // {} | .[] | select(.status == "ready" and (.deleted | not)) | .pictures // {} | .[] | select(.removed | not) | .path), (.projects // {} | .[] | .pictures // {} | .[] | select(.removed | not) | .path) ] | map(select(type == "string")) | unique[]' desk/desk.json | sort -u | while read -r path; do
+          jq -r '[ (.articles // {} | .[] | select(.status == "ready" and (.deleted | not)) | .pictures // {} | .[] | select(.removed | not) | .path), (.projects // {} | .[] | .pictures // {} | .[] | select(.removed | not) | .path) , (.articles // {} | .[] | select(.status == "ready" and (.deleted | not)) | .videos // {} | .[] | select(.removed | not) | .path), (.projects // {} | .[] | .videos // {} | .[] | select(.removed | not) | .path) ] | map(select(type == "string")) | unique[]' desk/desk.json | sort -u | while read -r path; do
             curl -sSf -H "Authorization: Bearer $oidc" --get --data-urlencode "path=$path" https://reddy.world/api/desk-upload -o "desk/originals/$(basename "$path")" || echo "::warning::picture not fetched: $path"
           done
           echo "go=true" >> "$GITHUB_OUTPUT"
@@ -103,6 +103,7 @@ jobs:
         run: |
           D="$RUNNER_TEMP/desk"
           node scripts/desk-pictures.mjs "$D/desk.json" "$D/originals" "$D/pictures.json" 2>&1 | tee "$RUNNER_TEMP/report.txt"
+          node scripts/desk-videos.mjs "$D/desk.json" "$D/originals" 2>&1 | tee -a "$RUNNER_TEMP/report.txt"
           node scripts/import-image-keywords.mjs "$D/desk.json" --pictures "$D/pictures.json" 2>&1 | tee -a "$RUNNER_TEMP/report.txt"
 
       - name: The changes, as a patch for the push job
@@ -112,7 +113,7 @@ jobs:
           mkdir -p "$RUNNER_TEMP/out"
           cp "$RUNNER_TEMP/report.txt" "$RUNNER_TEMP/out/report.txt"
           # a folder that is neither there nor in git (no article has pictures yet) would stop `git add`
-          for p in src/data src/content/articles public/images/articles public/images/project-uploads; do
+          for p in src/data src/content/articles public/images/articles public/images/project-uploads public/videos; do
             if [ -e "$p" ] || [ -n "$(git ls-files -- "$p")" ]; then git add -A -- "$p"; fi
           done
           if git diff --cached --quiet; then echo "changed=false" >> "$GITHUB_OUTPUT"; else git diff --cached --binary > "$RUNNER_TEMP/out/changes.patch"; echo "changed=true" >> "$GITHUB_OUTPUT"; fi
@@ -168,7 +169,7 @@ jobs:
           git apply --index --binary "$RUNNER_TEMP/out/changes.patch"
           if [ -n "$OPEN" ]; then
             git fetch -q origin "$OPEN"
-            if git diff --cached --quiet "origin/$OPEN" -- src/data src/content/articles public/images/articles public/images/project-uploads; then echo "The open pull request already has these changes."; exit 0; fi
+            if git diff --cached --quiet "origin/$OPEN" -- src/data src/content/articles public/images/articles public/images/project-uploads public/videos; then echo "The open pull request already has these changes."; exit 0; fi
             # a commit made on the desk PR by hand is never thrown away
             others=$(git log "origin/main..origin/$OPEN" --format='%ae' | grep -v '^41898341+github-actions\[bot\]@users.noreply.github.com$' || true)
             if [ -n "$others" ]; then

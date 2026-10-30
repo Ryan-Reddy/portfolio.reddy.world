@@ -1,3 +1,4 @@
+import {VIDEO_KEY} from './article-video.js';
 // Words Ryan types on the image desk (credits, descriptions, keywords, a post's text) end up inside
 // the pages' HTML. These keep them from being read as markup or as a script link.
 
@@ -41,7 +42,7 @@ export function storyHtml(html) {
     // an article's own picture (scripts/desk-articles.mjs makes it the picture itself)
     .replace(/<figure\s+data-picture="([a-z0-9]+)"\s*>\s*<\/figure>/gi, (_, id) => keep(`<figure data-picture="${id}"></figure>`))
     // and its videos (src/lib/article-video.js)
-    .replace(/<figure\s+data-video="((?:youtube:[\w-]{11}|vimeo:\d{1,12}))"\s*>\s*<\/figure>/gi, (_, key) => keep(`<figure data-video="${key}"></figure>`))
+    .replace(/<figure\s+data-video="([^"]+)"\s*>\s*<\/figure>/gi, (_, key) => VIDEO_KEY.test(key)?keep(`<figure data-video="${key}"></figure>`):'')
     .replace(/<\/?([a-zA-Z][\w-]*)([^>]*)>/g, (tag, name, attrs) => {
       const tagName = RENAME[name.toLowerCase()] ?? name.toLowerCase();
       const closing = tag.startsWith('</');
