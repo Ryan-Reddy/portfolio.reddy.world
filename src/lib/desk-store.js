@@ -152,6 +152,8 @@ export function mergeStates(local, remote, existing = {}) {
   const a = local ?? {};
   const b = remote ?? {};
   const newer = (Number(b.savedAt) || 0) > (Number(a.savedAt) || 0) ? b : a;
+  const placed=(Number(b.place?.at)||0)>(Number(a.place?.at)||0)?b:a;
+  const position=placed.place?placed:newer;
   const merged = {
     ...b,
     ...a,
@@ -161,7 +163,8 @@ export function mergeStates(local, remote, existing = {}) {
     articles: mergeMap(a.articles, b.articles),
     wall: mergeMap(a.wall, b.wall),
     days: {...b.days, ...a.days},
-    cursor: Number.isInteger(newer.cursor) ? newer.cursor : (a.cursor ?? b.cursor ?? 0),
+    ...(position.place?{place:position.place,article:position.place.articleId??null}:{}),
+    cursor: Number.isInteger(position.cursor) ? position.cursor : (a.cursor ?? b.cursor ?? 0),
     session: Math.max(Number(a.session) || 0, Number(b.session) || 0),
     savedAt: Math.max(Number(a.savedAt) || 0, Number(b.savedAt) || 0) || undefined,
   };

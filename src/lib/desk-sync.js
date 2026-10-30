@@ -1,3 +1,4 @@
+import {samePlace} from './desk-progress.js';
 import {publicationSnapshot,restoredState} from './desk-history.js';
 // Keeps the image desk's work for Ryan and shows him where he is.
 //
@@ -43,24 +44,25 @@ function show(next) {
 
 /** Puts a merged copy into the page's state (same object, so the page's own code sees it) and redraws. */
 function apply(merged, { keepPlace }) {
-  if (keepPlace) merged.cursor = desk.state.cursor;
+  if (keepPlace){merged.cursor=desk.state.cursor;merged.article=desk.state.article;merged.place=desk.state.place;}
+  else merged.cursor=desk.resumeCursor(merged);
   for (const key of Object.keys(desk.state)) if (!(key in merged)) delete desk.state[key];
   Object.assign(desk.state, merged);
   snap = snapshotOf(desk.state);
   // kept in the browser at once, so work merged in from the account is the browser's own copy from now on
   try { localStorage.setItem(desk.STORE, JSON.stringify(desk.state)); } catch {}
-  desk.render({ focus: false });
+  desk.render({ focus: false,restorePlace:!keepPlace });
 }
 
 function push() {
   clearTimeout(timer);
-  if (!cloud || !user || (remoteCopy && sameWork(desk.state, remoteCopy))) return;
+  if (!cloud || !user || (remoteCopy && sameWork(desk.state, remoteCopy) && samePlace(desk.state,remoteCopy))) return;
   timer = setTimeout(saveNow, 1200);
 }
 
 async function saveNow() {
   clearTimeout(timer);
-  if (!cloud || !user || (remoteCopy && sameWork(desk.state, remoteCopy))) return;
+  if (!cloud || !user || (remoteCopy && sameWork(desk.state, remoteCopy) && samePlace(desk.state,remoteCopy))) return;
   if (!navigator.onLine) return show({ kind: 'offline' });
   show({ kind: 'saving' });
   try {
@@ -73,7 +75,7 @@ async function saveNow() {
     // merged again with what Ryan typed while the save was on its way, so those keystrokes win
     const next = mergeStates(desk.state, merged, existing);
     if (!sameWork(next, desk.state)) apply(next, { keepPlace: true });
-    if (!sameWork(next, merged)) push();
+    if (!sameWork(next, merged)||!samePlace(next,merged)) push();
     show({ kind: 'saved', at: Date.now() });
   } catch (error) {
     show(error.code === 'permission-denied' ? { kind: 'denied' } : { kind: 'error', message: error.code === 'too-big' ? error.message : error.code ?? error.message });
@@ -128,6 +130,7 @@ window.deskSync = {
   // Load export: replaces the loaded projects' records (the page then calls save(), which writes through)
   load: (state, loaded) => applyExport(state, loaded, Date.now()),
   send,
+  saveNow,
   upload,
   picture,
 };
@@ -160,7 +163,7 @@ function bar(part) {
 function openProject(index) {
   const start = desk.flat.findIndex((item) => item.projectIndex === index);
   if (start >= 0) desk.state.cursor = start;
-  desk.state.article = null;
+  desk.state.article = null;desk.save();
   closeOverview();
   desk.render();
 }
@@ -261,11 +264,11 @@ import('./desk-cloud.js').then((module) => {
       owner(true);
       remoteCopy = remote;
       const merged = mergeStates(desk.state, remote, existing);
-      if (!sameWork(merged, desk.state) || (first && remote && merged.cursor !== desk.state.cursor)) {
+      if (!sameWork(merged, desk.state) || (first && remote && !samePlace(merged,desk.state))) {
         // opened on one project (the edit bar's "Open in the desk"): stay there
         apply(merged, { keepPlace: !first || desk.pinned });
       }
-      const behind = !remote || !sameWork(merged, remote);
+      const behind = !remote || !sameWork(merged, remote)||!samePlace(merged,remote);
       first = false;
       if (behind) push();
       else if (status.kind === 'checking' || status.kind === 'saved') show({ kind: 'saved', at: updated ?? Date.now() });
@@ -292,4 +295,12 @@ historyButton.addEventListener('click',async()=>{
    button.onclick=async()=>{button.disabled=true;try{await cloud.checkpoint(publicationSnapshot(desk));apply(restoredState(publicationSnapshot(desk),version.state),{keepPlace:true});desk.save();await saveNow();historyDialog.close();}catch(error){note.textContent=error.message;button.disabled=false;}};
   }
  }catch(error){note.textContent=error.message;}
+});
+
+// An explicit save complements autosave; it never starts publishing.
+$('save-desk').addEventListener('click',async()=>{
+ const button=$('save-desk');button.disabled=true;button.textContent='Saving…';
+ try {desk.saveCurrent();await saveNow();button.textContent=status.kind==='saved'?'Saved':'Saved here';}
+ catch(error){button.textContent='Save failed';show({kind:'error',message:error.message});}
+ finally {button.disabled=false;setTimeout(()=>{button.textContent='Save';},2500);}
 });
