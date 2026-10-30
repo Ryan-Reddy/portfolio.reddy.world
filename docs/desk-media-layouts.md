@@ -39,3 +39,11 @@ Tests cover archive-source preservation, new project image processing/idempotenc
 ## Desk navigation
 
 **Edit page** shows title, summary, tags and page design. **Images** shows the selected image, Add to page, descriptions and photographer credits. **Wall preview** previews cards. **View live page** opens the published page. **Reviewed** records editorial progress and never means published. Autosave says **Saved privately**; only **Publish changes** sends work live after checks. Version history and backup files live under Tools.
+
+## Defaults, saving and progress
+
+Untouched projects start with their WordPress title, content, summary/excerpt, tags and categories. Published keyword edits and explicit empty keyword lists take precedence. Draft edits and deliberate cleared fields also win; opening a project does not save or mark it reviewed.
+
+**Save** stores the current draft privately and reports **Saved** (account) or **Saved here** (signed out/browser). It does not publish or mark reviewed. **Save & next** saves and marks the project reviewed, then opens the next pending item. **Next to review** skips reviewed items and prefers untouched work before returning to in-progress items. Previous and the project list can still revisit anything. Default WordPress tags alone do not mark a project reviewed.
+
+The saved position uses stable project/image ids and a separate navigation timestamp, so image insertions and older account cursors do not reset progress. Navigation from the project list, image strip and overview is saved too. Signed-in navigation syncs even when no content changed. Legacy numeric cursors remain supported.
