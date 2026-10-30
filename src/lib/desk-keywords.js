@@ -109,6 +109,7 @@ export function deskProjects() {
       summary: useful(raw.summary) || plain(raw.excerpt),
       excerpt: plain(post.excerpt),
       content: String(post.content ?? ''),
+      linkedMedia: (raw.media ?? []).map(({source_url}) => source_url ? {source_url} : {}),
       thumbs,
       // how the wall names it: the brand as caption, the year, the kind of work
       label: BRAND[portfolio.id] ?? portfolio.name,

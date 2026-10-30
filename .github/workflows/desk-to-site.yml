@@ -105,6 +105,7 @@ jobs:
           node scripts/desk-pictures.mjs "$D/desk.json" "$D/originals" "$D/pictures.json" 2>&1 | tee "$RUNNER_TEMP/report.txt"
           node scripts/desk-videos.mjs "$D/desk.json" "$D/originals" 2>&1 | tee -a "$RUNNER_TEMP/report.txt"
           node scripts/import-image-keywords.mjs "$D/desk.json" --pictures "$D/pictures.json" 2>&1 | tee -a "$RUNNER_TEMP/report.txt"
+          node scripts/text-media.mjs 2>&1 | tee -a "$RUNNER_TEMP/report.txt"
 
       - name: The changes, as a patch for the push job
         id: changes

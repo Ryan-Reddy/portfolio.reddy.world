@@ -5,6 +5,7 @@
  */
 
 import {videoFigure} from './article-video.js';
+import {labelSourceLinks} from './source-links.js';
 
 const BLOCK_TAGS = new Set([
   'address', 'article', 'aside', 'blockquote', 'dd', 'details', 'div', 'dl', 'dt', 'fieldset',
@@ -78,6 +79,7 @@ function bareVideoUrls(html) {
 const textOnly = (html) => html.replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').trim();
 
 function paragraph(html, ctx, breaks = true) {
+  html = labelSourceLinks(html);
   const urls = bareVideoUrls(html);
   const videos = [];
   for (const u of urls) {
