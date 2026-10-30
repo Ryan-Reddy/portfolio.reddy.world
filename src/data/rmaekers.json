@@ -6607,6 +6607,52 @@
             "cantina",
             "marktkantine"
           ]
+        },
+        {
+          "type": "image",
+          "url": "/portfolio/images/project-uploads/rmaekers/cantina-yung-internet-special/pmvv4bl3nrvz3.webp",
+          "deskPicture": "pmvv4bl3nrvz3",
+          "width": 500,
+          "height": 500,
+          "alt": "Signing: Yung Internet, photo 6 — custom signage Amsterdam, BINNENSTAD, DIXILAND",
+          "title": "51dTLGXJ0uL.jpg",
+          "srcset": "/portfolio/images/project-uploads/rmaekers/cantina-yung-internet-special/pmvv4bl3nrvz3-480w.webp 480w, /portfolio/images/project-uploads/rmaekers/cantina-yung-internet-special/pmvv4bl3nrvz3.webp 500w",
+          "keywords": [
+            "YUNG INTERNET",
+            "custom signage Amsterdam",
+            "BINNENSTAD",
+            "DIXILAND",
+            "merkactivatie",
+            "brand activations Amsterdam",
+            "SIGNING",
+            "amsterdam",
+            "signage",
+            "cantina",
+            "marktkantine"
+          ]
+        },
+        {
+          "type": "image",
+          "url": "/portfolio/images/project-uploads/rmaekers/cantina-yung-internet-special/pmvv4bnyqkaya.webp",
+          "deskPicture": "pmvv4bnyqkaya",
+          "width": 1200,
+          "height": 630,
+          "alt": "Dixieland tour - yung internet",
+          "title": "58b419a7c91e0.png",
+          "srcset": "/portfolio/images/project-uploads/rmaekers/cantina-yung-internet-special/pmvv4bnyqkaya-480w.webp 480w, /portfolio/images/project-uploads/rmaekers/cantina-yung-internet-special/pmvv4bnyqkaya-800w.webp 800w, /portfolio/images/project-uploads/rmaekers/cantina-yung-internet-special/pmvv4bnyqkaya.webp 1200w",
+          "keywords": [
+            "YUNG INTERNET",
+            "custom signage Amsterdam",
+            "BINNENSTAD",
+            "DIXILAND",
+            "merkactivatie",
+            "brand activations Amsterdam",
+            "SIGNING",
+            "amsterdam",
+            "signage",
+            "cantina",
+            "marktkantine"
+          ]
         }
       ],
       "pageLayout": "cover",
@@ -6625,7 +6671,7 @@
         "marktkantine"
       ],
       "summary": "Signs custom made for yung internet's album release at the Marktkantine 2017.",
-      "edited_content": "<figure data-media=\"1\"></figure>\n\n<figure data-media=\"2\"></figure>\n\n<figure data-media=\"3\"></figure>\n\n<figure data-media=\"4\"></figure>\n\n<figure data-media=\"0\"></figure>\n\n<figure data-media=\"0\"></figure>"
+      "edited_content": "<figure data-picture=\"pmvv4bnyqkaya\"></figure>\n\n<figure data-media=\"1\"></figure>\n\n<figure data-media=\"2\"></figure>\n\n<figure data-media=\"3\"></figure>\n\n<figure data-media=\"4\"></figure>\n\n<figure data-media=\"0\"></figure>"
     },
     {
       "id": "1358",
@@ -6648,38 +6694,60 @@
       "featured": {
         "id": "1361",
         "url": "/portfolio/images/rmaekers/2017/10/img_0926.jpg",
-        "alt": "IMG_0926",
+        "alt": "Kattegattemuseum W/ Daan Roosegaarde, photo 2 — lightinstallations on the afsluitdijk",
         "caption": "",
         "width": 2000,
         "height": 1500,
-        "wp_url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2017/10/img_0926.jpg"
+        "wp_url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2017/10/img_0926.jpg",
+        "keywords": [
+          "KATTEGATTEMUSEUM",
+          "DAAN ROOSEGAARDE",
+          "lightinstallations on the afsluitdijk"
+        ]
       },
       "media": [
         {
           "id": "1362",
           "url": "/portfolio/images/rmaekers/2017/10/img_0930.jpg",
           "title": "IMG_0930",
-          "alt": "IMG_0930",
+          "alt": "Kattegattemuseum W/ Daan Roosegaarde, photo 1 — lightinstallations on the afsluitdijk",
           "caption": "",
           "description": "",
           "width": 2000,
           "height": 1500,
           "type": "image",
-          "wp_url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2017/10/img_0930.jpg"
+          "wp_url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2017/10/img_0930.jpg",
+          "keywords": [
+            "KATTEGATTEMUSEUM",
+            "DAAN ROOSEGAARDE",
+            "lightinstallations on the afsluitdijk"
+          ]
         },
         {
           "id": "1361",
           "url": "/portfolio/images/rmaekers/2017/10/img_0926.jpg",
           "title": "IMG_0926",
-          "alt": "IMG_0926",
+          "alt": "Kattegattemuseum W/ Daan Roosegaarde, photo 2 — lightinstallations on the afsluitdijk",
           "caption": "",
           "description": "",
           "width": 2000,
           "height": 1500,
           "type": "image",
-          "wp_url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2017/10/img_0926.jpg"
+          "wp_url": "https://reddymaekersproductions.wordpress.com/wp-content/uploads/2017/10/img_0926.jpg",
+          "keywords": [
+            "KATTEGATTEMUSEUM",
+            "DAAN ROOSEGAARDE",
+            "lightinstallations on the afsluitdijk"
+          ]
         }
-      ]
+      ],
+      "keywords": [
+        "KATTEGATTEMUSEUM",
+        "DAAN ROOSEGAARDE",
+        "lightinstallations on the afsluitdijk"
+      ],
+      "summary": "Technical support for installations and experiments for Studio Daan Roosegaarde on the afsluitdijk.",
+      "edited_content": "<figure data-media=\"0\"></figure>\n\n<p>For Studio Daan Roosegaarde's upcoming exposition at the Kattegattenmuseum, in Friesland, the Netherlands, we constructed a couple of benches, and a walkway made of wood.</p>\n\n<p>The exact purpose, or imagery, is as of this day still top secret, so I shall be silent.<br><br><a href=\"https://www.studioroosegaarde.net/about\">https://www.studioroosegaarde.net/about</a></p>\n\n<figure data-media=\"1\"></figure>"
     },
     {
       "id": "1318",
