@@ -98,6 +98,7 @@ export function deskProjects() {
       title: post.title.trim(),
       published: String(post.published ?? '').slice(0, 10),
       craft: post.craft ?? '',
+      pageLayout:post.pageLayout ?? 'story', bannerVideo:post.bannerVideo ?? '', bannerFocus:post.bannerFocus ?? 'center',
       href: `${SITE}${post.path}`,
       // what the archive already says, so the desk opens on it instead of on nothing (Ryan, 2026-10-26:
       // "i cant see what keywords etc are already in the image")
@@ -132,6 +133,7 @@ export function deskProjects() {
         return {
           key: `${portfolio.id}/${post.slug}::${image.url}`,
           url: image.url,
+          pictureId:image.deskPicture,
           index: index + 1,
           src: pic.src,
           srcset: pic.srcset ?? '',

@@ -1,5 +1,9 @@
 ---
 import Base from '../../layouts/Base.astro';
+import {pageLayout,bannerVideo,bannerFocus} from '../../lib/page-layout.js';
+import {videoFigure} from '../../lib/article-video.js';
+import {resolveProjectPictures} from '../../lib/project-pictures.js';
+import '../../styles/page-layout.css';
 import { renderContent } from '../../lib/content.js';
 import { absUrl } from '../../lib/media-url.js';
 import { imageRights } from '../../lib/image-rights.js';
@@ -79,21 +83,24 @@ function figure(indices) {
 
 // The modelling page is a comp card: the lead picture large with the measurements beside it,
 // the other pictures in a grid at their own shape. Its text only placed the pictures.
-const comp = post.layout === 'comp-card';
+const layout=pageLayout(post.pageLayout);
+const banner=bannerVideo(post.bannerVideo);
+const comp = post.layout === 'comp-card' && layout==='story';
 const lead = comp ? (imgs.find((m) => m.url === post.featured?.url) ?? imgs[0]) : null;
 // the lead is the page's largest picture: loaded first, not lazily
 const leadHtml = lead ? item(post.media.indexOf(lead), '(max-width: 720px) 100vw, 640px').replace(' loading="lazy"', ' fetchpriority="high"') : '';
 const gridHtml = comp ? imgs.filter((m) => m !== lead).map((m) => item(post.media.indexOf(m), '(max-width: 720px) 50vw, 360px')).join('') : '';
 const leadRatio = lead?.width && lead?.height ? (lead.width / lead.height).toFixed(3) : '0.667';
 
-const body = comp ? '' : renderContent(post.content, { title: name, figure });
+const body = comp ? '' : renderContent(resolveProjectPictures(post.content,post.media), { title: name, figure });
 // Pictures the text did not place: only posts that never placed any keep their uploads here
 const rest = comp ? [] : imgs.filter((m) => !shown.has(m.url));
 const restHtml = rows(rest.map((m) => post.media.indexOf(m)));
 
 // The chosen featured image heads the page, unless the post already shows it
 const featured = post.featured;
-const hero = featured && !comp && !shown.has(featured.url) ? { ...picture(featured), alt: altFor(post, featured, 0) } : null;
+const bannerImage=featured ?? imgs[0];
+const hero = bannerImage && !comp && !banner && (!shown.has(bannerImage.url) || layout!=='story') ? {...picture(bannerImage),alt:altFor(post,bannerImage,0)} : null;
 
 const shareImage = featured && { url: absUrl(featured.url), width: featured.width, height: featured.height, alt: altFor(post, featured, 0) };
 const words = body.replace(/<[^>]+>/g, ' ').split(/\s+/).filter(Boolean).length;
@@ -149,7 +156,7 @@ const jsonLd = [
 const article = isPost ? { published: post.published, modified: post.modified, section: post.categories[0] || p.name, tags: post.tags } : undefined;
 ---
 <Base title={fitTitle(`${name} — ${p.brand} | Ryan Reddy`, `${name} — ${p.brand}`, name)} description={description} image={shareImage} active={p.id} jsonLd={jsonLd} type={isPost ? 'article' : 'website'} article={article}>
-  <article class:list={['project-page', { 'comp-card': comp }]} data-desk-project={`${p.id}/${post.slug}`}>
+  <article class:list={['project-page','page-layout', { 'comp-card': comp }]} data-page-layout={layout} data-has-banner={Boolean(hero || banner)} style={`--banner-focus:${bannerFocus(post.bannerFocus)}`} data-desk-project={`${p.id}/${post.slug}`}>
     <nav class="breadcrumb" aria-label="Breadcrumb">
       <a href={`${BASE}/`}>Portfolio</a> <span aria-hidden="true">/</span> <a href={`${BASE}/${p.id}/`}>{p.name}</a>
     </nav>
@@ -182,10 +189,11 @@ const article = isPost ? { published: post.published, modified: post.modified, s
       )}
     </header>}
 
+    {banner && <div class="page-banner post-hero" set:html={videoFigure(banner)} />}
     {hero && (
       <figure class="post-hero">
-        <img src={hero.src} srcset={hero.srcset} sizes="(max-width: 900px) 100vw, 852px" width={hero.width} height={hero.height} alt={hero.alt} fetchpriority="high" decoding="async" data-desk-picture={featured.url}>
-        {(featured.caption || featured.credit?.name) && <Fragment set:html={captionHtml(featured)} />}
+        <img src={hero.src} srcset={hero.srcset} sizes="(max-width: 900px) 100vw, 852px" width={hero.width} height={hero.height} alt={hero.alt} fetchpriority="high" decoding="async" data-desk-picture={bannerImage.url}>
+        {(bannerImage.caption || bannerImage.credit?.name) && <Fragment set:html={captionHtml(bannerImage)} />}
       </figure>
     )}
 

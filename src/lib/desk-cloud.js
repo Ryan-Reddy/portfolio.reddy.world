@@ -1,3 +1,5 @@
+import {sameWork} from './desk-store.js';
+import {packState,unpackState} from './desk-history.js';
 // The desk's copy in Ryan's account: Firestore `private-desk/image-desk` in project getreddyworld, the same
 // project, sign-in and owner-only rules as reddy.world/private (firestore.rules in Ryan-Reddy/reddy.world).
 //
@@ -6,7 +8,7 @@
 // repo) it is simply signed out and the desk keeps saving in the browser, as before.
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut, connectAuthEmulator, signInWithCredential } from 'firebase/auth';
-import { getFirestore, doc, onSnapshot, runTransaction, serverTimestamp, connectFirestoreEmulator } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, onSnapshot, runTransaction, serverTimestamp, connectFirestoreEmulator } from 'firebase/firestore';
 
 // Must match reddy.world's src/services/firebaseConfig/firebase-config.ts: the sign-in is shared through it.
 const firebaseConfig = {
@@ -62,4 +64,20 @@ export async function save(merge) {
     tx.set(ref, { state: text, updated: serverTimestamp() });
     return merged;
   });
+}
+
+const versionRefs=Array.from({length:4},(_,i)=>doc(db,'private-desk','image-desk-version-'+i));
+export async function checkpoint(state) {
+ const text=await packState({...state,versionAt:Date.now()});
+ if(text.length>LIMIT)throw new Error('This backup is too large; export a copy before publishing.');
+ await runTransaction(db,async tx=>{
+  const previous=await Promise.all(versionRefs.map(ref=>tx.get(ref)));
+  if(previous[0].exists() && sameWork(await unpackState(previous[0].data().state),state))return;
+  for(let i=versionRefs.length-1;i>0;i--)if(previous[i-1].exists())tx.set(versionRefs[i],{state:previous[i-1].data().state,updated:serverTimestamp()});
+  tx.set(versionRefs[0],{state:text,updated:serverTimestamp()});
+ });
+}
+export async function versions() {
+ const snapshots=await Promise.all(versionRefs.map(ref=>getDoc(ref)));
+ return Promise.all(snapshots.filter(s=>s.exists()).map(async snap=>{const state=await unpackState(snap.data().state);return {state,at:state.versionAt ?? snap.data().updated?.toMillis?.()};}));
 }

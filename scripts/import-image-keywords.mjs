@@ -42,6 +42,8 @@ import { curatedPost, isPublicArchivePost } from '../src/lib/archive-curation.js
 import { articleFiles, deskIdOf } from './desk-articles.mjs';
 import { wallSettings } from '../src/lib/desk-wall.js';
 import {craftOf, publicationDay} from '../src/lib/piece-fields.js';
+import {appendProjectPictures} from '../src/lib/project-pictures.js';
+import {pageLayout,bannerVideo,bannerFocus} from '../src/lib/page-layout.js';
 
 export { isFileNameCaption };
 
@@ -200,6 +202,9 @@ export function applyDesk(state, data) {
     const portfolio = projectId.split('/')[0];
     const before = JSON.stringify(post);
     if (filled(record.title)) post.edited_title = clean(record.title);
+    if (Object.hasOwn(record,'pageLayout')) post.pageLayout=pageLayout(record.pageLayout);
+    if (Object.hasOwn(record,'bannerVideo')) post.bannerVideo=bannerVideo(record.bannerVideo);
+    if (Object.hasOwn(record,'bannerFocus')) post.bannerFocus=bannerFocus(record.bannerFocus);
     if (Object.hasOwn(record, 'craft')) {
       if (craftOf(record.craft)) post.craft = record.craft;
       else if (record.craft === '') delete post.craft;
@@ -215,11 +220,13 @@ export function applyDesk(state, data) {
       const summary = clean(record.summary);
       if (summary !== post.summary) { post.summary = summary; report.summaries++; }
     }
-    if (filled(record.content)) {
+    if (isCleared(record,'content')) post.edited_content='';
+    else if (filled(record.content)) {
       const text = deskText(record.content, curatedPost(portfolio, post).content);
       if (text) { post.edited_content = text; report.texts++; }
     }
-    if (filled(record.hero)) setLead(post, record.hero, projectId, report);
+    if (isCleared(record,'hero')) delete post.featured;
+    else if (filled(record.hero)) setLead(post, record.hero, projectId, report);
     if (JSON.stringify(post) !== before) report.projects++;
 
     const sharedWords = post.keywords ?? [];
@@ -300,6 +307,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
     if (flag !== '--dry-run') writeFileSync(wallFile, `${JSON.stringify(next, null, 2)}\n`);
     console.log(`wall: ${changed} tile placements updated${flag === '--dry-run' ? ' (dry run, nothing written)' : ''}`);
   }
+  if (fromDesk) appendProjectPictures(input,data,photos.projects);
   const report = fromDesk ? applyDesk(input, data) : applyKeywords(input, data);
   if (flag !== '--dry-run') for (const key of KEYS) writeFileSync(path(key), `${JSON.stringify(data[key], null, 2)}\n`);
   // the desk's published articles as files of the articles collection (scripts/desk-articles.mjs)

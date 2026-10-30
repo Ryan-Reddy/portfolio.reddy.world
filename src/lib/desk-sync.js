@@ -1,3 +1,4 @@
+import {publicationSnapshot,restoredState} from './desk-history.js';
 // Keeps the image desk's work for Ryan and shows him where he is.
 //
 // - Every save the desk makes in the browser is stamped (desk-store.js) and, when Ryan is signed in,
@@ -88,13 +89,14 @@ async function send() {
   if (!cloud || !user) return { kind: 'signin' };
   await saveNow();
   if (status.kind !== 'saved') return { kind: 'unsaved', line: document.querySelector('[data-desk-saved]')?.textContent ?? '' };
+  await cloud.checkpoint(publicationSnapshot(desk));
   let response;
   try {
     response = await fetch('/api/desk-to-site', { method: 'POST', headers: { Authorization: `Bearer ${await cloud.idToken()}` } });
   } catch {
-    return { kind: 'manual', url: RUN_PAGE };
+    return { kind: 'manual', url: 'https://reddy.world/private/portfolio/' };
   }
-  if (response.status === 404) return { kind: 'manual', url: RUN_PAGE };
+  if (response.status === 404) return { kind: 'manual', url: 'https://reddy.world/private/portfolio/' };
   const body = await response.json().catch(() => ({}));
   if (!response.ok) return { kind: 'failed', message: body.error ?? `HTTP ${response.status}`, url: RUN_PAGE };
   return { kind: 'sent', prs: DESK_PRS, run: body.run ?? RUN_PAGE };
@@ -273,3 +275,21 @@ import('./desk-cloud.js').then((module) => {
     });
   });
 }).catch((error) => show({ kind: 'error', message: `could not load the account code: ${error.message}` }));
+
+// History is beside publishing: restoring is a new draft, never an immediate site change.
+const historyButton=document.createElement('button');historyButton.type='button';historyButton.textContent='History';historyButton.className='quiet';$('send').after(historyButton);
+const historyDialog=document.createElement('dialog');historyDialog.setAttribute('aria-label','Previous sent versions');document.body.append(historyDialog);
+historyButton.addEventListener('click',async()=>{
+ historyDialog.replaceChildren();const title=document.createElement('h2');title.textContent='Previous sent versions';historyDialog.append(title);
+ const note=document.createElement('p');note.textContent='Four recent versions, including three updates back. Restore loads a draft for review; Publish changes sends it to the site.';historyDialog.append(note);
+ const close=document.createElement('button');close.textContent='Close';close.onclick=()=>historyDialog.close();historyDialog.append(close);historyDialog.showModal();
+ try{
+  if(!user || !cloud)throw new Error('Sign in to see your account history.');
+  const versions=await cloud.versions();
+  if(!versions.length){const empty=document.createElement('p');empty.textContent='Your first backup is created when you publish from this updated desk.';historyDialog.append(empty);}
+  for(const [i,version] of versions.entries()){
+   const row=document.createElement('p');const button=document.createElement('button');button.textContent='Restore to desk';row.append(document.createTextNode((i===0?'Latest sent version':i+' update'+(i===1?'':'s')+' back')+' · '+new Date(version.at).toLocaleString()+' '),button);historyDialog.append(row);
+   button.onclick=async()=>{button.disabled=true;try{await cloud.checkpoint(publicationSnapshot(desk));apply(restoredState(publicationSnapshot(desk),version.state),{keepPlace:true});desk.save();await saveNow();historyDialog.close();}catch(error){note.textContent=error.message;button.disabled=false;}};
+  }
+ }catch(error){note.textContent=error.message;}
+});
