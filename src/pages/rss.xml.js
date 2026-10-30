@@ -1,3 +1,4 @@
+import {pageLayout,bannerVideo,bannerFocus} from '../lib/page-layout.js';
 import { absUrl } from '../lib/media-url.js';
 import { allPosts, portfolioById, SITE } from '../lib/portfolios.js';
 import { allArticles } from '../lib/articles.js';
@@ -10,6 +11,7 @@ import {articleCraft, craftOf} from '../lib/piece-fields.js';
 // with its picture. reddy.world's wall reads it: the first category names the portfolio, or for an
 // article its kind, with "Article" after it.
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const presentation=(value)=>`<reddy:layout>${pageLayout(value.pageLayout)}</reddy:layout><reddy:focus>${bannerFocus(value.bannerFocus)}</reddy:focus>${bannerVideo(value.bannerVideo)?'<reddy:video>'+bannerVideo(value.bannerVideo)+'</reddy:video>':''}`;
 const rfc822 = (iso) => new Date(iso).toUTCString();
 const posts = allPosts.filter((post) => post.type === 'post');
 
@@ -31,6 +33,7 @@ export async function GET() {
       ...post.categories.map((c) => `<category>${esc(c)}</category>`),
       ...(post.keywords ?? []).map(tag => `<category>${esc(tag)}</category>`),
       craftOf(post.craft) ? `<reddy:craft>${post.craft}</reddy:craft>` : '',
+      presentation(post),
       image,
       '</item>',
     ].join('') };
@@ -51,6 +54,7 @@ export async function GET() {
       '<category>Article</category>',
       ...(data.tags ?? []).map(tag => `<category>${esc(tag)}</category>`),
       `<reddy:craft>${articleCraft({...data, related: data.related?.id}, software)}</reddy:craft>`,
+      presentation(data),
       data.desk ? `<reddy:desk>${esc(data.desk)}</reddy:desk>` : '',
       hero ? `<media:content url="${esc(absUrl(hero.url))}" medium="image" width="${hero.width}" height="${hero.height}"/>` : '',
       '</item>',

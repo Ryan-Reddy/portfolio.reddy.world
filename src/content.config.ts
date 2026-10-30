@@ -79,6 +79,9 @@ const articles = defineCollection({
   schema: z.object({
     kind: z.enum(['interview', 'story', 'case-study', 'project', 'recipe', 'writing', 'poem']),
     title: z.string(),
+    pageLayout:z.enum(['story','cover','split']).default('story'),
+    bannerFocus:z.enum(['top','center','bottom']).default('center'),
+    bannerVideo:z.string().regex(/^(youtube:[\w-]{11}|vimeo:\d{1,12})$/).optional(),
     craft: z.enum(['software', 'decor', 'signs', 'furniture', 'art', 'performance', 'work']).optional(),
     tags: z.array(z.string()).default([]),
     // the title's language when it differs from the article's

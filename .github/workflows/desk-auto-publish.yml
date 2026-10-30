@@ -1,0 +1,33 @@
+name: Publish checked desk changes
+on:
+  workflow_run:
+    workflows: [Preview]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      number:
+        description: Checked desk PR number
+        required: true
+        type: string
+permissions:
+  contents: read
+  pull-requests: read
+  checks: read
+concurrency:
+  group: publish-desk
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Publish only checked data from the owner's desk
+        env:
+          GH_TOKEN: ${{ secrets.DESK_TOKEN }}
+        run: node .github/scripts/auto-publish-desk.mjs
