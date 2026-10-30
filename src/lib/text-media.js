@@ -1,5 +1,18 @@
 // Recognise standalone media links without changing prose or the original WordPress record.
 import {segments} from './content.js';
+import {labelSourceLinks} from './source-links.js';
+
+// Both the active rich-text editor and its fallback must receive the same resolved text.
+export function projectEditorText(html, media) {
+  const placed = placeTextImages(html, media);
+  let changed = false;
+  const labelled = segments(placed).map(piece => {
+    const next = labelSourceLinks(piece);
+    changed ||= next !== piece;
+    return next;
+  }).join('\n\n');
+  return changed ? labelled : placed;
+}
 
 export function imageLink(value) {
   try {

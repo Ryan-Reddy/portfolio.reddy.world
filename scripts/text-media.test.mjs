@@ -4,12 +4,30 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import sharp from 'sharp';
-import {textImageLinks,placeTextImages,imageLink} from '../src/lib/text-media.js';
+import {textImageLinks,placeTextImages,imageLink,projectEditorText} from '../src/lib/text-media.js';
+import {editorPieces} from '../src/lib/desk-text.js';
+import {JSDOM} from 'jsdom';
 import {labelSourceLinks} from '../src/lib/source-links.js';
 import {recoverTextImages,trustedImageHost} from './text-media.mjs';
 import {rightsOf} from '../src/lib/image-rights.js';
 
 const image = 'https://i0.wp.com/amsterdamtoday.eu/wp-content/uploads/2018/04/koupe1.jpg?ssl=1';
+test('saved project draft reaches the rich-text editor as images and labelled Instagram sources', () => {
+  const dom = new JSDOM('');
+  const previous = globalThis.document;
+  globalThis.document = dom.window.document;
+  try {
+    const draft = `<figure data-media="0"></figure>\n\n<p>Our sign above the door closeup.</p>\n\n<p><a href="${image}">${image}</a><br>${image}<br><br><a href="https://www.instagram.com/koupe_protein_ice/">https://www.instagram.com/koupe_protein_ice/</a><br><a href="https://www.instagram.com/p/BhbX9RjAW02/">https://www.instagram.com/p/BhbX9RjAW02/</a></p>`;
+    const resolved = projectEditorText(draft,[{}, {source_url:image}]);
+    const input = editorPieces(resolved).map(piece=>piece.html).join('');
+    assert.equal((input.match(/data-media="1"/g)||[]).length,1);
+    assert.ok(!input.includes('i0.wp.com'));
+    assert.match(input,/Our sign above the door closeup/);
+    assert.match(input,/Instagram: @koupe_protein_ice/);
+    assert.match(input,/View original Instagram post/);
+    assert.equal(projectEditorText(resolved,[{}, {source_url:image}]),resolved);
+  } finally {globalThis.document=previous;dom.window.close();}
+});
 test('recognises linked and plain images, deduplicates, preserves prose and existing indices', () => {
   const input = `<figure data-media="0"></figure>\n\n<p>Our sign closeup.<br><a href="${image}">${image}</a><br>${image}</p>`;
   assert.deepEqual(textImageLinks(input),[image]);
