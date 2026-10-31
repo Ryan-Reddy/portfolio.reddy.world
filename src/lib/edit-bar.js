@@ -10,9 +10,11 @@
 import { stamp, snapshotOf, mergeStates } from './desk-store.js';
 import { mountEditor, fromEditor } from './desk-text.js';
 import {blankText} from './content.js';
+import {watchOwnerEditAccess} from './owner-edit-access.js';
 
 const STORE = 'reddy-world-image-metadata-v4';
 const OWNER_FLAG = 'reddy-desk-owner';
+const PREVIEW = location.hostname !== 'reddy.world' && new URLSearchParams(location.search).has('edit');
 const HERE = location.pathname.startsWith('/portfolio/') && location.hostname === 'reddy.world';
 const DATA_URLS = ['/private/portfolio/data.json', '/portfolio/image-metadata/data.json'];
 const DESK_URL = HERE ? '/private/portfolio/' : '/portfolio/image-metadata/';
@@ -139,7 +141,6 @@ async function start(id) {
       <button id="edit" type="button" aria-pressed="false">✎ Edit this page</button>
       <button id="words" type="button" class="quiet">Keywords</button>
       <span class="status" id="status" aria-live="polite"></span>
-      <button id="signin" type="button" class="quiet" hidden>Sign in</button>
       <a class="button wide" id="desk" href="${DESK_URL}#project=${encodeURIComponent(project.id)}">Open in the desk</a>
       <button id="send" type="button" class="primary">Send to site</button>
       <button id="close" type="button" class="quiet" aria-label="Hide the bar for this page">×</button>
@@ -159,7 +160,6 @@ async function start(id) {
       <label>Their site <input id="pic-credit-url" autocomplete="off" inputmode="url" placeholder="https://…"></label>
       <div class="row"><button id="pic-lead" type="button">☆ Make it the lead picture</button><button id="pic-close" type="button" class="quiet">Close</button></div>
     </section>`;
-  document.body.prepend(host);
   const $ = (name) => shadow.getElementById(name);
   const show = (text) => { $('status').textContent = text; };
 
@@ -174,32 +174,27 @@ async function start(id) {
     .desk-pics img { width: 2.8rem; height: 2.1rem; object-fit: cover; display: block; }
     .desk-pic-edit { position: absolute; top: .4rem; right: .4rem; z-index: 5; min-width: 2.2rem; min-height: 2.2rem; border: 1px solid #c7a86d; background: rgba(17,17,17,.85); color: #c7a86d; font-size: 1rem; cursor: pointer; }
     .desk-pic-edit[data-lead="true"]::after { content: ' ★'; }`;
-  document.head.append(room);
+  const reveal=()=>{document.body.prepend(host);document.head.append(room);};
+  const hide=()=>{if(editing)leave();host.remove();room.remove();};
+  if(PREVIEW)reveal();
 
-  // ---------- the account ----------
+  // ---------- the account: no controls or sign-in prompt on a signed-out public page ----------
+  let stopOwner;
   try {
     cloud = await import('./desk-cloud.js');
-    cloud.watchUser((signedIn) => {
-      user = signedIn;
-      // signing in works on reddy.world itself; a preview address saves in the browser only
-      $('signin').hidden = Boolean(user) || !HERE;
-      if (!user) { show(HERE ? 'Not signed in: changes stay in this browser' : 'Preview: changes stay in this browser'); return; }
-      cloud.watchRemote((remote) => {
-        remoteSeen = true;
-        state = mergeStates(state, remote, existing);
-        snap = snapshotOf(state);
-        try { localStorage.setItem(STORE, JSON.stringify(state)); } catch {}
-        show('Your desk is up to date');
-        if (!editing) refreshFields();
-      }, (error) => {
-        if (error.code === 'permission-denied') { try { localStorage.removeItem(OWNER_FLAG); } catch {} show('This account can\'t edit the desk'); }
-        else show(`Your desk could not be read (${error.code ?? error.message})`);
-      });
+    stopOwner=watchOwnerEditAccess(cloud,{
+      hide:()=>{user=null;if(!PREVIEW)hide();},
+      ready:(remote,signedIn)=>{
+        user=signedIn;remoteSeen=true;
+        state=mergeStates(state,remote,existing);snap=snapshotOf(state);
+        try {localStorage.setItem(STORE,JSON.stringify(state));}catch{}
+        reveal();show('Your desk is up to date');if(!editing)refreshFields();
+      },
+      error:(error)=>{
+        if(error.code==='permission-denied')try{localStorage.removeItem(OWNER_FLAG);}catch{}
+      }
     });
-  } catch {
-    show('Changes stay in this browser');
-  }
-  $('signin').addEventListener('click', () => cloud?.signIn().catch((error) => show(error.code ?? error.message)));
+  } catch { if(!PREVIEW)hide(); }
 
   // ---------- editing in place ----------
   const header = article.querySelector('.modal-header, .comp-title');
@@ -378,11 +373,7 @@ async function start(id) {
       show(`Not sent (${error.message})`);
     }
   });
-  $('close').addEventListener('click', () => {
-    if (editing) leave();
-    host.remove();
-    room.remove();
-  });
+  $('close').addEventListener('click', () => {stopOwner?.();hide();});
   addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && (!$('picture-panel').hidden || !$('words-panel').hidden)) { $('picture-panel').hidden = true; $('words-panel').hidden = true; }
   });
