@@ -1,27 +1,56 @@
-name: Check keyword demand data
+name: Refresh keyword demand
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '23 6 * * 1'
   pull_request:
     paths:
       - scripts/keyword-search.mjs
       - .github/workflows/keyword-data.yml
 permissions:
   contents: read
+concurrency:
+  group: keyword-data-${{ github.event_name }}
+  cancel-in-progress: false
 jobs:
   keyword-data:
-    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor == 'Ryan-Reddy')
+    if: github.event_name != 'pull_request' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor == 'Ryan-Reddy')
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v5
         with:
           node-version: '22'
-      - name: Check recent keyword counts without exposing the key
+      - name: Fetch dated aggregate counts; the key stays in this job
         env:
           BING_WEBMASTER_API_KEY: ${{ secrets.BING_WEBMASTER_API_KEY }}
-        run: node scripts/keyword-search.mjs keyword-search-probe.json
+        run: node scripts/keyword-search.mjs
       - uses: actions/upload-artifact@v4
         with:
-          name: keyword-search-probe
-          path: keyword-search-probe.json
+          name: keyword-demand
+          path: src/data/keyword-search.json
           retention-days: 3
+  publish:
+    needs: keyword-data
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@v4
+        with:
+          name: keyword-demand
+          path: ${{ runner.temp }}/keyword-demand
+      # No installed packages; submit only the generated dataset.
+      - name: Submit data for the existing checked publishing flow
+        env:
+          GH_TOKEN: ${{ secrets.DESK_TOKEN }}
+        run: node .github/scripts/publish-keywords.mjs "$RUNNER_TEMP/keyword-demand/keyword-search.json"

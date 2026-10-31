@@ -1,0 +1,78 @@
+{
+  "source": "Bing Webmaster keyword research",
+  "market": "NL",
+  "language": "nl-NL",
+  "updatedAt": "2026-10-31T01:08:26.826Z",
+  "keywords": {
+    "signage": {
+      "recent": 17,
+      "previous": 20,
+      "end": "2026-10-24",
+      "weeks": [
+        6,
+        6,
+        3,
+        5,
+        2,
+        5,
+        3,
+        7
+      ],
+      "fetchedAt": "2026-10-31T01:08:26.826Z"
+    },
+    "digital signage": {
+      "recent": 18,
+      "previous": 21,
+      "end": "2026-10-24",
+      "weeks": [
+        6,
+        4,
+        3,
+        8,
+        8,
+        5,
+        3,
+        2
+      ],
+      "fetchedAt": "2026-10-31T01:08:29.740Z"
+    },
+    "interior design": {
+      "recent": 43,
+      "previous": 47,
+      "end": "2026-10-24",
+      "weeks": [
+        9,
+        8,
+        20,
+        10,
+        7,
+        16,
+        12,
+        8
+      ],
+      "fetchedAt": "2026-10-31T01:08:31.919Z"
+    },
+    "photography": {
+      "recent": 65,
+      "previous": 56,
+      "end": "2026-10-24",
+      "weeks": [
+        18,
+        17,
+        12,
+        9,
+        18,
+        30,
+        10,
+        7
+      ],
+      "fetchedAt": "2026-10-31T01:08:33.153Z"
+    }
+  },
+  "unavailable": {
+    "custom signage": "no-recent-series",
+    "stage design": "no-recent-series",
+    "portrait photography": "no-recent-series",
+    "brand activation": "no-recent-series"
+  }
+}
