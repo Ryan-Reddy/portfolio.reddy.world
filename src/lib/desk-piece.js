@@ -1,6 +1,7 @@
 import {CRAFTS, articleCraft, publicationDay, pieceTags} from './piece-fields.js';
 import {PAGE_LAYOUTS,pageLayout,bannerVideo,bannerFocus} from './page-layout.js';
 import {videoFigure,videoFor} from './article-video.js';
+import {mountKeywordHelp} from './keyword-help.js';
 import '../styles/page-layout.css';
 import '../styles/desk-ui.css';
 const desk = window.imageDesk;
@@ -35,6 +36,7 @@ const titleSource=sourceHint($('piece-title'),'Original title');
 const tagsSource=sourceHint($('piece-tags'),'WordPress tags and categories');
 const ideaBox=document.querySelector('#project-bench [data-box="keywords"]');
 $('piece-tags').closest('label').after(ideaBox);
+const keywordHelp=mountKeywordHelp({input:$('piece-tags'),ratings:desk.DATA.ratings,updatedAt:desk.DATA.ratingsInfo?.updatedAt,onAdd:value=>desk.setPiece('tags',value)});
 const innerIdeas=ideaBox.querySelector('details');if(innerIdeas){const body=innerIdeas.querySelector('div');if(body)innerIdeas.replaceWith(...body.childNodes);}
 $('piece-tags').addEventListener('focus',()=>{if(desk.piece().type==='project')ideaBox.open=true;});
 $('piece-summary').addEventListener('focus',()=>{if(desk.piece().type==='project')summarySource.box.open=true;});
@@ -75,6 +77,7 @@ function render() {
     if (input && document.activeElement !== input) input.value = piece[name] ?? '';
   }
   $('piece-craft').options[0].textContent = piece.type === 'article' ? `Automatic · ${CRAFTS[articleCraft(piece, desk.DATA.software)]}` : 'Automatic';
+  keywordHelp.refresh();
   const selected=piece.selectedPicture;
   const mode=piece.type==='project' ? piece.mode : articleMode;
   fields.querySelector('.piece-inputs').hidden=mode!=='page';

@@ -87,6 +87,8 @@ export function rate(word, ratings) {
   if (typeof bing?.impressions === 'number') parts.push(`Bing, Netherlands: ${bing.impressions.toLocaleString('en')} searches in ${bing.weeks} weeks${searchTrend !== null ? `, ${searchTrend >= 0 ? 'up' : 'down'} ${Math.abs(Math.round(searchTrend * 100))}% on the 4 weeks before` : ''}`);
   return {
     tag: word,
+    topic: closest?.page ?? pages.join(', '),
+    fetchedAt: topic?.fetchedAt ?? null,
     views,
     level,
     local,

@@ -10,7 +10,39 @@ Ryan's feedback, 30 October 2026: the organiser exists, but managing the wall sh
 - The archive-page edit bar is another editing route. It creates an empty text region in some layouts, but does not expose the full desk's insertion controls.
 - The saved-link recognition bug is fixed separately in #114/#115: the active editor now receives resolved image blocks and labelled Instagram sources.
 
-## Delivery order
+## Shared item model and category settings
+
+Ryan, 30 October: projects and articles should be interchangeable in the interface. Treat them as items sharing the same editor, properties, media blocks and arrangement tools. Project, Story, Recipe and other types are descriptive choices with optional specialist fields, not separate editing capabilities. Retain existing public addresses and WordPress source history.
+
+Categories currently group/filter work; they do not supply an inherited design-settings interface. Ryan's follow-up favours optional templates rather than automatically applying a category layout to every post. Categories may suggest suitable templates, but applying one is an explicit choice. Applying a template supplies an editable starting structure; later template changes must not rewrite existing items.
+
+Keep content type (Project, Story, Recipe) distinct from work category (Signs & light, Stages & decor, etc.) while allowing the same editing tools for every item. Tags and categories organise items without imposing a fixed number of images or a mandatory template.
+
+## Reusable galleries and wall sections
+
+The ADNIGHT @ MERKTROUBADOUR source contains a single nine-picture media block, rendered in balanced rows of up to three. Preserve this as a reference layout and make it available as an Add gallery choice in every item's editor, including for newly uploaded pictures.
+
+Gallery choices to implement: Balanced rows (the Merktroubadour arrangement), Even grid, Featured image with smaller images, and a Carousel. Allow changing image order, adding/removing pictures, column count, gaps and whether pictures keep their full proportions or use a chosen crop. Moving or changing a gallery layout must retain image descriptions, credits, source references and individual enlargement.
+
+The actual wall should support multiple layout sections rather than a single global grid choice: compact grid, photo mosaic and featured rows, with section-level columns, spacing and image-shape options. Tile and block positions snap into responsive rows and columns, as Ryan selected. Templates are optional starting choices; section, item and block controls provide fine adjustment. Galleries adapt to the chosen pictures and do not require filling a prescribed number of slots; longer photo stories and videos remain supported.
+
+## Media performance and motion previews
+
+New desk pictures and recovered supported links already publish local WebP copies. Uploaded pictures have responsive sizes; older archive JPEGs also have smaller copies. Preserve originals separately from the public delivery copies. Measure actual loading performance before choosing a bulk format migration; file dimensions, responsive selection, loading priority and total page media matter as well as the extension.
+
+Uploaded videos currently publish without automatic transcoding. Add an optional short, compressed MP4/WebM preview and a WebP poster for wall tiles and hero media, retaining the full video separately. This provides the looping effect Ryan previously made with GIFs without requiring large GIF downloads. Load/play previews only on visibility or deliberate interaction, pause them when offscreen, and use static posters for reduced motion/data-saving. Avoid many simultaneous looping decoders.
+
+The latest production release passed its existing checks; its main wall script is about 125 KB gzip. The current Lighthouse gate covers accessibility, SEO and best practices, not loading performance. A fresh anonymous PageSpeed mobile request returned quota-exceeded, so no new mobile speed score has been established. Add mobile performance measurement and page-media budgets before treating this as fully performance-verified.
+
+## Instagram and keyword feedback (31 October)
+
+Instagram's official public oEmbed endpoint reports the Koupe post `BhbX9RjAW02` as Private Media (HTTP 400). Keep its source link; displaying its photograph requires a copy the owner can upload. A profile address does not identify a photo. Do not treat a working Instagram page link as a recoverable image file or claim all such media is permanently missing.
+
+Put keyword feedback next to the shared tag field for projects and articles. Existing cached Wikimedia reader counts describe topic interest, not keyword search volume or ranking potential. Show the data date and missing-data state clearly. Related words can use the free Datamuse service with relevance filtering, request debouncing, caching and graceful failure; its result scores must not be presented as search demand. Supply an explicit Google Trends link for the keyword and Netherlands market.
+
+There is currently no Bing search data connected in the ratings cache. Existing build-time support accepts a Bing Webmaster key; no key is added to the browser. Google's official Trends API still requires alpha access. Datamuse currently offers free keyless lookups but announces API-key requirements for 2027; preserve local-vocabulary suggestions and saving if that service becomes unavailable. Sources: https://www.datamuse.com/api/ and https://developers.google.com/search/apis/trends.
+
+## Delivery steps
 
 ### 0. Find every item
 
