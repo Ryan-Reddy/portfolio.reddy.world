@@ -39,7 +39,7 @@ if(process.argv[1]===fileURLToPath(import.meta.url)) {
   let checked=0;
   for(const word of words){
     const known=output.keywords[word]??output.unavailable[word];
-    if(!probe&&Date.now()-Date.parse(known?.fetchedAt??known?.checkedAt)<6*DAY)continue;
+    if(!probe&&process.env.KEYWORD_FORCE!=='1'&&Date.now()-Date.parse(known?.fetchedAt??known?.checkedAt)<6*DAY)continue;
     let result;try{result=await fetchKeyword(word,key);}catch{result={error:'provider-unavailable'};}
     if(result.error)output.unavailable[word]={reason:result.error,checkedAt:new Date().toISOString()};else{output.keywords[word]=result;delete output.unavailable[word];}
     checked++;console.log(word+': '+(result.error??`${result.recent} searches, latest weekly point ${result.end}`));await new Promise(r=>setTimeout(r,1000));

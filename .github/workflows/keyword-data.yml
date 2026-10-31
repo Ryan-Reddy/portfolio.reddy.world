@@ -26,6 +26,7 @@ jobs:
           node-version: '22'
       - name: Fetch dated aggregate counts; the key stays in this job
         env:
+          KEYWORD_FORCE: ${{ github.event_name == 'schedule' && '1' || '0' }}
           BING_WEBMASTER_API_KEY: ${{ secrets.BING_WEBMASTER_API_KEY }}
         run: node scripts/keyword-search.mjs
       - uses: actions/upload-artifact@v4

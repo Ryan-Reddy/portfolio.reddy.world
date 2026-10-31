@@ -3,6 +3,7 @@ import {AUTOMATIC_DESK_PUBLISHING} from '../../src/lib/publishing-policy.js';
 import {readFileSync} from 'node:fs';
 import {pathToFileURL} from 'node:url';
 export function eligible(pr,repo,files) {
+ if(pr.title==='Refresh keyword demand')return pr.state==='open' && !pr.draft && pr.user?.login==='Ryan-Reddy' && pr.base?.ref==='main' && pr.head?.repo?.full_name===repo && /^desk\/keyword-demand-\d+$/.test(pr.head.ref) && pr.changed_files===1 && files.length===1 && files[0]==='src/data/keyword-search.json';
  return pr.state==='open' && !pr.draft && pr.title==='Your desk changes' && pr.user?.login==='Ryan-Reddy' && pr.base?.ref==='main' && pr.head?.repo?.full_name===repo && pr.head.ref.startsWith('desk/') && files.length>0 && files.length===pr.changed_files && files.every(file=>!file.includes('..') && /^(public\/videos\/[a-z0-9]{12,40}\.(?:mp4|webm)|src\/data\/.*\.json|src\/content\/articles\/.*\.md|public\/images\/(articles|project-uploads)\/.*\.(webp|png|jpe?g|gif))$/i.test(file));
 }
 async function main() {
