@@ -10,7 +10,7 @@ export function mountKeywordBar({input,data={keywords:{}},onAdd,getContext=()=>'
   const query=make('input');query.type='search';query.placeholder='Add a keyword…';query.autocomplete='off';query.setAttribute('aria-label','Add keyword');query.setAttribute('role','combobox');query.setAttribute('aria-autocomplete','list');query.setAttribute('aria-controls','keyword-options');
   const score=make('span','—');score.className='keyword-score';score.setAttribute('role','status');
   const info=make('button','ⓘ');info.type='button';info.setAttribute('aria-label','About keyword scores');info.setAttribute('aria-expanded','false');
-  const explanation=make('p','Demand score: 0–100 from observed Bing Netherlands searches in the latest four reported weeks (logarithmic scale; 10,000+ = 100). The arrow compares the previous four weeks when there are at least 20 prior searches. Google searches and ranking difficulty are not included. — means no recent data.');explanation.className='keyword-explanation';explanation.hidden=true;
+  const explanation=make('p','Demand score: 0–100 from observed Bing Netherlands searches in the latest four reported weeks (logarithmic scale; 10,000+ = 100). The arrow compares the previous four weeks when there are at least 20 prior searches. New means the previous four weeks had no observed searches. Google searches and ranking difficulty are not included. — means no recent data.');explanation.className='keyword-explanation';explanation.hidden=true;
   info.onclick=()=>{open=false;explanation.hidden=!explanation.hidden;info.setAttribute('aria-expanded',String(!explanation.hidden));draw();};
   const add=make('button','+');add.type='button';add.setAttribute('aria-label','Add typed keyword');add.title='Add keyword';add.onclick=()=>{if(query.value.trim())choose(query.value.trim());};
   entry.append(query,score,add,info);
@@ -24,7 +24,7 @@ export function mountKeywordBar({input,data={keywords:{}},onAdd,getContext=()=>'
   let expanded=false,rising=false,open=false,active=-1,choices=[],context=null,timer,request;
   const cache=new Map();let extras=[],pendingKey='';
   const selected=()=>input.value.split(',').map(s=>s.trim()).filter(Boolean);
-  const describe=metric=>metric?`${metric.recent} observed Bing NL searches in 4 reported weeks, ending ${metric.end}${metric.change===null?'':`; ${Math.round(metric.change*100)}% vs previous 4 weeks`}`:'No recent measured search data';
+  const describe=metric=>metric?`${metric.recent} observed Bing NL searches in 4 reported weeks, latest week dated ${metric.end}${metric.change===null?'':`; ${Math.round(metric.change*100)}% vs previous 4 weeks`}`:'No recent measured search data';
   function choose(word){input.value=addKeyword(input.value,word);query.value='';open=false;active=-1;extras=[];request?.abort();clearTimeout(timer);onAdd(input.value);refresh();query.focus();}
   function draw(){
     add.disabled=!query.value.trim();
