@@ -111,8 +111,8 @@ const canonical = new URL(Astro.url.pathname, ORIGIN).href;
     </div>
   </footer>
   <script>
-    // Ryan's edit bar (src/lib/edit-bar.js): only in a browser where he is signed in to the desk,
-    // or on a preview address with ?edit; nobody else loads it
+    // The cached flag only loads the code. The edit bar stays absent until a fresh owner-only
+    // account read succeeds. Preview addresses can explicitly enable browser-only edits with ?edit.
     try {
       const preview = location.hostname !== 'reddy.world' && new URLSearchParams(location.search).has('edit');
       if (preview || localStorage.getItem('reddy-desk-owner') === '1') import('../lib/edit-bar.js');
