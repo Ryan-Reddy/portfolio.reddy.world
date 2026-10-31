@@ -1,7 +1,7 @@
 import {CRAFTS, articleCraft, publicationDay, pieceTags} from './piece-fields.js';
 import {PAGE_LAYOUTS,pageLayout,bannerVideo,bannerFocus} from './page-layout.js';
 import {videoFigure,videoFor} from './article-video.js';
-import {mountKeywordHelp} from './keyword-help.js';
+import {mountKeywordBar} from './keyword-bar.js';
 import '../styles/page-layout.css';
 import '../styles/desk-ui.css';
 const desk = window.imageDesk;
@@ -36,9 +36,8 @@ const titleSource=sourceHint($('piece-title'),'Original title');
 const tagsSource=sourceHint($('piece-tags'),'WordPress tags and categories');
 const ideaBox=document.querySelector('#project-bench [data-box="keywords"]');
 $('piece-tags').closest('label').after(ideaBox);
-const keywordHelp=mountKeywordHelp({input:$('piece-tags'),ratings:desk.DATA.ratings,updatedAt:desk.DATA.ratingsInfo?.updatedAt,onAdd:value=>desk.setPiece('tags',value)});
+const keywordHelp=mountKeywordBar({input:$('piece-tags'),data:desk.DATA.keywordSearch,onAdd:value=>desk.setPiece('tags',value),getContext:()=>{const p=desk.piece();return `${p.type}:${p.id}`;}});
 const innerIdeas=ideaBox.querySelector('details');if(innerIdeas){const body=innerIdeas.querySelector('div');if(body)innerIdeas.replaceWith(...body.childNodes);}
-$('piece-tags').addEventListener('focus',()=>{if(desk.piece().type==='project')ideaBox.open=true;});
 $('piece-summary').addEventListener('focus',()=>{if(desk.piece().type==='project')summarySource.box.open=true;});
 const textBox=document.querySelector('#project-bench [data-box="text"]');
 $('page-source-content').append(textBox.querySelector('.box-body'));
@@ -90,7 +89,7 @@ function render() {
   $('pic-input').closest('label').hidden=true;
   for(const button of fields.querySelectorAll('[data-piece-mode]'))button.setAttribute('aria-pressed',String(button.dataset.pieceMode===mode));
   if(piece.type==='article')for(const box of document.querySelectorAll('#article-bench .box-list>[data-box]')){
-    const name=box.dataset.box;box.hidden=mode==='preview' || (mode==='picture' ? name!=='pictures' : ['pictures','title','summary'].includes(name));
+    const name=box.dataset.box;box.hidden=mode==='preview' || (mode==='picture' ? name!=='pictures' : ['pictures','title','summary','keywords'].includes(name));
   }
   $('pane-picture').dataset.imageEditor='true';
   $('piece-selection').hidden=piece.type==='article';
@@ -121,7 +120,7 @@ function render() {
   $('reading').dataset.hasBanner=String(!$('read-lead').hidden);
   const project=piece.type==='project' ? desk.DATA.projects.find(p=>p.id===piece.id) : null;
   for(const hint of [summarySource,titleSource,tagsSource])hint.box.hidden=!project;
-  ideaBox.hidden=!project;
+  ideaBox.hidden=true;
   $('page-source').hidden=!project;
   const choice=(body,text,field)=>{body.replaceChildren();if(!text){body.append(make('p','No original value.'));return;}body.append(make('p',text));const button=make('button',field==='title'?'Use original title':field==='summary'?'Use original summary':'Add these tags');button.type='button';button.addEventListener('click',()=>desk.setPiece(field,field==='tags'?pieceTags([...(desk.piece().tags ?? '').split(','),...text.split(',')]).join(', '):text));body.append(button);};
   if(project){choice(summarySource.body,project.wordpress.excerpt,'summary');choice(titleSource.body,project.title,'title');choice(tagsSource.body,[...project.wordpress.categories,...project.wordpress.tags].join(', '),'tags');}
