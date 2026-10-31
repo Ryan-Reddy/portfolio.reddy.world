@@ -1,0 +1,27 @@
+name: Check keyword demand data
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - scripts/keyword-search.mjs
+      - .github/workflows/keyword-data.yml
+permissions:
+  contents: read
+jobs:
+  keyword-data:
+    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor == 'Ryan-Reddy')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Check recent keyword counts without exposing the key
+        env:
+          BING_WEBMASTER_API_KEY: ${{ secrets.BING_WEBMASTER_API_KEY }}
+        run: node scripts/keyword-search.mjs keyword-search-probe.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: keyword-search-probe
+          path: keyword-search-probe.json
+          retention-days: 3
