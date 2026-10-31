@@ -66,3 +66,13 @@ button.primary:not(:disabled):hover{background:#dfc38a;}
 .reading #video-form{order:-3;position:sticky;top:0;z-index:6;background:#191917;padding:.8rem;border:1px solid var(--line);}
 
 #video-form>label{max-width:100%;min-width:0;}#video-form input[type=file],#video-form select{max-width:100%;min-width:0;}
+/* Keyword feedback stays beside the field for projects and articles. */
+.piece-inputs{grid-template-columns:minmax(0,1fr);}
+.piece-inputs > *{min-width:0;}
+.keyword-help{padding:.75rem;border:1px solid #514735;display:grid;grid-template-columns:minmax(0,1fr);gap:.4rem;margin:.4rem 0;min-width:0;}
+.keyword-help[hidden]{display:none;}
+.keyword-help p{margin:0;font-size:.8rem;line-height:1.45;}
+.keyword-help strong{overflow-wrap:anywhere;}
+.keyword-help a{font-size:.8rem;}
+.keyword-related{display:flex;flex-wrap:wrap;gap:.35rem;min-width:0;}
+.keyword-related button{font-size:.8rem;min-height:2.25rem;max-width:100%;overflow-wrap:anywhere;}
