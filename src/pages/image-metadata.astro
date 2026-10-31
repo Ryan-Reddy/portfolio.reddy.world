@@ -8,6 +8,7 @@ import { KINDS } from '../lib/article-kinds.js';
 import wall from '../data/wall.json';
 import {AUTOMATIC_DESK_PUBLISHING} from '../lib/publishing-policy.js';
 import {allPosts} from '../lib/portfolios.js';
+import keywordSearch from '../data/keyword-search.json';
 
 // Every word idea in one list, each rated (scripts/keyword-ratings.mjs fetches the numbers at build time):
 // per project the words and where they came from; each word's rating once, in `ratings`.
@@ -39,7 +40,7 @@ const seeds = Object.fromEntries(Object.entries(import.meta.glob('../data/articl
   .map(([file, seed]) => [file.split('/').pop().replace(/\.json$/, ''), seed]));
 const wallArticles = (await getCollection('articles')).map(({id, data,body}) => ({id, desk: data.desk, title: data.title, summary:data.summary ?? '', tags:data.tags ?? [], text:String(body ?? '').replace(/<[^>]*>/g,' '),href:`/portfolio/${KINDS[data.kind].path}/${id}/`, hasText:Boolean(String(body ?? '').replace(/<[^>]*>/g,' ').trim()),kind: KINDS[data.kind].label, year: (data.published ?? data.updated).getFullYear()}));
 const wallProjects = allPosts.filter(p => p.type === 'post' && p.portfolio !== 'maup').map(p => ({id: `${p.portfolio}/${p.slug}`, slug: p.slug, title: p.title.trim(), published: p.published, year: new Date(p.published).getFullYear(), time: new Date(p.published).getTime()}));
-const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING, projects, count, ratingsInfo, ratings: ideaRatings, articleIdeas: articleIdeas.map((idea) => [idea.tag, idea.sources]), kinds: KINDS, software, seeds, wall, wallArticles, wallProjects }).replace(/</g, '\\u003c');
+const queue = JSON.stringify({ keywordSearch,automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING, projects, count, ratingsInfo, ratings: ideaRatings, articleIdeas: articleIdeas.map((idea) => [idea.tag, idea.sources]), kinds: KINDS, software, seeds, wall, wallArticles, wallProjects }).replace(/</g, '\\u003c');
 ---
 <!doctype html>
 <html lang="en">
@@ -2866,8 +2867,8 @@ const queue = JSON.stringify({ automaticDeskPublishing:AUTOMATIC_DESK_PUBLISHING
     <div class="piece-inputs">
       <label>Title<input id="piece-title" autocomplete="off"></label>
       <label>Summary<textarea id="piece-summary" rows="2"></textarea></label>
-      <label>Tags<input id="piece-tags" autocomplete="off" placeholder="Add tags, separated by commas"></label>
-      <p class="hint">Your tags describe the piece for search and organisation. Choose the type of work below.</p>
+      <label>Keywords<input id="piece-tags" autocomplete="off" placeholder="Add tags, separated by commas"></label>
+      <p class="hint">Keywords describe this piece. Keep them relevant to the work.</p>
       <label>Type of work<select id="piece-craft"><option value="">Automatic</option></select></label>
       <label>Date shown on page<input id="piece-published" type="date" min="1900-01-01" max="2200-12-31"></label>
       <p class="hint">The date shown on its page and used to place it on the wall. Changing the date does not publish a draft.</p>

@@ -38,9 +38,11 @@ The latest production release passed its existing checks; its main wall script i
 
 Instagram's official public oEmbed endpoint reports the Koupe post `BhbX9RjAW02` as Private Media (HTTP 400). Keep its source link; displaying its photograph requires a copy the owner can upload. A profile address does not identify a photo. Do not treat a working Instagram page link as a recoverable image file or claim all such media is permanently missing.
 
-Put keyword feedback next to the shared tag field for projects and articles. Existing cached Wikimedia reader counts describe topic interest, not keyword search volume or ranking potential. Show the data date and missing-data state clearly. Related words can use the free Datamuse service with relevance filtering, request debouncing, caching and graceful failure; its result scores must not be presented as search demand. Supply an explicit Google Trends link for the keyword and Netherlands market.
+The shared keyword field now uses a compact entry with removable chips, inline demand scores and related suggestions. Demand/Rising sorting appears only while typing; method details stay behind the info button. Ryan rejected the former large helper panel and external Trends-link workflow.
 
-There is currently no Bing search data connected in the ratings cache. Existing build-time support accepts a Bing Webmaster key; no key is added to the browser. Google's official Trends API still requires alpha access. Datamuse currently offers free keyless lookups but announces API-key requirements for 2027; preserve local-vocabulary suggestions and saving if that service becomes unavailable. Sources: https://www.datamuse.com/api/ and https://developers.google.com/search/apis/trends.
+The existing Bing Webmaster connection is working. A 180-phrase catalog returned 56 usable dated weekly series on 31 October; remaining phrases are unscored. The 0–100 logarithmic score uses the latest four reported weeks of Bing Netherlands/nl-NL counts, with growth against the previous four weeks only when the baseline has at least 20 searches. Stale data and missing coverage remain unknown. This is not Google demand or ranking difficulty. Weekly refreshes submit only the dataset through checked automatic publishing; no key enters the browser.
+
+Datamuse supplies additional related wording, with no invented demand scores. Local measured suggestions and saving continue if it is unavailable. The actual wall editor, drag arrangement and reusable galleries below remain unfinished; #82 and #83 stay open.
 
 ## Delivery steps
 
