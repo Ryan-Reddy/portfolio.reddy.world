@@ -2,583 +2,583 @@
   "source": "Bing Webmaster keyword research",
   "market": "NL",
   "language": "nl-NL",
-  "updatedAt": "2026-11-09T16:45:40.987Z",
+  "updatedAt": "2026-11-16T16:15:45.929Z",
   "keywords": {
     "signage": {
-      "recent": 25,
+      "recent": 28,
       "previous": 15,
-      "end": "2026-11-07",
+      "end": "2026-11-14",
       "weeks": [
-        3,
         5,
         2,
         5,
         3,
         7,
         10,
-        5
+        5,
+        6
       ],
-      "fetchedAt": "2026-11-09T16:41:26.647Z"
+      "fetchedAt": "2026-11-16T16:11:18.875Z"
     },
     "digital signage": {
-      "recent": 13,
+      "recent": 15,
       "previous": 24,
-      "end": "2026-11-07",
+      "end": "2026-11-14",
       "weeks": [
-        3,
         8,
         8,
         5,
         3,
         2,
         3,
+        5,
         5
       ],
-      "fetchedAt": "2026-11-09T16:41:29.625Z"
+      "fetchedAt": "2026-11-16T16:11:21.820Z"
     },
     "interior design": {
-      "recent": 44,
-      "previous": 53,
-      "end": "2026-11-07",
+      "recent": 43,
+      "previous": 45,
+      "end": "2026-11-14",
       "weeks": [
-        20,
         10,
         7,
         16,
         12,
         8,
         12,
-        12
+        12,
+        11
       ],
-      "fetchedAt": "2026-11-09T16:41:32.035Z"
+      "fetchedAt": "2026-11-16T16:11:25.053Z"
     },
     "photography": {
-      "recent": 39,
-      "previous": 69,
-      "end": "2026-11-07",
+      "recent": 46,
+      "previous": 67,
+      "end": "2026-11-14",
       "weeks": [
-        12,
         9,
         18,
         30,
         10,
         7,
         12,
-        10
+        10,
+        17
       ],
-      "fetchedAt": "2026-11-09T16:41:33.280Z"
+      "fetchedAt": "2026-11-16T16:11:26.683Z"
     },
     "industrial design": {
-      "recent": 17,
-      "previous": 22,
-      "end": "2026-11-07",
+      "recent": 19,
+      "previous": 18,
+      "end": "2026-11-14",
       "weeks": [
-        6,
         5,
         10,
         1,
         2,
         5,
         4,
-        6
+        6,
+        4
       ],
-      "fetchedAt": "2026-11-09T16:41:46.749Z"
+      "fetchedAt": "2026-11-16T16:11:41.008Z"
     },
     "sculpture": {
-      "recent": 35,
-      "previous": 20,
-      "end": "2026-11-07",
+      "recent": 38,
+      "previous": 27,
+      "end": "2026-11-14",
       "weeks": [
-        5,
         4,
         3,
         8,
         12,
         4,
         10,
-        9
+        9,
+        15
       ],
-      "fetchedAt": "2026-11-09T16:41:59.064Z"
+      "fetchedAt": "2026-11-16T16:11:52.825Z"
     },
     "graphic design": {
-      "recent": 44,
-      "previous": 49,
-      "end": "2026-11-07",
+      "recent": 43,
+      "previous": 54,
+      "end": "2026-11-14",
       "weeks": [
-        5,
         12,
         18,
         14,
         10,
         12,
         14,
-        8
+        8,
+        9
       ],
-      "fetchedAt": "2026-11-09T16:42:07.587Z"
+      "fetchedAt": "2026-11-16T16:12:01.422Z"
     },
     "lightbox": {
-      "recent": 33,
-      "previous": 24,
-      "end": "2026-11-07",
+      "recent": 23,
+      "previous": 32,
+      "end": "2026-11-14",
       "weeks": [
-        4,
         8,
         6,
         6,
         12,
         9,
         3,
-        9
+        9,
+        2
       ],
-      "fetchedAt": "2026-11-09T16:42:16.479Z"
+      "fetchedAt": "2026-11-16T16:12:10.928Z"
     },
     "modelling": {
-      "recent": 25,
-      "previous": 15,
-      "end": "2026-11-07",
+      "recent": 20,
+      "previous": 20,
+      "end": "2026-11-14",
       "weeks": [
-        3,
         6,
         2,
         4,
         8,
         5,
         4,
-        8
+        8,
+        3
       ],
-      "fetchedAt": "2026-11-09T16:42:27.852Z"
+      "fetchedAt": "2026-11-16T16:12:22.398Z"
     },
     "photoshoot": {
-      "recent": 18,
-      "previous": 24,
-      "end": "2026-11-07",
+      "recent": 13,
+      "previous": 28,
+      "end": "2026-11-14",
       "weeks": [
-        3,
         4,
         5,
         12,
         7,
         2,
         4,
-        5
+        5,
+        2
       ],
-      "fetchedAt": "2026-11-09T16:42:29.069Z"
+      "fetchedAt": "2026-11-16T16:12:23.637Z"
     },
     "portfolio": {
-      "recent": 1431,
-      "previous": 1706,
-      "end": "2026-11-07",
+      "recent": 1533,
+      "previous": 1541,
+      "end": "2026-11-14",
       "weeks": [
-        490,
         414,
         424,
         378,
         325,
         214,
         487,
-        405
+        405,
+        427
       ],
-      "fetchedAt": "2026-11-09T16:42:31.915Z"
+      "fetchedAt": "2026-11-16T16:12:26.889Z"
     },
     "amsterdam": {
-      "recent": 2586,
-      "previous": 2965,
-      "end": "2026-11-07",
+      "recent": 2588,
+      "previous": 2825,
+      "end": "2026-11-14",
       "weeks": [
-        736,
         723,
         738,
         768,
         596,
         615,
         741,
-        634
+        634,
+        598
       ],
-      "fetchedAt": "2026-11-09T16:42:33.300Z"
+      "fetchedAt": "2026-11-16T16:12:28.530Z"
     },
     "decor": {
-      "recent": 42,
-      "previous": 84,
-      "end": "2026-11-07",
+      "recent": 37,
+      "previous": 75,
+      "end": "2026-11-14",
       "weeks": [
-        19,
         25,
         23,
         17,
         10,
         7,
         9,
-        16
+        16,
+        5
       ],
-      "fetchedAt": "2026-11-09T16:42:34.539Z"
+      "fetchedAt": "2026-11-16T16:12:30.186Z"
     },
     "meubilair": {
-      "recent": 84,
-      "previous": 107,
-      "end": "2026-11-07",
+      "recent": 82,
+      "previous": 103,
+      "end": "2026-11-14",
       "weeks": [
-        22,
         30,
         35,
         20,
         18,
         15,
         16,
-        35
+        35,
+        16
       ],
-      "fetchedAt": "2026-11-09T16:42:35.778Z"
+      "fetchedAt": "2026-11-16T16:12:31.830Z"
     },
     "interieur": {
-      "recent": 274,
-      "previous": 337,
-      "end": "2026-11-07",
+      "recent": 296,
+      "previous": 324,
+      "end": "2026-11-14",
       "weeks": [
-        74,
         90,
         83,
         90,
         61,
         53,
         84,
-        76
+        76,
+        83
       ],
-      "fetchedAt": "2026-11-09T16:42:37.415Z"
+      "fetchedAt": "2026-11-16T16:12:33.077Z"
     },
     "fotografie": {
-      "recent": 332,
-      "previous": 589,
-      "end": "2026-11-07",
+      "recent": 297,
+      "previous": 529,
+      "end": "2026-11-14",
       "weeks": [
-        173,
         176,
         125,
         115,
         113,
         40,
         104,
-        75
+        75,
+        78
       ],
-      "fetchedAt": "2026-11-09T16:42:46.420Z"
+      "fetchedAt": "2026-11-16T16:12:42.374Z"
     },
     "podium": {
-      "recent": 202,
-      "previous": 465,
-      "end": "2026-11-07",
+      "recent": 223,
+      "previous": 405,
+      "end": "2026-11-14",
       "weeks": [
-        103,
         98,
         133,
         131,
         43,
         35,
         72,
-        52
+        52,
+        64
       ],
-      "fetchedAt": "2026-11-09T16:42:50.453Z"
+      "fetchedAt": "2026-11-16T16:12:46.853Z"
     },
     "libreoffice": {
-      "recent": 2993,
-      "previous": 3041,
-      "end": "2026-11-07",
+      "recent": 3110,
+      "previous": 3013,
+      "end": "2026-11-14",
       "weeks": [
-        738,
         731,
         780,
         792,
         710,
         723,
         826,
-        734
+        734,
+        827
       ],
-      "fetchedAt": "2026-11-09T16:42:53.306Z"
+      "fetchedAt": "2026-11-16T16:12:49.711Z"
     },
     "formation": {
-      "recent": 7,
+      "recent": 8,
       "previous": 5,
-      "end": "2026-11-07",
+      "end": "2026-11-14",
       "weeks": [
-        1,
         3,
         1,
         0,
         1,
         0,
         2,
-        4
+        4,
+        2
       ],
-      "fetchedAt": "2026-11-09T16:42:54.549Z"
+      "fetchedAt": "2026-11-16T16:12:50.993Z"
     },
     "sketchup": {
-      "recent": 6247,
-      "previous": 9472,
-      "end": "2026-11-07",
+      "recent": 6735,
+      "previous": 8269,
+      "end": "2026-11-14",
       "weeks": [
-        2547,
         2398,
         2492,
         2035,
         1344,
         1096,
         1729,
-        2078
+        2078,
+        1832
       ],
-      "fetchedAt": "2026-11-09T16:42:55.774Z"
+      "fetchedAt": "2026-11-16T16:12:52.621Z"
     },
     "fashion design": {
-      "recent": 49,
-      "previous": 45,
-      "end": "2026-11-07",
+      "recent": 50,
+      "previous": 43,
+      "end": "2026-11-14",
       "weeks": [
-        12,
         10,
         17,
         6,
         10,
         10,
         19,
-        10
+        10,
+        11
       ],
-      "fetchedAt": "2026-11-09T16:42:59.887Z"
+      "fetchedAt": "2026-11-16T16:12:57.503Z"
     },
     "tinkercad": {
-      "recent": 24006,
-      "previous": 29999,
-      "end": "2026-11-07",
+      "recent": 26957,
+      "previous": 28133,
+      "end": "2026-11-14",
       "weeks": [
-        6940,
         7779,
         7807,
         7473,
         5074,
         3454,
         7667,
-        7811
+        7811,
+        8025
       ],
-      "fetchedAt": "2026-11-09T16:43:02.282Z"
+      "fetchedAt": "2026-11-16T16:13:00.751Z"
     },
     "thingiverse": {
-      "recent": 3370,
-      "previous": 3744,
-      "end": "2026-11-07",
+      "recent": 3599,
+      "previous": 3580,
+      "end": "2026-11-14",
       "weeks": [
-        945,
         939,
         959,
         901,
         781,
         802,
         910,
-        877
+        877,
+        1010
       ],
-      "fetchedAt": "2026-11-09T16:43:03.499Z"
+      "fetchedAt": "2026-11-16T16:13:02.411Z"
     },
     "startup": {
-      "recent": 66,
-      "previous": 110,
-      "end": "2026-11-07",
+      "recent": 76,
+      "previous": 105,
+      "end": "2026-11-14",
       "weeks": [
-        24,
         30,
         28,
         28,
         19,
         12,
         15,
-        20
+        20,
+        29
       ],
-      "fetchedAt": "2026-11-09T16:43:32.622Z"
+      "fetchedAt": "2026-11-16T16:13:33.605Z"
     },
     "activity": {
-      "recent": 24,
-      "previous": 31,
-      "end": "2026-11-07",
+      "recent": 30,
+      "previous": 25,
+      "end": "2026-11-14",
       "weeks": [
-        9,
         7,
         9,
         6,
         3,
         4,
         9,
-        8
+        8,
+        9
       ],
-      "fetchedAt": "2026-11-09T16:43:38.872Z"
+      "fetchedAt": "2026-11-16T16:13:39.001Z"
     },
     "incoming": {
-      "recent": 17,
-      "previous": 23,
-      "end": "2026-11-07",
+      "recent": 16,
+      "previous": 17,
+      "end": "2026-11-14",
       "weeks": [
-        9,
         4,
         6,
         4,
         3,
         4,
         7,
-        3
+        3,
+        2
       ],
-      "fetchedAt": "2026-11-09T16:43:43.572Z"
+      "fetchedAt": "2026-11-16T16:13:43.134Z"
     },
     "bondi sands": {
-      "recent": 29,
-      "previous": 40,
-      "end": "2026-11-07",
+      "recent": 39,
+      "previous": 31,
+      "end": "2026-11-14",
       "weeks": [
-        14,
         7,
         12,
         7,
         5,
         7,
         5,
-        12
+        12,
+        15
       ],
-      "fetchedAt": "2026-11-09T16:43:52.955Z"
+      "fetchedAt": "2026-11-16T16:13:51.328Z"
     },
     "ade": {
-      "recent": 2549,
-      "previous": 1588,
-      "end": "2026-11-07",
+      "recent": 2070,
+      "previous": 1746,
+      "end": "2026-11-14",
       "weeks": [
-        384,
         370,
         389,
         445,
         542,
         1539,
         384,
-        84
+        84,
+        63
       ],
-      "fetchedAt": "2026-11-09T16:43:57.430Z"
+      "fetchedAt": "2026-11-16T16:13:55.795Z"
     },
     "guns": {
-      "recent": 57,
-      "previous": 65,
-      "end": "2026-11-07",
+      "recent": 61,
+      "previous": 60,
+      "end": "2026-11-14",
       "weeks": [
-        21,
         14,
         13,
         17,
         16,
         17,
         10,
-        14
+        14,
+        20
       ],
-      "fetchedAt": "2026-11-09T16:44:00.713Z"
+      "fetchedAt": "2026-11-16T16:13:59.058Z"
     },
     "edo": {
-      "recent": 66,
-      "previous": 57,
-      "end": "2026-11-07",
+      "recent": 51,
+      "previous": 80,
+      "end": "2026-11-14",
       "weeks": [
-        9,
         17,
         8,
         23,
         32,
         15,
         10,
-        9
+        9,
+        17
       ],
-      "fetchedAt": "2026-11-09T16:44:02.369Z"
+      "fetchedAt": "2026-11-16T16:14:00.682Z"
     },
     "adr": {
-      "recent": 188,
-      "previous": 184,
-      "end": "2026-11-07",
+      "recent": 195,
+      "previous": 181,
+      "end": "2026-11-14",
       "weeks": [
-        52,
         35,
         55,
         42,
         49,
         46,
         36,
-        57
+        57,
+        56
       ],
-      "fetchedAt": "2026-11-09T16:44:08.056Z"
+      "fetchedAt": "2026-11-16T16:14:06.044Z"
     },
     "eda": {
-      "recent": 31,
-      "previous": 37,
-      "end": "2026-11-07",
+      "recent": 32,
+      "previous": 38,
+      "end": "2026-11-14",
       "weeks": [
-        6,
         16,
         6,
         9,
         7,
         4,
         7,
-        13
+        13,
+        8
       ],
-      "fetchedAt": "2026-11-09T16:44:09.714Z"
+      "fetchedAt": "2026-11-16T16:14:07.301Z"
     },
     "damson idris": {
-      "recent": 63,
-      "previous": 42,
-      "end": "2026-11-07",
+      "recent": 54,
+      "previous": 49,
+      "end": "2026-11-14",
       "weeks": [
-        5,
         11,
         14,
         12,
         12,
         10,
         34,
-        7
+        7,
+        3
       ],
-      "fetchedAt": "2026-11-09T16:44:13.314Z"
+      "fetchedAt": "2026-11-16T16:14:12.158Z"
     },
     "anitta": {
-      "recent": 9,
-      "previous": 8,
-      "end": "2026-11-07",
+      "recent": 8,
+      "previous": 9,
+      "end": "2026-11-14",
       "weeks": [
-        1,
         2,
         2,
         3,
         2,
         4,
         2,
+        1,
         1
       ],
-      "fetchedAt": "2026-11-09T16:44:22.617Z"
+      "fetchedAt": "2026-11-16T16:14:22.009Z"
     },
     "air flow": {
-      "recent": 7,
+      "recent": 10,
       "previous": 4,
-      "end": "2026-11-07",
+      "end": "2026-11-14",
       "weeks": [
-        0,
         1,
         2,
         1,
         0,
         0,
         4,
+        3,
         3
       ],
-      "fetchedAt": "2026-11-09T16:44:36.495Z"
+      "fetchedAt": "2026-11-16T16:14:35.940Z"
     },
     "muzzle": {
-      "recent": 14,
-      "previous": 14,
-      "end": "2026-11-07",
+      "recent": 13,
+      "previous": 12,
+      "end": "2026-11-14",
       "weeks": [
-        6,
         1,
         4,
         3,
         4,
         3,
         4,
+        3,
         3
       ],
-      "fetchedAt": "2026-11-09T16:44:38.909Z"
+      "fetchedAt": "2026-11-16T16:14:39.179Z"
     },
     "hamster ball": {
       "recent": 2,
@@ -594,423 +594,423 @@
         0,
         1
       ],
-      "fetchedAt": "2026-11-09T16:44:40.131Z"
+      "fetchedAt": "2026-11-16T16:14:40.809Z"
     },
     "amfi": {
-      "recent": 91,
-      "previous": 62,
-      "end": "2026-11-07",
+      "recent": 98,
+      "previous": 70,
+      "end": "2026-11-14",
       "weeks": [
-        10,
         15,
         14,
         23,
         18,
         20,
         23,
-        30
+        30,
+        25
       ],
-      "fetchedAt": "2026-11-09T16:44:45.369Z"
+      "fetchedAt": "2026-11-16T16:14:46.551Z"
     },
     "oxford": {
-      "recent": 267,
-      "previous": 383,
-      "end": "2026-11-07",
+      "recent": 256,
+      "previous": 328,
+      "end": "2026-11-14",
       "weeks": [
-        131,
         87,
         78,
         87,
         76,
         37,
         88,
-        66
+        66,
+        65
       ],
-      "fetchedAt": "2026-11-09T16:44:55.121Z"
+      "fetchedAt": "2026-11-16T16:14:56.712Z"
     },
     "rotterdam": {
-      "recent": 1732,
-      "previous": 2019,
-      "end": "2026-11-07",
+      "recent": 1824,
+      "previous": 1913,
+      "end": "2026-11-14",
       "weeks": [
-        544,
         490,
         494,
         491,
         438,
         361,
         481,
-        452
+        452,
+        530
       ],
-      "fetchedAt": "2026-11-09T16:44:56.805Z"
+      "fetchedAt": "2026-11-16T16:14:58.362Z"
     },
     "new amsterdam": {
-      "recent": 490,
-      "previous": 662,
-      "end": "2026-11-07",
+      "recent": 511,
+      "previous": 623,
+      "end": "2026-11-14",
       "weeks": [
-        155,
         161,
         179,
         167,
         116,
         96,
         139,
-        139
+        139,
+        137
       ],
-      "fetchedAt": "2026-11-09T16:44:58.012Z"
+      "fetchedAt": "2026-11-16T16:14:59.988Z"
     },
     "maastricht": {
-      "recent": 1207,
-      "previous": 1354,
-      "end": "2026-11-07",
+      "recent": 1150,
+      "previous": 1311,
+      "end": "2026-11-14",
       "weeks": [
-        362,
         346,
         317,
         329,
         319,
         291,
         319,
-        278
+        278,
+        262
       ],
-      "fetchedAt": "2026-11-09T16:44:59.200Z"
+      "fetchedAt": "2026-11-16T16:15:01.255Z"
     },
     "groningen": {
-      "recent": 1222,
-      "previous": 1280,
-      "end": "2026-11-07",
+      "recent": 1253,
+      "previous": 1206,
+      "end": "2026-11-14",
       "weeks": [
-        344,
         326,
         304,
         306,
         270,
         312,
         319,
-        321
+        321,
+        301
       ],
-      "fetchedAt": "2026-11-09T16:45:02.050Z"
+      "fetchedAt": "2026-11-16T16:15:03.820Z"
     },
     "angle": {
-      "recent": 94,
-      "previous": 44,
-      "end": "2026-11-07",
+      "recent": 123,
+      "previous": 46,
+      "end": "2026-11-14",
       "weeks": [
-        10,
         7,
         17,
         10,
         12,
         20,
         28,
-        34
+        34,
+        41
       ],
-      "fetchedAt": "2026-11-09T16:45:10.557Z"
+      "fetchedAt": "2026-11-16T16:15:12.395Z"
     },
     "architecture": {
-      "recent": 65,
-      "previous": 127,
-      "end": "2026-11-07",
+      "recent": 76,
+      "previous": 100,
+      "end": "2026-11-14",
       "weeks": [
-        38,
         27,
         24,
         38,
         11,
         17,
         20,
-        17
+        17,
+        22
       ],
-      "fetchedAt": "2026-11-09T16:45:15.914Z"
+      "fetchedAt": "2026-11-16T16:15:18.526Z"
     },
     "edifice": {
-      "recent": 10,
-      "previous": 11,
-      "end": "2026-11-07",
+      "recent": 11,
+      "previous": 9,
+      "end": "2026-11-14",
       "weeks": [
-        4,
         0,
         2,
         5,
         2,
         3,
         2,
+        3,
         3
       ],
-      "fetchedAt": "2026-11-09T16:45:18.766Z"
+      "fetchedAt": "2026-11-16T16:15:21.023Z"
     },
     "construction": {
-      "recent": 33,
-      "previous": 31,
-      "end": "2026-11-07",
+      "recent": 41,
+      "previous": 29,
+      "end": "2026-11-14",
       "weeks": [
-        5,
         7,
         10,
         9,
         3,
         10,
         8,
-        12
+        12,
+        11
       ],
-      "fetchedAt": "2026-11-09T16:45:19.968Z"
+      "fetchedAt": "2026-11-16T16:15:22.647Z"
     },
     "vestibule": {
-      "recent": 28,
-      "previous": 41,
-      "end": "2026-11-07",
+      "recent": 34,
+      "previous": 38,
+      "end": "2026-11-14",
       "weeks": [
-        9,
         7,
         13,
         12,
         6,
         7,
         11,
-        4
+        4,
+        12
       ],
-      "fetchedAt": "2026-11-09T16:45:22.912Z"
+      "fetchedAt": "2026-11-16T16:15:25.930Z"
     },
     "structure": {
-      "recent": 20,
-      "previous": 20,
-      "end": "2026-11-07",
+      "recent": 17,
+      "previous": 23,
+      "end": "2026-11-14",
       "weeks": [
-        3,
         8,
         5,
         4,
         6,
         4,
         6,
-        4
+        4,
+        3
       ],
-      "fetchedAt": "2026-11-09T16:45:24.100Z"
+      "fetchedAt": "2026-11-16T16:15:27.222Z"
     },
     "arch": {
-      "recent": 65,
-      "previous": 53,
-      "end": "2026-11-07",
+      "recent": 67,
+      "previous": 57,
+      "end": "2026-11-14",
       "weeks": [
-        10,
         13,
         16,
         14,
         14,
         14,
         17,
-        20
+        20,
+        16
       ],
-      "fetchedAt": "2026-11-09T16:45:25.336Z"
+      "fetchedAt": "2026-11-16T16:15:28.860Z"
     },
     "enterprise architecture": {
-      "recent": 35,
-      "previous": 29,
-      "end": "2026-11-07",
+      "recent": 33,
+      "previous": 22,
+      "end": "2026-11-14",
       "weeks": [
-        13,
         6,
         5,
         5,
         6,
         6,
         10,
-        13
+        13,
+        4
       ],
-      "fetchedAt": "2026-11-09T16:45:26.554Z"
+      "fetchedAt": "2026-11-16T16:15:30.497Z"
     },
     "framework": {
-      "recent": 124,
-      "previous": 119,
-      "end": "2026-11-07",
+      "recent": 146,
+      "previous": 104,
+      "end": "2026-11-14",
       "weeks": [
-        39,
         23,
         28,
         29,
         24,
         26,
         35,
-        39
+        39,
+        46
       ],
-      "fetchedAt": "2026-11-09T16:45:28.188Z"
+      "fetchedAt": "2026-11-16T16:15:31.742Z"
     },
     "area": {
-      "recent": 181,
-      "previous": 191,
-      "end": "2026-11-07",
+      "recent": 171,
+      "previous": 193,
+      "end": "2026-11-14",
       "weeks": [
-        46,
         48,
         48,
         49,
         48,
         38,
         40,
-        55
+        55,
+        38
       ],
-      "fetchedAt": "2026-11-09T16:45:30.613Z"
+      "fetchedAt": "2026-11-16T16:15:35.051Z"
     },
     "metropolitan statistical area": {
-      "recent": 36,
-      "previous": 35,
-      "end": "2026-11-07",
+      "recent": 38,
+      "previous": 37,
+      "end": "2026-11-14",
       "weeks": [
-        6,
         6,
         13,
         10,
         8,
         11,
         11,
-        6
+        6,
+        10
       ],
-      "fetchedAt": "2026-11-09T16:45:32.284Z"
+      "fetchedAt": "2026-11-16T16:15:36.708Z"
     },
     "country": {
-      "recent": 112,
-      "previous": 169,
-      "end": "2026-11-07",
+      "recent": 113,
+      "previous": 160,
+      "end": "2026-11-14",
       "weeks": [
-        46,
         51,
         41,
         31,
         37,
         22,
         25,
-        28
+        28,
+        38
       ],
-      "fetchedAt": "2026-11-09T16:45:38.444Z"
+      "fetchedAt": "2026-11-16T16:15:42.593Z"
     },
     "region": {
-      "recent": 16,
-      "previous": 27,
-      "end": "2026-11-07",
+      "recent": 12,
+      "previous": 23,
+      "end": "2026-11-14",
       "weeks": [
-        9,
         4,
         7,
         7,
         5,
         3,
         4,
-        4
+        4,
+        1
       ],
-      "fetchedAt": "2026-11-09T16:45:39.754Z"
+      "fetchedAt": "2026-11-16T16:15:44.281Z"
     },
     "google": {
-      "recent": 2155550,
-      "previous": 2253282,
-      "end": "2026-11-07",
+      "recent": 2207771,
+      "previous": 2205475,
+      "end": "2026-11-14",
       "weeks": [
-        567236,
         551444,
         566556,
         568046,
         519429,
         505056,
         566223,
-        564842
+        564842,
+        571650
       ],
-      "fetchedAt": "2026-11-09T16:43:07.984Z"
+      "fetchedAt": "2026-11-16T16:13:06.198Z"
     },
     "acne": {
-      "recent": 204,
-      "previous": 241,
-      "end": "2026-11-07",
+      "recent": 219,
+      "previous": 232,
+      "end": "2026-11-14",
       "weeks": [
-        58,
         57,
         84,
         42,
         49,
         40,
         56,
-        59
+        59,
+        64
       ],
-      "fetchedAt": "2026-11-09T16:43:15.155Z"
+      "fetchedAt": "2026-11-16T16:13:14.009Z"
     },
     "hidradenitis suppurativa": {
-      "recent": 353,
-      "previous": 348,
-      "end": "2026-11-07",
+      "recent": 333,
+      "previous": 337,
+      "end": "2026-11-14",
       "weeks": [
-        91,
         88,
         97,
         72,
         80,
         88,
         96,
-        89
+        89,
+        60
       ],
-      "fetchedAt": "2026-11-09T16:43:16.809Z"
+      "fetchedAt": "2026-11-16T16:13:15.287Z"
     },
     "rosacea": {
-      "recent": 524,
-      "previous": 524,
-      "end": "2026-11-07",
+      "recent": 535,
+      "previous": 517,
+      "end": "2026-11-14",
       "weeks": [
-        137,
         125,
         139,
         123,
         130,
         134,
         128,
-        132
+        132,
+        141
       ],
-      "fetchedAt": "2026-11-09T16:43:18.005Z"
+      "fetchedAt": "2026-11-16T16:13:16.913Z"
     },
     "pimples": {
-      "recent": 6,
-      "previous": 10,
-      "end": "2026-11-07",
+      "recent": 4,
+      "previous": 8,
+      "end": "2026-11-14",
       "weeks": [
         4,
-        4,
         2,
         0,
         2,
         0,
         2,
-        2
+        2,
+        0
       ],
-      "fetchedAt": "2026-11-09T16:43:19.651Z"
+      "fetchedAt": "2026-11-16T16:13:18.161Z"
     },
     "acne studios": {
-      "recent": 654,
-      "previous": 1083,
-      "end": "2026-11-07",
+      "recent": 668,
+      "previous": 965,
+      "end": "2026-11-14",
       "weeks": [
-        283,
         293,
         261,
         246,
         165,
         139,
         172,
-        178
+        178,
+        179
       ],
-      "fetchedAt": "2026-11-09T16:43:20.876Z"
+      "fetchedAt": "2026-11-16T16:13:19.426Z"
     },
     "pomade": {
-      "recent": 16,
-      "previous": 20,
-      "end": "2026-11-07",
+      "recent": 18,
+      "previous": 19,
+      "end": "2026-11-14",
       "weeks": [
-        5,
         7,
         6,
         2,
         4,
         4,
         2,
+        6,
         6
       ],
-      "fetchedAt": "2026-11-09T16:43:22.519Z"
+      "fetchedAt": "2026-11-16T16:13:21.049Z"
     },
     "cutibacterium acnes": {
       "recent": 10,
@@ -1026,23 +1026,23 @@
         3,
         4
       ],
-      "fetchedAt": "2026-11-09T16:43:23.728Z"
+      "fetchedAt": "2026-11-16T16:13:22.666Z"
     },
     "activation": {
-      "recent": 15,
+      "recent": 16,
       "previous": 16,
-      "end": "2026-11-07",
+      "end": "2026-11-14",
       "weeks": [
-        4,
         5,
         3,
         4,
         4,
         4,
         4,
-        3
+        3,
+        5
       ],
-      "fetchedAt": "2026-11-09T16:43:28.971Z"
+      "fetchedAt": "2026-11-16T16:13:28.804Z"
     },
     "mast cell activation syndrome": {
       "recent": 7,
@@ -1062,485 +1062,501 @@
     },
     "funhouse": {
       "recent": 11,
-      "previous": 11,
-      "end": "2026-11-07",
+      "previous": 13,
+      "end": "2026-11-14",
       "weeks": [
-        0,
         5,
         6,
         0,
         2,
         2,
         1,
-        6
+        6,
+        2
       ],
-      "fetchedAt": "2026-11-09T16:43:51.317Z"
+      "fetchedAt": "2026-11-16T16:13:50.088Z"
     },
     "schengen area": {
-      "recent": 27,
-      "previous": 10,
-      "end": "2026-11-07",
+      "recent": 30,
+      "previous": 11,
+      "end": "2026-11-14",
       "weeks": [
-        1,
         1,
         5,
         3,
         2,
         10,
         2,
-        13
+        13,
+        5
       ],
-      "fetchedAt": "2026-11-09T16:45:33.922Z"
+      "fetchedAt": "2026-11-16T16:15:38.332Z"
+    },
+    "commencement": {
+      "recent": 5,
+      "previous": 5,
+      "end": "2026-11-14",
+      "weeks": [
+        1,
+        2,
+        1,
+        1,
+        2,
+        0,
+        1,
+        2
+      ],
+      "fetchedAt": "2026-11-16T16:13:36.141Z"
     }
   },
   "unavailable": {
     "custom signage": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:41:28.624Z"
+      "checkedAt": "2026-11-16T16:11:20.820Z"
     },
     "stage design": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:41:31.034Z"
+      "checkedAt": "2026-11-16T16:11:24.053Z"
     },
     "portrait photography": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:41:34.719Z"
+      "checkedAt": "2026-11-16T16:11:28.597Z"
     },
     "brand activation": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:41:35.920Z"
+      "checkedAt": "2026-11-16T16:11:30.233Z"
     },
     "event decor": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:41:37.132Z"
+      "checkedAt": "2026-11-16T16:11:31.846Z"
     },
     "festival decor": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:41:38.770Z"
+      "checkedAt": "2026-11-16T16:11:33.078Z"
     },
     "exhibition design": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:41:39.971Z"
+      "checkedAt": "2026-11-16T16:11:34.311Z"
     },
     "exhibition stands": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:41:41.606Z"
+      "checkedAt": "2026-11-16T16:11:35.548Z"
     },
     "exhibition stand design": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:41:42.884Z"
+      "checkedAt": "2026-11-16T16:11:36.780Z"
     },
     "furniture design": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:41:44.519Z"
+      "checkedAt": "2026-11-16T16:11:38.394Z"
     },
     "product design": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:41:45.749Z"
+      "checkedAt": "2026-11-16T16:11:40.009Z"
     },
     "lighting design": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:41:49.058Z"
+      "checkedAt": "2026-11-16T16:11:43.252Z"
     },
     "light installations": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:41:50.704Z"
+      "checkedAt": "2026-11-16T16:11:44.488Z"
     },
     "creative fabrication": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:41:51.887Z"
+      "checkedAt": "2026-11-16T16:11:45.725Z"
     },
     "custom fabrication": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:41:53.517Z"
+      "checkedAt": "2026-11-16T16:11:47.335Z"
     },
     "custom props": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:41:54.705Z"
+      "checkedAt": "2026-11-16T16:11:48.949Z"
     },
     "set design": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:41:56.843Z"
+      "checkedAt": "2026-11-16T16:11:50.560Z"
     },
     "stage lighting": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:41:58.064Z"
+      "checkedAt": "2026-11-16T16:11:51.826Z"
     },
     "installation art": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:42:00.916Z"
+      "checkedAt": "2026-11-16T16:11:54.324Z"
     },
     "art installations": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:42:02.556Z"
+      "checkedAt": "2026-11-16T16:11:55.579Z"
     },
     "festival production": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:42:03.751Z"
+      "checkedAt": "2026-11-16T16:11:57.195Z"
     },
     "event production": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:42:05.382Z"
+      "checkedAt": "2026-11-16T16:11:58.808Z"
     },
     "visual design": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:42:06.587Z"
+      "checkedAt": "2026-11-16T16:12:00.422Z"
     },
     "creative technologist": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:42:09.790Z"
+      "checkedAt": "2026-11-16T16:12:03.725Z"
     },
     "experiential design": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:42:11.422Z"
+      "checkedAt": "2026-11-16T16:12:05.073Z"
     },
     "retail design": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:42:12.630Z"
+      "checkedAt": "2026-11-16T16:12:06.683Z"
     },
     "window display": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:42:14.276Z"
+      "checkedAt": "2026-11-16T16:12:08.302Z"
     },
     "shop signage": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:42:15.479Z"
+      "checkedAt": "2026-11-16T16:12:09.928Z"
     },
     "neon signs": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:42:18.305Z"
+      "checkedAt": "2026-11-16T16:12:13.162Z"
     },
     "sign making": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:42:19.512Z"
+      "checkedAt": "2026-11-16T16:12:14.392Z"
     },
     "interior architecture": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:42:21.153Z"
+      "checkedAt": "2026-11-16T16:12:15.636Z"
     },
     "architectural photography": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:42:22.797Z"
+      "checkedAt": "2026-11-16T16:12:16.885Z"
     },
     "fashion photography": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:42:24.006Z"
+      "checkedAt": "2026-11-16T16:12:18.524Z"
     },
     "fashion model": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:42:25.212Z"
+      "checkedAt": "2026-11-16T16:12:20.143Z"
     },
     "male model": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:42:26.852Z"
+      "checkedAt": "2026-11-16T16:12:21.397Z"
     },
     "video production": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:42:30.915Z"
+      "checkedAt": "2026-11-16T16:12:25.887Z"
     },
     "lichtinstallatie": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:42:39.755Z"
+      "checkedAt": "2026-11-16T16:12:35.302Z"
     },
     "kunstinstallatie": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:42:40.953Z"
+      "checkedAt": "2026-11-16T16:12:36.913Z"
     },
     "merkactivatie": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:42:42.586Z"
+      "checkedAt": "2026-11-16T16:12:38.145Z"
     },
     "beursstand": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:42:43.788Z"
+      "checkedAt": "2026-11-16T16:12:39.764Z"
     },
     "festivaldecor": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:42:45.420Z"
+      "checkedAt": "2026-11-16T16:12:41.373Z"
     },
     "hannah schmitz": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:42:48.249Z"
+      "checkedAt": "2026-11-16T16:12:44.243Z"
     },
     "gabriel gomez": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:42:49.453Z"
+      "checkedAt": "2026-11-16T16:12:45.852Z"
     },
     "the podium": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:42:52.306Z"
+      "checkedAt": "2026-11-16T16:12:48.711Z"
     },
     "three-dimensional integrated circuit": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:42:57.666Z"
+      "checkedAt": "2026-11-16T16:12:54.864Z"
     },
     "computer-aided design": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:42:58.888Z"
+      "checkedAt": "2026-11-16T16:12:56.501Z"
     },
     "digital fashion": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:43:01.282Z"
+      "checkedAt": "2026-11-16T16:12:59.751Z"
     },
     "vidal golosinas": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:43:05.785Z"
+      "checkedAt": "2026-11-16T16:13:03.944Z"
     },
     "about sufficient": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:43:06.984Z"
+      "checkedAt": "2026-11-16T16:13:05.198Z"
     },
     "sufficient statistic": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:43:09.681Z"
+      "checkedAt": "2026-11-16T16:13:08.348Z"
     },
     "self-sustainability": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:43:11.322Z"
+      "checkedAt": "2026-11-16T16:13:09.955Z"
     },
     "nuisance parameter": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:43:12.517Z"
+      "checkedAt": "2026-11-16T16:13:11.773Z"
     },
     "necessary but not sufficient": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:43:14.155Z"
+      "checkedAt": "2026-11-16T16:13:13.009Z"
     },
     "pomade acne": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:43:25.131Z"
+      "checkedAt": "2026-11-16T16:13:24.535Z"
     },
     "conglobate": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:43:26.331Z"
+      "checkedAt": "2026-11-16T16:13:26.185Z"
     },
     "papulopustular": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:43:27.971Z"
+      "checkedAt": "2026-11-16T16:13:27.803Z"
     },
     "energizing": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:43:30.413Z"
+      "checkedAt": "2026-11-16T16:13:30.980Z"
     },
     "activation function": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:43:35.009Z"
-    },
-    "commencement": {
-      "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:43:36.673Z"
+      "checkedAt": "2026-11-16T16:13:35.141Z"
     },
     "activation energy": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:43:37.872Z"
+      "checkedAt": "2026-11-16T16:13:38.000Z"
     },
     "neutron activation": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:43:41.361Z"
+      "checkedAt": "2026-11-16T16:13:40.518Z"
     },
     "entropy of activation": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:43:42.572Z"
+      "checkedAt": "2026-11-16T16:13:42.133Z"
     },
     "actuation": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:43:45.407Z"
+      "checkedAt": "2026-11-16T16:13:44.988Z"
     },
     "activation fun": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:43:47.043Z"
+      "checkedAt": "2026-11-16T16:13:46.242Z"
     },
     "wharfie time": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:43:48.677Z"
+      "checkedAt": "2026-11-16T16:13:47.476Z"
     },
     "list of ssshhhh...koi hai episodes": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:43:50.316Z"
+      "checkedAt": "2026-11-16T16:13:49.087Z"
     },
     "list of ax men episodes": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:43:54.798Z"
+      "checkedAt": "2026-11-16T16:13:53.548Z"
     },
     "activation guerillia": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:43:56.429Z"
+      "checkedAt": "2026-11-16T16:13:54.795Z"
     },
     "adrian edmondson": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:43:59.713Z"
+      "checkedAt": "2026-11-16T16:13:58.058Z"
     },
     "fruit drink": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:44:04.655Z"
+      "checkedAt": "2026-11-16T16:14:02.189Z"
     },
     "ade adepitan": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:44:05.841Z"
+      "checkedAt": "2026-11-16T16:14:03.803Z"
     },
     "adunni ade": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:44:07.056Z"
+      "checkedAt": "2026-11-16T16:14:05.044Z"
     },
     "-ade": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:44:11.126Z"
+      "checkedAt": "2026-11-16T16:14:09.539Z"
     },
     "ade lights": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:44:12.315Z"
+      "checkedAt": "2026-11-16T16:14:11.158Z"
     },
     "purdue boilermakers football": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:44:15.179Z"
+      "checkedAt": "2026-11-16T16:14:13.659Z"
     },
     "arie luyendyk jr.": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:44:16.378Z"
+      "checkedAt": "2026-11-16T16:14:14.908Z"
     },
     "ross–ade stadium": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:44:17.572Z"
+      "checkedAt": "2026-11-16T16:14:16.518Z"
     },
     "thomas adès": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:44:18.775Z"
+      "checkedAt": "2026-11-16T16:14:17.761Z"
     },
     "ade octostrip": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:44:20.406Z"
+      "checkedAt": "2026-11-16T16:14:19.375Z"
     },
     "adnight": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:44:21.617Z"
+      "checkedAt": "2026-11-16T16:14:21.008Z"
     },
     "list of talk show hosts": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:44:24.893Z"
+      "checkedAt": "2026-11-16T16:14:23.865Z"
     },
     "marília gabriela": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:44:26.522Z"
+      "checkedAt": "2026-11-16T16:14:25.112Z"
     },
     "tv globo df": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:44:27.706Z"
+      "checkedAt": "2026-11-16T16:14:27.208Z"
     },
     "adnight ade": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:44:29.339Z"
+      "checkedAt": "2026-11-16T16:14:28.450Z"
     },
     "air holes": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:44:30.569Z"
+      "checkedAt": "2026-11-16T16:14:30.060Z"
     },
     "fallstreak hole": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:44:32.203Z"
+      "checkedAt": "2026-11-16T16:14:31.680Z"
     },
     "apertures": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:44:33.856Z"
+      "checkedAt": "2026-11-16T16:14:33.315Z"
     },
     "air duct": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:44:35.494Z"
+      "checkedAt": "2026-11-16T16:14:34.940Z"
     },
     "sound hole": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:44:37.908Z"
+      "checkedAt": "2026-11-16T16:14:38.180Z"
     },
     "photonic-crystal fiber": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:44:41.995Z"
+      "checkedAt": "2026-11-16T16:14:42.696Z"
     },
     "charcoal pile": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:44:43.179Z"
+      "checkedAt": "2026-11-16T16:14:43.939Z"
     },
     "air pocket": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:44:44.368Z"
+      "checkedAt": "2026-11-16T16:14:45.551Z"
     },
     "cc amfi": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:44:47.663Z"
+      "checkedAt": "2026-11-16T16:14:48.788Z"
     },
     "nye jordal amfi": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:44:48.901Z"
+      "checkedAt": "2026-11-16T16:14:50.015Z"
     },
     "sparta amfi": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:44:50.096Z"
+      "checkedAt": "2026-11-16T16:14:51.253Z"
     },
     "jordal amfi": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:44:51.292Z"
+      "checkedAt": "2026-11-16T16:14:52.492Z"
     },
     "adastra minerals": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:44:52.925Z"
+      "checkedAt": "2026-11-16T16:14:54.105Z"
     },
     "varden amfi": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:44:54.120Z"
+      "checkedAt": "2026-11-16T16:14:55.712Z"
     },
     "morey amsterdam": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:45:01.049Z"
+      "checkedAt": "2026-11-16T16:15:02.820Z"
     },
     "capital of the netherlands": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:45:03.905Z"
+      "checkedAt": "2026-11-16T16:15:05.680Z"
     },
     "robert amsterdam": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:45:05.093Z"
+      "checkedAt": "2026-11-16T16:15:06.929Z"
     },
     "angle positioning": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:45:06.290Z"
+      "checkedAt": "2026-11-16T16:15:08.548Z"
     },
     "global positioning system": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:45:07.923Z"
+      "checkedAt": "2026-11-16T16:15:10.165Z"
     },
     "euler angles": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:45:09.557Z"
+      "checkedAt": "2026-11-16T16:15:11.395Z"
     },
     "dynamic positioning": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:45:11.987Z"
+      "checkedAt": "2026-11-16T16:15:14.657Z"
     },
     "low-angle shot": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:45:13.177Z"
+      "checkedAt": "2026-11-16T16:15:16.266Z"
     },
     "position angle": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:45:14.913Z"
+      "checkedAt": "2026-11-16T16:15:17.526Z"
     },
     "gothic architecture": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:45:17.765Z"
+      "checkedAt": "2026-11-16T16:15:20.023Z"
     },
     "neoclassical architecture": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:45:21.911Z"
+      "checkedAt": "2026-11-16T16:15:24.929Z"
     },
     "open architecture": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:45:29.614Z"
+      "checkedAt": "2026-11-16T16:15:34.051Z"
     },
     "metropolitan area": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:45:35.782Z"
+      "checkedAt": "2026-11-16T16:15:39.844Z"
     },
     "raaf area commands": {
       "reason": "no-recent-series",
-      "checkedAt": "2026-11-09T16:45:37.444Z"
+      "checkedAt": "2026-11-16T16:15:41.592Z"
+    },
+    "mast cell activation syndrome": {
+      "reason": "no-recent-series",
+      "checkedAt": "2026-11-16T16:13:32.605Z"
     }
   }
 }
